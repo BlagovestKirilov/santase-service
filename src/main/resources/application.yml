@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: SantaseService
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/santase
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: ${DB_DIALECT}
+    show-sql: true
+    hibernate:
+      ddl-auto: update
