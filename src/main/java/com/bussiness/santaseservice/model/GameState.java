@@ -8,23 +8,26 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.List;
 
+@Builder
 @Getter
 @Setter
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class GameState extends BaseEntity{
 
     @ElementCollection
     @CollectionTable(name = "game_deck",
             joinColumns = @JoinColumn(name = "game_id"))
-    private List<Card> deck = new ArrayList<>();
+    private List<Card> deck;
 
     @Embedded
     @AttributeOverrides({
@@ -37,22 +40,22 @@ public class GameState extends BaseEntity{
     @ElementCollection
     @CollectionTable(name = "game_first_player_hand",
             joinColumns = @JoinColumn(name = "game_id"))
-    private List<Card> firstPlayerHand = new ArrayList<>();
+    private List<Card> firstPlayerHand;
 
     @ElementCollection
     @CollectionTable(name = "game_second_player_hand",
             joinColumns = @JoinColumn(name = "game_id"))
-    private List<Card> secondPlayerHand = new ArrayList<>();
+    private List<Card> secondPlayerHand;
 
-    private Integer firstPlayerScore = 0;
+    private Integer firstPlayerScore;
 
-    private Integer secondPlayerScore = 0;
-
-    private Boolean isPlayer1Turn = Boolean.TRUE;
-
-    //public boolean closed = false;
+    private Integer secondPlayerScore;
 
     private String winner;
+
+    private String firstTurnPlayerUsername;
+
+    private String inTurnPlayerUsername;
 
     @Embedded
     @AttributeOverrides({

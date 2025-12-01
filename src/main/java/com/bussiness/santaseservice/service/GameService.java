@@ -52,8 +52,6 @@ public class GameService {
         User firstPlayer = userRepo.findByUsername(firstPlayerUsername).orElseThrow();
         User secondPlayer = userRepo.findByUsername(secondPlayerUsername).orElseThrow();
 
-        GameState state = new GameState();
-
         List<Card> deck = new ArrayList<>();
         for (Suit s : Suit.values()) {
             for (Rank r : Rank.values()) {
@@ -61,23 +59,29 @@ public class GameService {
             }
         }
         Collections.shuffle(deck);
-        state.setDeck(deck);
+
+        GameState gameState = GameState.builder()
+                .deck(deck)
+                .firstTurnPlayerUsername(firstPlayerUsername)
+                .inTurnPlayerUsername(firstPlayerUsername)
+                .firstPlayerHand(new ArrayList<>())
+                .secondPlayerHand(new ArrayList<>())
+                .firstPlayerScore(0)
+                .secondPlayerScore(0)
+                .build();
 
         // Deal 6 cards each
-        for (int i = 0; i < 6; i++) state.getFirstPlayerHand().add(deck.removeFirst());
-        for (int i = 0; i < 6; i++) state.getSecondPlayerHand().add(deck.removeFirst());
+        for (int i = 0; i < 6; i++) gameState.getFirstPlayerHand().add(deck.removeFirst());
+        for (int i = 0; i < 6; i++) gameState.getSecondPlayerHand().add(deck.removeFirst());
 
-        state.setTrumpCard(deck.getFirst());
-
-        // Trump
-        //state.trumpCard = deck.getLast();
+        gameState.setTrumpCard(deck.getFirst());
 
         Game game = Game.builder()
                 .firstPlayer(firstPlayer)
                 .secondPlayer(secondPlayer)
-                .state(state)
+                .state(gameState)
                 .build();
-        gameStateRepo.save(state);
+        gameStateRepo.save(gameState);
         return gameRepo.save(game);
     }
 
@@ -88,16 +92,17 @@ public class GameService {
 
         GameState state = game.getState();
 
+        // Check turn
+        if (!state.getInTurnPlayerUsername().equals(playCardRequest.getUsername())) {
+            throw new RuntimeException("Not your turn");
+        }
+
         boolean isP1 = game.getFirstPlayer().getUsername().equals(playCardRequest.getUsername());
         boolean isP2 = game.getSecondPlayer().getUsername().equals(playCardRequest.getUsername());
 
         if (!isP1 && !isP2) {
             throw new RuntimeException("User not in this game");
         }
-
-        // Check turn
-        if (state.getIsPlayer1Turn() && !isP1) throw new RuntimeException("Not your turn");
-        if (state.getIsPlayer1Turn() && isP2) throw new RuntimeException("Not your turn");
 
         // Remove card from player's hand
         if (isP1) {
@@ -107,6 +112,7 @@ public class GameService {
                     .orElse(null);
             if (!state.getFirstPlayerHand().remove(card)) throw new RuntimeException("Card not in player's hand");
             state.setFirstPlayerPlayedCard(card);
+            checkTwentyForty(game, game.getFirstPlayer().getUsername(), card);
         } else {
             Card card = state.getSecondPlayerHand().stream()
                     .filter(c -> c.getId().equals(playCardRequest.getCardId()))
@@ -114,14 +120,18 @@ public class GameService {
                     .orElse(null);
             if (!state.getSecondPlayerHand().remove(card)) throw new RuntimeException("Card not in player's hand");
             state.setSecondPlayerPlayedCard(card);
+            checkTwentyForty(game, game.getFirstPlayer().getUsername(), card);
         }
 
         // If both players have played → evaluate trick
         if (state.getFirstPlayerPlayedCard() != null && state.getSecondPlayerPlayedCard() != null) {
-            evaluateTrick(state);
+            evaluateTrick(game);
         } else {
-            // Only one played, switch turn
-            state.setIsPlayer1Turn(Boolean.FALSE);
+            if (isP1) {
+                state.setInTurnPlayerUsername(game.getSecondPlayer().getUsername());
+            } else {
+                state.setInTurnPlayerUsername(game.getFirstPlayer().getUsername());
+            }
         }
 
         game.setState(state);
@@ -129,23 +139,24 @@ public class GameService {
         return state;
     }
 
-    private void evaluateTrick(GameState state) {
+    private void evaluateTrick(Game game) {
+        GameState state = game.getState();
         Card firstPlayerCard = state.getFirstPlayerPlayedCard();
         Card secondPlayerCard = state.getSecondPlayerPlayedCard();
 
-        int winner = determineWinner(firstPlayerCard, secondPlayerCard, state.getTrumpCard(), state.getIsPlayer1Turn());
+        int winner = determineWinner(game);
 
         if (winner == 1) {
             state.setFirstPlayerScore(state.getFirstPlayerScore() + firstPlayerCard.getPoints() + secondPlayerCard.getPoints());
-            state.setIsPlayer1Turn(Boolean.TRUE);
+            state.setInTurnPlayerUsername(game.getFirstPlayer().getUsername());
         } else {
             state.setSecondPlayerScore(state.getSecondPlayerScore() + firstPlayerCard.getPoints() + secondPlayerCard.getPoints());
-            state.setIsPlayer1Turn(Boolean.FALSE);
+            state.setInTurnPlayerUsername(game.getSecondPlayer().getUsername());
         }
 
         // Draw new cards
         if (!state.getDeck().isEmpty()) {
-            if (state.getIsPlayer1Turn()) {
+            if (state.getInTurnPlayerUsername().equals(game.getFirstPlayer().getUsername())) {
                 state.getFirstPlayerHand().add(state.getDeck().removeFirst());
                 if (!state.getDeck().isEmpty()) state.getSecondPlayerHand().add(state.getDeck().removeFirst());
             } else {
@@ -160,17 +171,56 @@ public class GameService {
 
     }
 
-    private int determineWinner(Card firstPlayerCard, Card secondPlayerCard, Card trumpCard, boolean isPlayer1Turn) {
-        boolean c1Trump = firstPlayerCard.getSuit().equals(trumpCard.getSuit());
-        boolean c2Trump = secondPlayerCard.getSuit().equals(trumpCard.getSuit());
+    private int determineWinner(Game game) {
+        GameState state = game.getState();
+
+        boolean c1Trump = state.getFirstPlayerPlayedCard().getSuit().equals(state.getTrumpCard().getSuit());
+        boolean c2Trump = state.getSecondPlayerPlayedCard().getSuit().equals(state.getTrumpCard().getSuit());
 
         if (c1Trump && !c2Trump) return 1;
         if (c2Trump && !c1Trump) return 2;
 
-        if (firstPlayerCard.getSuit() == secondPlayerCard.getSuit()) {
-            return firstPlayerCard.getPoints() > secondPlayerCard.getPoints() ? 1 : 2;
+        if (state.getFirstPlayerPlayedCard().getSuit() == state.getSecondPlayerPlayedCard().getSuit()) {
+            return state.getFirstPlayerPlayedCard().getPoints() > state.getSecondPlayerPlayedCard().getPoints() ? 1 : 2;
         }
 
-        return isPlayer1Turn ? 1 : 2;
+        return state.getInTurnPlayerUsername().equals(game.getSecondPlayer().getUsername()) ? 1 : 2;
+    }
+
+    private void checkTwentyForty(Game game, String playerInTurnUsername, Card playedCard) {
+        if (!playerInTurnUsername.equals(game.getState().getFirstTurnPlayerUsername())) {
+            return;
+        }
+
+        boolean isPlayerOne = game.getState().getInTurnPlayerUsername().equals(game.getFirstPlayer().getUsername());
+
+        // Must play King OR Queen
+        if (!(playedCard.getRank().name().equals("KING") || playedCard.getRank().name().equals("QUEEN"))) {
+            return;
+        }
+
+        Suit suit = playedCard.getSuit();
+        Suit trumpSuit = game.getState().getTrumpCard().getSuit();
+
+        List<Card> hand = isPlayerOne ? game.getState().getFirstPlayerHand() : game.getState().getSecondPlayerHand();
+
+        boolean hasMatchingPair = hand.stream().anyMatch(c ->
+                c.getSuit() == suit &&
+                        (
+                                (playedCard.getRank().name().equals("KING") && c.getRank().name().equals("QUEEN")) ||
+                                        (playedCard.getRank().name().equals("QUEEN") && c.getRank().name().equals("KING"))
+                        )
+        );
+
+        if (!hasMatchingPair) return;
+
+        // Bonus: 40 if trump, otherwise 20
+        int bonus = (suit == trumpSuit) ? 40 : 20;
+
+        if (isPlayerOne) {
+            game.getState().setFirstPlayerScore(game.getState().getFirstPlayerScore() + bonus);
+        } else {
+            game.getState().setSecondPlayerScore(game.getState().getSecondPlayerScore() + bonus);
+        }
     }
 }
