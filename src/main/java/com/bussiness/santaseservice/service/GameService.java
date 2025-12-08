@@ -109,18 +109,18 @@ public class GameService {
             Card card = state.getFirstPlayerHand().stream()
                     .filter(c -> c.getId().equals(playCardRequest.getCardId()))
                     .findFirst()
-                    .orElse(null);
-            if (!state.getFirstPlayerHand().remove(card)) throw new RuntimeException("Card not in player's hand");
+                    .orElseThrow(() -> new IllegalStateException("Card not found in player's hand"));
+            removeCardFromHand(state.getFirstPlayerHand(), game.getFirstPlayer().getUsername(), card, game);
             state.setFirstPlayerPlayedCard(card);
             checkTwentyForty(game, game.getFirstPlayer().getUsername(), card);
         } else {
             Card card = state.getSecondPlayerHand().stream()
                     .filter(c -> c.getId().equals(playCardRequest.getCardId()))
                     .findFirst()
-                    .orElse(null);
-            if (!state.getSecondPlayerHand().remove(card)) throw new RuntimeException("Card not in player's hand");
+                    .orElseThrow(() -> new IllegalStateException("Card not found in player's hand"));
+            removeCardFromHand(state.getSecondPlayerHand(), game.getSecondPlayer().getUsername(), card, game);
             state.setSecondPlayerPlayedCard(card);
-            checkTwentyForty(game, game.getFirstPlayer().getUsername(), card);
+            checkTwentyForty(game, game.getSecondPlayer().getUsername(), card);
         }
 
         // If both players have played → evaluate trick
@@ -139,6 +139,76 @@ public class GameService {
         return state;
     }
 
+    private void removeCardFromHand(List<Card> playerCards, String playerUsername, Card cardForRemoval, Game game) {
+
+        if (!playerCards.contains(cardForRemoval)) {
+            throw new RuntimeException("Card not in player's hand");
+        }
+
+        // If deck still has cards → always allowed
+        if (!game.getState().getDeck().isEmpty()) {
+            playerCards.remove(cardForRemoval);
+            return;
+        }
+
+        // First player always allowed
+        if (playerUsername.equals(game.getState().getFirstTurnPlayerUsername())) {
+            playerCards.remove(cardForRemoval);
+            return;
+        }
+
+        // Determine opponent card
+        Card opponentCard = playerUsername.equals(game.getFirstPlayer().getUsername())
+                ? game.getState().getSecondPlayerPlayedCard()
+                : game.getState().getFirstPlayerPlayedCard();
+
+        Suit opponentSuit = opponentCard.getSuit();
+
+        boolean hasSameSuit = playerCards.stream()
+                .anyMatch(card -> card.getSuit() == opponentSuit);
+
+        // --- CASE 1: Player has same suit as opponent ---
+        if (hasSameSuit) {
+            List<Card> playableCards = playerCards.stream()
+                    .filter(c -> c.getSuit() == opponentSuit && c.getPoints() > opponentCard.getPoints())
+                    .toList();
+
+            if (playableCards.isEmpty()) {
+                playableCards = playerCards.stream()
+                        .filter(c -> c.getSuit() == opponentSuit)
+                        .toList();
+            }
+
+            if (!playableCards.contains(cardForRemoval)) {
+                throw new RuntimeException("Card cannot be played");
+            }
+
+            playerCards.remove(cardForRemoval);
+            return;
+        }
+
+        // --- CASE 2: Player does NOT have same suit ---
+        Card trumpCard = game.getState().getTrumpCard();
+        Suit trumpSuit = trumpCard.getSuit();
+
+        // Opponent card is trump - you may play anything
+        if (opponentSuit == trumpSuit) {
+            playerCards.remove(cardForRemoval);
+            return;
+        }
+
+        // Otherwise check if player has trump cards
+        boolean hasTrump = playerCards.stream()
+                .anyMatch(c -> c.getSuit() == trumpSuit);
+
+        if (hasTrump && cardForRemoval.getSuit() != trumpSuit) {
+            throw new RuntimeException("Card cannot be played");
+        }
+
+        playerCards.remove(cardForRemoval);
+    }
+
+
     private void evaluateTrick(Game game) {
         GameState state = game.getState();
         Card firstPlayerCard = state.getFirstPlayerPlayedCard();
@@ -149,9 +219,11 @@ public class GameService {
         if (winner == 1) {
             state.setFirstPlayerScore(state.getFirstPlayerScore() + firstPlayerCard.getPoints() + secondPlayerCard.getPoints());
             state.setInTurnPlayerUsername(game.getFirstPlayer().getUsername());
+            state.setFirstTurnPlayerUsername(game.getFirstPlayer().getUsername());
         } else {
             state.setSecondPlayerScore(state.getSecondPlayerScore() + firstPlayerCard.getPoints() + secondPlayerCard.getPoints());
             state.setInTurnPlayerUsername(game.getSecondPlayer().getUsername());
+            state.setFirstTurnPlayerUsername(game.getSecondPlayer().getUsername());
         }
 
         // Draw new cards
@@ -188,7 +260,8 @@ public class GameService {
     }
 
     private void checkTwentyForty(Game game, String playerInTurnUsername, Card playedCard) {
-        if (!playerInTurnUsername.equals(game.getState().getFirstTurnPlayerUsername())) {
+        if (!playerInTurnUsername.equals(game.getState().getFirstTurnPlayerUsername()) ||
+                game.getState().getDeck().size() == 12) {
             return;
         }
 
