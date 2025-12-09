@@ -6,7 +6,9 @@ import com.bussiness.santaseservice.model.Card;
 import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.GameState;
 import com.bussiness.santaseservice.model.User;
+import com.bussiness.santaseservice.model.request.CloseDeckRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
+import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
 import com.bussiness.santaseservice.repository.GameRepository;
 import com.bussiness.santaseservice.repository.GameStateRepository;
 import com.bussiness.santaseservice.repository.UserRepository;
@@ -24,14 +26,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @RequiredArgsConstructor
 @Service
 public class GameService {
-    private final GameRepository gameRepo;
-    private final UserRepository userRepo;
-    private final GameStateRepository gameStateRepo;
+    private final GameRepository gameRepository;
+    private final UserRepository userRepository;
+    private final GameStateRepository gameStateRepository;
 
     volatile Queue<String> matchQueue = new ConcurrentLinkedQueue<>();
 
     public GameState getGameState(Long gameId) {
-        Game game = gameRepo.findById(gameId).orElseThrow(() -> new RuntimeException("Game id not found"));
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Game id not found"));
         return game.getState();
     }
 
@@ -49,8 +51,8 @@ public class GameService {
 
     @Transactional
     public Game startMatch(String firstPlayerUsername, String secondPlayerUsername) {
-        User firstPlayer = userRepo.findByUsername(firstPlayerUsername).orElseThrow();
-        User secondPlayer = userRepo.findByUsername(secondPlayerUsername).orElseThrow();
+        User firstPlayer = userRepository.findByUsername(firstPlayerUsername).orElseThrow();
+        User secondPlayer = userRepository.findByUsername(secondPlayerUsername).orElseThrow();
 
         List<Card> deck = new ArrayList<>();
         for (Suit s : Suit.values()) {
@@ -74,20 +76,20 @@ public class GameService {
         for (int i = 0; i < 6; i++) gameState.getFirstPlayerHand().add(deck.removeFirst());
         for (int i = 0; i < 6; i++) gameState.getSecondPlayerHand().add(deck.removeFirst());
 
-        gameState.setTrumpCard(deck.getFirst());
+        gameState.setTrumpCard(deck.getLast());
 
         Game game = Game.builder()
                 .firstPlayer(firstPlayer)
                 .secondPlayer(secondPlayer)
                 .state(gameState)
                 .build();
-        gameStateRepo.save(gameState);
-        return gameRepo.save(game);
+        gameStateRepository.save(gameState);
+        return gameRepository.save(game);
     }
 
     @Transactional
     public GameState playCard(PlayCardRequest playCardRequest) {
-        Game game = gameRepo.findById(playCardRequest.getGameId())
+        Game game = gameRepository.findById(playCardRequest.getGameId())
                 .orElseThrow(() -> new RuntimeException("Game not found"));
 
         GameState state = game.getState();
@@ -135,8 +137,62 @@ public class GameService {
         }
 
         game.setState(state);
-        gameRepo.save(game);
+        gameRepository.save(game);
         return state;
+    }
+
+    public GameState closeDeck(CloseDeckRequest closeDeckRequest) {
+        Game game = findGameForClosingOrRemoval(closeDeckRequest.getGameId(), closeDeckRequest.getUsername());
+
+        GameState state = game.getState();
+        state.getDeck().clear();
+
+        return gameStateRepository.save(state);
+    }
+
+    public GameState replaceCard(ReplaceCardRequest replaceCardRequest) {
+        Game game = findGameForClosingOrRemoval(replaceCardRequest.getGameId(), replaceCardRequest.getUsername());
+        GameState state = game.getState();
+
+        boolean isFirstPlayer = game.getFirstPlayer().getUsername().equals(replaceCardRequest.getUsername());
+        List<Card> playerCards = isFirstPlayer ? state.getFirstPlayerHand() : state.getSecondPlayerHand();
+
+        Card cardForReplace = playerCards.stream()
+                .filter(card -> card.getRank() == Rank.NINE)
+                .filter(card -> card.getSuit() == state.getTrumpCard().getSuit())
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("There is no card for replace"));
+
+        playerCards.remove(cardForReplace);
+        playerCards.add(state.getTrumpCard());
+
+        state.setTrumpCard(cardForReplace);
+
+        state.getDeck().removeLast();
+        state.getDeck().addLast(cardForReplace);
+
+        return gameStateRepository.save(state);
+    }
+
+    private Game findGameForClosingOrRemoval(Long gameId, String username) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        GameState state = game.getState();
+
+        if (!state.getFirstTurnPlayerUsername().equals(username)) {
+            throw new RuntimeException("User is not first in turn in this game");
+        }
+
+        if (!state.getInTurnPlayerUsername().equals(username)) {
+            throw new RuntimeException("Not your turn");
+        }
+
+        if (state.getDeck().size() == 2 || state.getDeck().size() == 12) {
+            throw new RuntimeException("Deck must have more than 2 cards and less than 12 left");
+        }
+
+        return game;
     }
 
     private void removeCardFromHand(List<Card> playerCards, String playerUsername, Card cardForRemoval, Game game) {
@@ -207,7 +263,6 @@ public class GameService {
 
         playerCards.remove(cardForRemoval);
     }
-
 
     private void evaluateTrick(Game game) {
         GameState state = game.getState();

@@ -2,7 +2,9 @@ package com.bussiness.santaseservice.controller;
 
 import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.GameState;
+import com.bussiness.santaseservice.model.request.CloseDeckRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
+import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
 import com.bussiness.santaseservice.model.request.StartGameRequest;
 import com.bussiness.santaseservice.service.GameService;
 import jakarta.validation.Valid;
@@ -40,5 +42,17 @@ public class GameController {
     public ResponseEntity<GameState> playCard(@RequestBody PlayCardRequest playCardRequest) {
         log.info("Trying to play card: {}", playCardRequest);
         return ResponseEntity.ok(gameService.playCard(playCardRequest));
+    }
+
+    @PostMapping("/close-deck")
+    public ResponseEntity<GameState> closeDeck(@RequestBody CloseDeckRequest closeDeckRequest) {
+        log.info("Trying to close deck: {}", closeDeckRequest);
+        return ResponseEntity.ok(gameService.closeDeck(closeDeckRequest));
+    }
+
+    @PostMapping("/replace-card")
+    public ResponseEntity<GameState> replaceCard(@RequestBody ReplaceCardRequest replaceCardRequest) {
+        log.info("Trying to replace card: {}", replaceCardRequest);
+        return ResponseEntity.ok(gameService.replaceCard(replaceCardRequest));
     }
 }

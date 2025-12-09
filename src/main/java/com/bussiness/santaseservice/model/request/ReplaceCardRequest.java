@@ -9,6 +9,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @NoArgsConstructor
-public class StartGameRequest {
+public class ReplaceCardRequest {
+    private Long gameId;
     private String username;
 }
