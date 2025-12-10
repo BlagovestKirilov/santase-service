@@ -3,6 +3,7 @@ package com.bussiness.santaseservice.controller;
 import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.GameState;
 import com.bussiness.santaseservice.model.request.CloseDeckRequest;
+import com.bussiness.santaseservice.model.request.FinishDealRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
 import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
 import com.bussiness.santaseservice.model.request.StartGameRequest;
@@ -29,7 +30,7 @@ public class GameController {
     @PostMapping("/start")
     public ResponseEntity<Game> start(@Valid @RequestBody StartGameRequest startGameRequest) {
         log.info("Trying to start game, account with username {}", startGameRequest.getUsername());
-        return ResponseEntity.ok(gameService.startGame(startGameRequest.getUsername()));
+        return ResponseEntity.ok(gameService.searchGame(startGameRequest.getUsername()));
     }
 
     @GetMapping("/state")
@@ -54,5 +55,11 @@ public class GameController {
     public ResponseEntity<GameState> replaceCard(@RequestBody ReplaceCardRequest replaceCardRequest) {
         log.info("Trying to replace card: {}", replaceCardRequest);
         return ResponseEntity.ok(gameService.replaceCard(replaceCardRequest));
+    }
+
+    @PostMapping("/finish-deal")
+    public ResponseEntity<GameState> finishDeal(@RequestBody FinishDealRequest finishDealRequest) {
+        log.info("Trying to finish deal: {}", finishDealRequest);
+        return ResponseEntity.ok(gameService.finishDeal(finishDealRequest));
     }
 }

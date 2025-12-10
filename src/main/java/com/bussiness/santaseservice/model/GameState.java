@@ -51,8 +51,6 @@ public class GameState extends BaseEntity{
 
     private Integer secondPlayerScore;
 
-    private String winner;
-
     private String firstTurnPlayerUsername;
 
     private String inTurnPlayerUsername;
@@ -72,4 +70,10 @@ public class GameState extends BaseEntity{
             @AttributeOverride(name = "rank", column = @Column(name = "second_player_played_rank"))
     })
     private Card secondPlayerPlayedCard;
+
+    private String closedByUsername;
+
+    private Boolean isFirstPlayerBlanked;
+
+    private Boolean isSecondPlayerBlanked;
 }
