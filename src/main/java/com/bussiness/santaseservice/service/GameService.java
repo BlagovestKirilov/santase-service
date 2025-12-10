@@ -361,13 +361,7 @@ public class GameService {
         }
     }
 
-    private void applyEndOfGameScore(
-            Game game,
-            GameState state,
-            User winner,
-            User first,
-            User second
-    ) {
+    private void applyEndOfGameScore(Game game, GameState state, User winner, User first, User second) {
         boolean winnerIsFirst = winner.equals(first);
         boolean closedByOther =
                 state.getClosedByUsername() != null &&
