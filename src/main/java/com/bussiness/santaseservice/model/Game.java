@@ -26,6 +26,9 @@ public class Game extends BaseEntity {
     @OneToOne
     private GameState state;
 
+    @ManyToOne
+    private User winner;
+
     private Integer firstPlayerResult;
 
     private Integer secondPlayerResult;

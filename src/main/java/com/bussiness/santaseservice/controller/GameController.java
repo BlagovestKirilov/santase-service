@@ -7,6 +7,7 @@ import com.bussiness.santaseservice.model.request.FinishDealRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
 import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
 import com.bussiness.santaseservice.model.request.StartGameRequest;
+import com.bussiness.santaseservice.model.response.PlayCardResponse;
 import com.bussiness.santaseservice.service.GameService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -34,13 +37,13 @@ public class GameController {
     }
 
     @GetMapping("/state")
-    public ResponseEntity<GameState> state(@RequestParam Long gameId) {
+    public ResponseEntity<GameState> state(@RequestParam UUID gameId) {
         log.info("Trying to get game state id: {}", gameId);
         return ResponseEntity.ok(gameService.getGameState(gameId));
     }
 
     @PostMapping("/play-card")
-    public ResponseEntity<GameState> playCard(@RequestBody PlayCardRequest playCardRequest) {
+    public ResponseEntity<PlayCardResponse> playCard(@RequestBody PlayCardRequest playCardRequest) {
         log.info("Trying to play card: {}", playCardRequest);
         return ResponseEntity.ok(gameService.playCard(playCardRequest));
     }

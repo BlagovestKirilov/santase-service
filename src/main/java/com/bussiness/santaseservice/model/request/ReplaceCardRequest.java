@@ -5,11 +5,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.UUID;
+
 @ToString
 @Getter
 @Setter
 @NoArgsConstructor
 public class ReplaceCardRequest {
-    private Long gameId;
+    private UUID gameId;
     private String username;
 }

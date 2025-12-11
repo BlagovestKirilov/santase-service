@@ -3,5 +3,7 @@ package com.bussiness.santaseservice.repository;
 import com.bussiness.santaseservice.model.GameState;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface GameStateRepository extends JpaRepository<GameState, Integer> {
+import java.util.UUID;
+
+public interface GameStateRepository extends JpaRepository<GameState, UUID> {
 }
