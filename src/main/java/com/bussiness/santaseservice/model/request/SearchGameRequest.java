@@ -9,6 +9,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @NoArgsConstructor
-public class StartGameRequest {
+public class SearchGameRequest {
     private String username;
 }

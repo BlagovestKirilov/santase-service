@@ -6,7 +6,7 @@ import com.bussiness.santaseservice.model.request.CloseDeckRequest;
 import com.bussiness.santaseservice.model.request.FinishDealRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
 import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
-import com.bussiness.santaseservice.model.request.StartGameRequest;
+import com.bussiness.santaseservice.model.request.SearchGameRequest;
 import com.bussiness.santaseservice.model.response.PlayCardResponse;
 import com.bussiness.santaseservice.service.GameService;
 import jakarta.validation.Valid;
@@ -30,10 +30,10 @@ public class GameController {
 
     private final GameService gameService;
 
-    @PostMapping("/start")
-    public ResponseEntity<Game> start(@Valid @RequestBody StartGameRequest startGameRequest) {
-        log.info("Trying to start game, account with username {}", startGameRequest.getUsername());
-        return ResponseEntity.ok(gameService.searchGame(startGameRequest.getUsername()));
+    @PostMapping("/search")
+    public ResponseEntity<Game> searchGame(@Valid @RequestBody SearchGameRequest searchGameRequest) {
+        log.info("Trying to start game, account with username {}", searchGameRequest.getUsername());
+        return ResponseEntity.ok(gameService.searchGame(searchGameRequest.getUsername()));
     }
 
     @GetMapping("/state")

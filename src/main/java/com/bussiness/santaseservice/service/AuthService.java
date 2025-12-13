@@ -5,8 +5,8 @@ import com.bussiness.santaseservice.model.request.LoginRequest;
 import com.bussiness.santaseservice.model.request.RegisterRequest;
 import com.bussiness.santaseservice.model.response.AuthResponse;
 import com.bussiness.santaseservice.repository.UserRepository;
+import com.bussiness.santaseservice.util.UserMapper;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ModelMapper modelMapper;
+    private final UserMapper userMapper;
 
     public AuthResponse login(LoginRequest loginRequest) {
 
@@ -44,7 +44,8 @@ public class AuthService {
             throw new RuntimeException("Username is already in use");
         }
 
-        User user = modelMapper.map(registerRequest, User.class);
+        User user = userMapper.toEntity(registerRequest);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         userRepository.save(user);
 
