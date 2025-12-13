@@ -10,7 +10,7 @@ import com.bussiness.santaseservice.model.request.CloseDeckRequest;
 import com.bussiness.santaseservice.model.request.FinishDealRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
 import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
-import com.bussiness.santaseservice.model.response.PlayCardResponse;
+import com.bussiness.santaseservice.model.response.GameStateResponse;
 import com.bussiness.santaseservice.repository.GameRepository;
 import com.bussiness.santaseservice.repository.GameStateRepository;
 import com.bussiness.santaseservice.repository.UserRepository;
@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,12 +32,18 @@ public class GameService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final GameStateRepository gameStateRepository;
+    private final GameWebSocketService gameWebSocketService;
 
     volatile Queue<User> matchQueue = new ConcurrentLinkedQueue<>();
 
-    public GameState getGameState(UUID gameId) {
+    public GameStateResponse getGameState(UUID gameId, String username) {
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Game id not found"));
-        return game.getState();
+
+        if (!game.getFirstPlayer().getUsername().equals(username) && !game.getSecondPlayer().getUsername().equals(username)) {
+            throw new RuntimeException("User is not part of this game");
+        }
+
+        return gameWebSocketService.updateGameState(game, username);
     }
 
     @Transactional
@@ -72,7 +79,7 @@ public class GameService {
     }
 
     @Transactional
-    public PlayCardResponse playCard(PlayCardRequest playCardRequest) {
+    public GameStateResponse playCard(PlayCardRequest playCardRequest) {
         Game game = gameRepository.findById(playCardRequest.getGameId())
                 .orElseThrow(() -> new RuntimeException("Game not found"));
 
@@ -111,6 +118,13 @@ public class GameService {
 
         // If both players have played → evaluate trick
         if (state.getFirstPlayerPlayedCard() != null && state.getSecondPlayerPlayedCard() != null) {
+            gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
+            gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername());
+            try {
+                Thread.sleep(Duration.ofSeconds(2));
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             evaluateTrick(game);
         } else {
             if (isFirstPlayer) {
@@ -120,35 +134,39 @@ public class GameService {
             }
         }
 
-        game.setState(state);
         gameRepository.save(game);
 
-        PlayCardResponse response = PlayCardResponse.builder()
-                .gameId(game.getId())
-                .build();
+        GameStateResponse firstPlayerResponse = gameWebSocketService
+                .updateGameState(game, game.getFirstPlayer().getUsername());
 
-        if (isFirstPlayer) {
-            response.setDeck(state.getFirstPlayerHand());
-        } else {
-            response.setDeck(state.getSecondPlayerHand());
-        }
+        GameStateResponse secondPlayerResponse = gameWebSocketService
+                .updateGameState(game, game.getSecondPlayer().getUsername());
 
-        return response;
+        return isFirstPlayer ? firstPlayerResponse : secondPlayerResponse;
     }
 
     @Transactional
-    public GameState closeDeck(CloseDeckRequest closeDeckRequest) {
+    public GameStateResponse closeDeck(CloseDeckRequest closeDeckRequest) {
         Game game = findGameForClosingOrRemoval(closeDeckRequest.getGameId(), closeDeckRequest.getUsername());
 
         GameState state = game.getState();
         state.getDeck().clear();
         state.setClosedByUsername(closeDeckRequest.getUsername());
+        gameStateRepository.save(state);
 
-        return gameStateRepository.save(state);
+        boolean isFirstPlayer = game.getFirstPlayer().getUsername().equals(closeDeckRequest.getUsername());
+
+        GameStateResponse firstPlayerResponse = gameWebSocketService
+                .updateGameState(game, game.getFirstPlayer().getUsername());
+
+        GameStateResponse secondPlayerResponse = gameWebSocketService
+                .updateGameState(game, game.getSecondPlayer().getUsername());
+
+        return isFirstPlayer ? firstPlayerResponse : secondPlayerResponse;
     }
 
     @Transactional
-    public GameState replaceCard(ReplaceCardRequest replaceCardRequest) {
+    public GameStateResponse replaceCard(ReplaceCardRequest replaceCardRequest) {
         Game game = findGameForClosingOrRemoval(replaceCardRequest.getGameId(), replaceCardRequest.getUsername());
         GameState state = game.getState();
 
@@ -168,12 +186,19 @@ public class GameService {
 
         state.getDeck().removeLast();
         state.getDeck().addLast(cardForReplace);
+        gameStateRepository.save(state);
 
-        return gameStateRepository.save(state);
+        GameStateResponse firstPlayerResponse = gameWebSocketService
+                .updateGameState(game, game.getFirstPlayer().getUsername());
+
+        GameStateResponse secondPlayerResponse = gameWebSocketService
+                .updateGameState(game, game.getSecondPlayer().getUsername());
+
+        return isFirstPlayer ? firstPlayerResponse : secondPlayerResponse;
     }
 
     @Transactional
-    public GameState finishDeal(FinishDealRequest req) {
+    public GameStateResponse finishDeal(FinishDealRequest req) {
         Game game = gameRepository.findById(req.getGameId())
                 .orElseThrow(() -> new RuntimeException("Game not found"));
 
@@ -187,11 +212,11 @@ public class GameService {
         if (!state.getInTurnPlayerUsername().equals(user))
             throw new RuntimeException("Not your turn");
 
-        boolean isFirst = game.getFirstPlayer().getUsername().equals(user);
+        boolean isFirstPlayer = game.getFirstPlayer().getUsername().equals(user);
 
-        int playerScore = isFirst ? state.getFirstPlayerScore() : state.getSecondPlayerScore();
-        int opponentScore = isFirst ? state.getSecondPlayerScore() : state.getFirstPlayerScore();
-        boolean opponentBlanked = isFirst ? state.getIsSecondPlayerBlanked()
+        int playerScore = isFirstPlayer ? state.getFirstPlayerScore() : state.getSecondPlayerScore();
+        int opponentScore = isFirstPlayer ? state.getSecondPlayerScore() : state.getFirstPlayerScore();
+        boolean opponentBlanked = isFirstPlayer ? state.getIsSecondPlayerBlanked()
                 : state.getIsFirstPlayerBlanked();
 
         // Determine round points
@@ -203,11 +228,11 @@ public class GameService {
         } else {
             // Opponent wins (player failed to reach 66)
             pointsAwarded = 3;
-            isFirst = !isFirst;  // flip winner
+            isFirstPlayer = !isFirstPlayer;  // flip winner
         }
 
         // Apply result
-        if (isFirst) {
+        if (isFirstPlayer) {
             game.setFirstPlayerResult(game.getFirstPlayerResult() + pointsAwarded);
             prepareNewState(game, game.getFirstPlayer()); // winner = first
         } else {
@@ -215,7 +240,13 @@ public class GameService {
             prepareNewState(game, game.getSecondPlayer()); // winner = second
         }
 
-        return state;
+        GameStateResponse firstPlayerResponse = gameWebSocketService
+                .updateGameState(game, game.getFirstPlayer().getUsername());
+
+        GameStateResponse secondPlayerResponse = gameWebSocketService
+                .updateGameState(game, game.getSecondPlayer().getUsername());
+
+        return isFirstPlayer ? firstPlayerResponse : secondPlayerResponse;
     }
 
     private Game findGameForClosingOrRemoval(UUID gameId, String username) {
@@ -232,8 +263,8 @@ public class GameService {
             throw new RuntimeException("Not your turn");
         }
 
-        if (state.getDeck().size() == 2 || state.getDeck().size() == 12) {
-            throw new RuntimeException("Deck must have more than 2 cards and less than 12 left");
+        if (state.getDeck().size() <= 2 || state.getDeck().size() == 12) {
+            throw new IllegalStateException("Deck size must be greater than 2 and less than 12");
         }
 
         return game;

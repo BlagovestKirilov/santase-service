@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Santase Client</title>
+    <style>
+        /* --- Global Reset & Fonts for Symbols --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            padding: 20px;
+        }
+
+        /* Ensures card symbols display correctly */
+        .card-symbol {
+            font-family: 'Times New Roman', serif;
+            line-height: 1;
+        }
+
+        h1, h2 { color: #333; }
+        hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
+
+        /* --- Layout & Containers --- */
+        .hand-container {
+            display: flex;
+            gap: 15px; /* Increased gap */
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        #game-controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        /* --- Card Styles --- */
+        .card {
+            border: 1px solid #1a1a1a;
+            padding: 10px 5px;
+            text-align: center;
+            cursor: pointer;
+            width: 90px; /* Slightly wider */
+            height: 120px; /* Slightly taller */
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            user-select: none;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Card Content */
+        .card-rank {
+            font-size: 1.6em;
+            font-weight: bold;
+            align-self: flex-start;
+        }
+        .card-suit {
+            font-size: 2.8em;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-points {
+            font-size: 0.7em;
+            color: #777;
+            align-self: flex-end;
+        }
+
+        /* Special Cards */
+        .card-played { background-color: #e6ffe6; border-color: #38761d; } /* Light green */
+        .trump-card h3 { font-size: 0.9em; margin: 0; color: #ff9800; }
+
+        /* --- Status & Controls --- */
+        .status-box {
+            padding: 15px 20px;
+            border: 1px solid #b3cde0;
+            border-radius: 5px;
+            text-align: center;
+            background-color: #eaf4ff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            font-weight: 500;
+            cursor: default;
+        }
+        #remainingCards { background-color: #e0f2f1; border-color: #00897b; cursor: pointer;}
+        #remainingCards:hover { background-color: #c0dfdb; }
+        #game-controls button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4a90e2;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        #game-controls button:hover {
+            background-color: #3c78c0;
+        }
+
+        /* --- Modal Styles --- */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6);
+        }
+        .modal-content {
+            background-color: #fff; margin: 15% auto; padding: 30px;
+            border: 1px solid #d0d0d0; width: 80%; max-width: 450px;
+            border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .modal-message { margin-bottom: 25px; font-size: 1.1em; }
+        #errorPopupMessage { color: #d93025; font-weight: bold; }
+        #confirmationPopupButtons button {
+            margin: 5px; padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        #confirmationPopupButtons #confirmActionButton { background-color: #4CAF50; color: white; border: none; }
+        #confirmationPopupButtons #confirmActionButton:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+<h1>WebSocket Card Game Client</h1>
+
+<div id="connection-form">
+    <label for="gameIdInput">Game ID:</label>
+    <input type="text" id="gameIdInput" value=""><br><br>
+
+    <label for="usernameInput">Username:</label>
+    <input type="text" id="usernameInput" value=""><br><br>
+
+    <button id="connectButton" onclick="tryConnect()">Connect to Game</button>
+    <p id="connection-status" style="color: red;">Disconnected</p>
+</div>
+
+<hr>
+
+<p>Connected to Game ID: <span id="gameIdDisplay">---</span> as User: <span id="usernameDisplay">---</span></p>
+
+<h2>Game Status and Controls</h2>
+<div id="game-controls">
+    <div id="remainingCards" class="status-box" onclick="showConfirmationPopup('closeDeck')">
+        Remaining Cards: <span id="remainingCardsCount">0</span>
+        <br><small>(Click to Close Deck)</small>
+    </div>
+    <div class="status-box">
+        <span id="firstPlayerUsernameDisplay">Player 1</span> Result:
+        <span id="firstPlayerResult">0</span>
+    </div>
+    <div class="status-box">
+        <span id="secondPlayerUsernameDisplay">Player 2</span> Result:
+        <span id="secondPlayerResult">0</span>
+    </div>
+    <div class="status-box">
+        Is my turn: <span id="isMineTurn">NO</span>
+    </div>
+    <button onclick="showConfirmationPopup('finishDeal')">Finish Deal</button>
+</div>
+
+<h2>Game Information</h2>
+<div id="trumpCardContainer" class="hand-container">
+    <p>No trump card defined yet.</p>
+</div>
+
+<h2>Cards on Table</h2>
+<div id="tableCards" class="hand-container">
+    <div id="playedCard" class="card card-played" style="display:none;"></div>
+    <div id="opponentPlayedCard" class="card card-played" style="display:none;"></div>
+</div>
+
+<h2>Your Hand (Click to Play)</h2>
+<div id="playerHand" class="hand-container">
+    <p>Connect to view your hand.</p>
+</div>
+
+<div id="errorPopup" class="modal">
+    <div id="errorPopupContent" class="modal-content">
+        <span class="closeButton" onclick="closeModal('errorPopup')">&times;</span>
+        <h3>Server Error</h3>
+        <p id="errorPopupMessage" class="modal-message"></p>
+        <button onclick="closeModal('errorPopup')">OK</button>
+    </div>
+</div>
+
+<div id="confirmationPopup" class="modal">
+    <div class="modal-content">
+        <span class="closeButton" onclick="closeModal('confirmationPopup')">&times;</span>
+        <h3>Confirmation</h3>
+        <p id="confirmationPopupMessage" class="modal-message"></p>
+        <div id="confirmationPopupButtons">
+            <button onclick="closeModal('confirmationPopup')">No</button>
+            <button id="confirmActionButton">Yes</button>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+<script type="text/javascript">
+    var stompClient = null;
+    var currentGameId = null;
+    var currentUsername = null;
+    var currentTrumpSuit = null;
+
+    const BASE_URL = 'http://localhost:8080/game';
+    const PLAY_CARD_URL = `${BASE_URL}/play-card`;
+    const GET_STATE_URL = `${BASE_URL}/state`;
+    const REPLACE_CARD_URL = `${BASE_URL}/replace-card`;
+    const CLOSE_DECK_URL = `${BASE_URL}/close-deck`;
+    const FINISH_DEAL_URL = `${BASE_URL}/finish-deal`;
+
+    const SUIT_MAP = {
+        'SPADES': { symbol: '♠', color: 'black' },
+        'HEARTS': { symbol: '♥', color: 'red' },
+        'DIAMONDS': { symbol: '♦', color: 'red' },
+        'CLUBS': { symbol: '♣', color: 'black' }
+    };
+
+    // --- Utility Functions ---
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    function showErrorPopup(message) {
+        document.getElementById('errorPopupMessage').textContent = message;
+        document.getElementById('errorPopup').style.display = 'block';
+    }
+
+    function showConfirmationPopup(action) {
+        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+
+        let message = "";
+        let confirmHandler;
+
+        if (action === 'closeDeck') {
+            message = "Are you sure you want to CLOSE the deck? This locks the remaining cards for the round.";
+            confirmHandler = closeDeck;
+        } else if (action === 'finishDeal') {
+            message = "Are you sure you want to FINISH the current deal? Points will be tallied.";
+            confirmHandler = finishDeal;
+        } else {
+            return;
+        }
+
+        document.getElementById('confirmationPopupMessage').textContent = message;
+        const confirmButton = document.getElementById('confirmActionButton');
+
+        confirmButton.onclick = () => {
+            confirmHandler();
+            closeModal('confirmationPopup');
+        };
+
+        document.getElementById('confirmationPopup').style.display = 'block';
+    }
+
+    function getSuitOrderValue(suit, trumpSuit) {
+        if (suit === trumpSuit) return 0;
+
+        const order = ['SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'];
+
+        return 1 + order.indexOf(suit);
+    }
+
+    // --- Core Connection and State Handlers ---
+
+    function handleRestResponse(response) {
+        if (response.ok) {
+            return response.json();
+        }
+        return response.json().then(errorData => {
+            throw new Error(errorData.message || 'Unknown server error.');
+        });
+    }
+
+    function tryConnect() {
+        const gameId = document.getElementById('gameIdInput').value.trim();
+        const username = document.getElementById('usernameInput').value.trim();
+        if (!gameId || !username) { showErrorPopup("Please enter both Game ID and Username."); return; }
+        currentGameId = gameId;
+        currentUsername = username;
+        document.getElementById('connection-status').textContent = "Connecting...";
+        document.getElementById('connection-status').style.color = "orange";
+        connect(gameId, username);
+    }
+
+    function connect(gameId, username) {
+        var socket = new SockJS('/ws-game');
+        stompClient = Stomp.over(socket);
+        const headers = { 'login': username };
+
+        stompClient.connect(headers, function () {
+            document.getElementById('connection-status').textContent = "CONNECTED";
+            document.getElementById('connection-status').style.color = "green";
+            document.getElementById('gameIdDisplay').textContent = gameId;
+            document.getElementById('usernameDisplay').textContent = username;
+
+            getInitialGameState(gameId, username);
+
+            const topic = '/topic/game/' + gameId + "/" + username;
+            stompClient.subscribe(topic, function (message) {
+                showGameUpdate(JSON.parse(message.body));
+            });
+
+        }, function(error) {
+            console.error("STOMP Connection Error:", error);
+            showErrorPopup("STOMP Connection Failed! See console for details.");
+            document.getElementById('connection-status').textContent = "Connection Failed!";
+            document.getElementById('connection-status').style.color = "red";
+            stompClient = null;
+        });
+    }
+
+    function getInitialGameState(gameId, username) {
+        const url = `${GET_STATE_URL}?gameId=${gameId}&username=${username}`;
+
+        fetch(url, { method: 'GET' })
+            .then(handleRestResponse)
+            .then(gameStateResponse => {
+                showGameUpdate(gameStateResponse);
+            })
+            .catch(error => {
+                console.error("Error fetching initial game state:", error);
+                showErrorPopup("Error fetching initial state: " + error.message);
+            });
+    }
+
+    function showGameUpdate(gameState) {
+        currentTrumpSuit = gameState.trumpCard ? gameState.trumpCard.suit : null;
+
+        // 1. Render Status (UPDATED)
+        document.getElementById('remainingCardsCount').textContent = gameState.remainingCardsCount || 0;
+
+        // Set Player Usernames
+        document.getElementById('firstPlayerUsernameDisplay').textContent = gameState.firstPlayerUsername || 'Player 1';
+        document.getElementById('secondPlayerUsernameDisplay').textContent = gameState.secondPlayerUsername || 'Player 2';
+
+        // FIX: Check strictly for the primitive boolean 'true'.
+        const isTurn = (gameState.isOnTurn === true);
+
+        // Update the display text
+        document.getElementById('isMineTurn').textContent = isTurn ? 'YES' : 'NO';
+
+        // Set Player Results
+        document.getElementById('firstPlayerResult').textContent = gameState.firstPlayerResult || 0;
+        document.getElementById('secondPlayerResult').textContent = gameState.secondPlayerResult || 0;
+
+        // 2. Render Player Hand (Deck)
+        const sortedDeck = (gameState.deck || []).sort((a, b) => {
+            const orderA = getSuitOrderValue(a.suit, currentTrumpSuit);
+            const orderB = getSuitOrderValue(b.suit, currentTrumpSuit);
+
+            if (orderA !== orderB) return orderA - orderB;
+
+            // Secondary sort: High points first
+            return (b.points || 0) - (a.points || 0);
+        });
+        renderHand(sortedDeck);
+
+        // 3. Render Table Cards and Trump Card
+        renderTable(gameState.playedCard, gameState.opponentPlayedCard, gameState.trumpCard);
+    }
+
+    function renderHand(deck) {
+        const handContainer = document.getElementById('playerHand');
+        handContainer.innerHTML = '';
+
+        if (!deck || deck.length === 0) {
+            handContainer.innerHTML = '<p>No cards in hand.</p>';
+            return;
+        }
+
+        deck.forEach(card => {
+            const suitData = SUIT_MAP[card.suit] || { symbol: '?', color: 'black' };
+
+            const cardElement = document.createElement('div');
+            cardElement.className = `card ${suitData.color}-card`;
+            cardElement.setAttribute('data-card-id', card.id);
+            cardElement.innerHTML = `
+                    <div class="card-rank">${card.rank}</div>
+                    <div class="card-suit card-symbol">${suitData.symbol}</div>
+                    <div class="card-points">${card.points} pts</div>
+                `;
+
+            cardElement.onclick = () => { playCard(card.id); };
+            handContainer.appendChild(cardElement);
+        });
+    }
+
+    function renderTable(playedCard, opponentPlayedCard, trumpCard) {
+        const playerCardEl = document.getElementById('playedCard');
+        const opponentCardEl = document.getElementById('opponentPlayedCard');
+        const trumpContainer = document.getElementById('trumpCardContainer');
+
+        trumpContainer.innerHTML = '';
+
+        // Trump Card Rendering
+        if (trumpCard) {
+            const suitData = SUIT_MAP[trumpCard.suit] || { symbol: '?', color: 'black' };
+            const trumpEl = document.createElement('div');
+            trumpEl.className = `card trump-card ${suitData.color}-card`;
+            trumpEl.innerHTML = `
+                    <div class="card-rank">${trumpCard.rank}</div>
+                    <div class="card-suit card-symbol">${suitData.symbol}</div>
+                    <div class="card-points">${trumpCard.points} pts</div>
+                `;
+            trumpEl.onclick = replaceCard;
+            trumpContainer.appendChild(trumpEl);
+        } else {
+            trumpContainer.innerHTML = '<p>No trump card defined yet.</p>';
+        }
+
+        // Helper to render played card
+        const updatePlayedCard = (el, card, label) => {
+            if (card) {
+                const suitData = SUIT_MAP[card.suit] || { symbol: '?', color: 'black' };
+                el.style.display = 'block';
+                el.className = `card card-played ${suitData.color}-card`;
+                el.innerHTML = `
+                        <small>${label}</small>
+                        <div class="card-rank">${card.rank}</div>
+                        <div class="card-suit card-symbol">${suitData.symbol}</div>
+                    `;
+            } else {
+                el.style.display = 'none';
+            }
+        };
+
+        updatePlayedCard(playerCardEl, playedCard, "YOUR PLAY");
+        updatePlayedCard(opponentCardEl, opponentPlayedCard, "OPPONENT'S PLAY");
+    }
+
+    // --- Game Action Implementations (Unchanged Logic) ---
+
+    function playCard(cardId) {
+        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+        const requestBody = { gameId: currentGameId, username: currentUsername, cardId: cardId };
+
+        fetch(PLAY_CARD_URL, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody),
+        })
+            .then(handleRestResponse)
+            .then(() => { console.log("Card played successfully."); })
+            .catch(error => { console.error("Error playing card:", error); showErrorPopup(error.message); });
+    }
+
+    function replaceCard() {
+        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+        const requestBody = { gameId: currentGameId, username: currentUsername };
+
+        fetch(REPLACE_CARD_URL, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody),
+        })
+            .then(handleRestResponse)
+            .then(() => { console.log("Card replaced successfully."); })
+            .catch(error => { console.error("Error replacing card:", error); showErrorPopup(error.message); });
+    }
+
+    function closeDeck() {
+        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+        const requestBody = { gameId: currentGameId, username: currentUsername };
+
+        fetch(CLOSE_DECK_URL, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody),
+        })
+            .then(handleRestResponse)
+            .then(() => { console.log("Deck closed successfully."); })
+            .catch(error => { console.error("Error closing deck:", error); showErrorPopup(error.message); });
+    }
+
+    function finishDeal() {
+        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+        const requestBody = { gameId: currentGameId, username: currentUsername };
+
+        fetch(FINISH_DEAL_URL, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody),
+        })
+            .then(handleRestResponse)
+            .then(() => { console.log("Deal finished successfully."); })
+            .catch(error => { console.error("Error finishing deal:", error); showErrorPopup(error.message); });
+    }
+</script>
+</body>
+</html>

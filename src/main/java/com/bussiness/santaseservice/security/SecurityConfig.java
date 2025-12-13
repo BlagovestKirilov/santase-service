@@ -14,15 +14,16 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/game/**").permitAll()
+                        .requestMatchers("/ws-game/**").permitAll()
+                        .requestMatchers("/game.html").permitAll()
+                        .anyRequest().authenticated()
                 );
 
         return http.build();
