@@ -1,12 +1,12 @@
 package com.bussiness.santaseservice.controller;
 
-import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.request.CloseDeckRequest;
 import com.bussiness.santaseservice.model.request.FinishDealRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
 import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
 import com.bussiness.santaseservice.model.request.SearchGameRequest;
 import com.bussiness.santaseservice.model.response.GameStateResponse;
+import com.bussiness.santaseservice.model.response.SearchGameResponse;
 import com.bussiness.santaseservice.service.GameService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class GameController {
     private final GameService gameService;
 
     @PostMapping("/search")
-    public ResponseEntity<Game> searchGame(@Valid @RequestBody SearchGameRequest searchGameRequest) {
+    public ResponseEntity<SearchGameResponse> searchGame(@Valid @RequestBody SearchGameRequest searchGameRequest) {
         log.info("Trying to start game, account with username {}", searchGameRequest.getUsername());
         return ResponseEntity.ok(gameService.searchGame(searchGameRequest.getUsername()));
     }

@@ -75,8 +75,19 @@
             align-self: flex-end;
         }
 
+        /* Card Colors */
+        .red-card { color: #cc0000; }
+        .black-card { color: #1a1a1a; }
+
         /* Special Cards */
-        .card-played { background-color: #e6ffe6; border-color: #38761d; } /* Light green */
+        .card-played { background-color: #e6ffe6; border-color: #38761d; }
+        .trump-card {
+            background-color: #fff3e0;
+            border: 3px solid #ff9800;
+            cursor: pointer;
+            width: 90px; /* Reduced width to match normal cards */
+            height: 120px; /* Match normal card height */
+        }
         .trump-card h3 { font-size: 0.9em; margin: 0; color: #ff9800; }
 
         /* --- Status & Controls --- */
@@ -116,7 +127,7 @@
             border: 1px solid #d0d0d0; width: 80%; max-width: 450px;
             border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
-        .modal-message { margin-bottom: 25px; font-size: 1.1em; }
+        .modal-message { margin-bottom: 25px; font-size: 1.1em; white-space: pre-wrap; }
         #errorPopupMessage { color: #d93025; font-weight: bold; }
         #confirmationPopupButtons button {
             margin: 5px; padding: 10px 20px;
@@ -125,70 +136,88 @@
         }
         #confirmationPopupButtons #confirmActionButton { background-color: #4CAF50; color: white; border: none; }
         #confirmationPopupButtons #confirmActionButton:hover { background-color: #45a049; }
+
+        /* Style for the search status when waiting */
+        .searching-status {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .connected-status {
+            color: green;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 <h1>WebSocket Card Game Client</h1>
 
 <div id="connection-form">
-    <label for="gameIdInput">Game ID:</label>
-    <input type="text" id="gameIdInput" value=""><br><br>
-
     <label for="usernameInput">Username:</label>
     <input type="text" id="usernameInput" value=""><br><br>
 
-    <button id="connectButton" onclick="tryConnect()">Connect to Game</button>
-    <p id="connection-status" style="color: red;">Disconnected</p>
+    <button id="searchButton" onclick="startSearch()">Search Game</button>
+    <p>Game Status: <span id="connection-status" class="connected-status">Disconnected</span></p>
 </div>
 
 <hr>
 
-<p>Connected to Game ID: <span id="gameIdDisplay">---</span> as User: <span id="usernameDisplay">---</span></p>
+<p>Game ID: <span id="gameIdDisplay">---</span> | User: <span id="usernameDisplay">---</span></p>
 
-<h2>Game Status and Controls</h2>
-<div id="game-controls">
-    <div id="remainingCards" class="status-box" onclick="showConfirmationPopup('closeDeck')">
-        Remaining Cards: <span id="remainingCardsCount">0</span>
-        <br><small>(Click to Close Deck)</small>
+<div id="game-ui" style="display: none;">
+    <h2>Game Status and Controls</h2>
+    <div id="game-controls">
+        <div id="remainingCards" class="status-box" onclick="showConfirmationPopup('closeDeck')">
+            Remaining Cards: <span id="remainingCardsCount">0</span>
+            <br><small>(Click to Close Deck)</small>
+        </div>
+        <div class="status-box">
+            <span id="firstPlayerUsernameDisplay">Player 1</span> Result:
+            <span id="firstPlayerResult">0</span>
+        </div>
+        <div class="status-box">
+            <span id="secondPlayerUsernameDisplay">Player 2</span> Result:
+            <span id="secondPlayerResult">0</span>
+        </div>
+        <div class="status-box">
+            Is my turn: <span id="isMineTurn">NO</span>
+        </div>
+        <button onclick="showConfirmationPopup('finishDeal')">Finish Deal</button>
     </div>
-    <div class="status-box">
-        <span id="firstPlayerUsernameDisplay">Player 1</span> Result:
-        <span id="firstPlayerResult">0</span>
+
+    <h2>Game Information</h2>
+    <div id="trumpCardContainer" class="hand-container">
+        <p>No trump card defined yet.</p>
     </div>
-    <div class="status-box">
-        <span id="secondPlayerUsernameDisplay">Player 2</span> Result:
-        <span id="secondPlayerResult">0</span>
+
+    <h2>Cards on Table</h2>
+    <div id="tableCards" class="hand-container">
+        <div id="playedCard" class="card card-played" style="display:none;"></div>
+        <div id="opponentPlayedCard" class="card card-played" style="display:none;"></div>
     </div>
-    <div class="status-box">
-        Is my turn: <span id="isMineTurn">NO</span>
+
+    <h2>Your Hand (Click to Play)</h2>
+    <div id="playerHand" class="hand-container">
+        <p>Connect to view your hand.</p>
     </div>
-    <button onclick="showConfirmationPopup('finishDeal')">Finish Deal</button>
 </div>
-
-<h2>Game Information</h2>
-<div id="trumpCardContainer" class="hand-container">
-    <p>No trump card defined yet.</p>
-</div>
-
-<h2>Cards on Table</h2>
-<div id="tableCards" class="hand-container">
-    <div id="playedCard" class="card card-played" style="display:none;"></div>
-    <div id="opponentPlayedCard" class="card card-played" style="display:none;"></div>
-</div>
-
-<h2>Your Hand (Click to Play)</h2>
-<div id="playerHand" class="hand-container">
-    <p>Connect to view your hand.</p>
-</div>
-
 <div id="errorPopup" class="modal">
-    <div id="errorPopupContent" class="modal-content">
+    <div class="modal-content">
         <span class="closeButton" onclick="closeModal('errorPopup')">&times;</span>
         <h3>Server Error</h3>
         <p id="errorPopupMessage" class="modal-message"></p>
         <button onclick="closeModal('errorPopup')">OK</button>
     </div>
 </div>
+
+<div id="messageModal" class="modal">
+    <div class="modal-content">
+        <span class="closeButton" onclick="closeModal('messageModal')">&times;</span>
+        <h3 id="messageModalTitle"></h3>
+        <p id="messageModalMessage" class="modal-message"></p>
+        <button onclick="closeModal('messageModal')">OK</button>
+    </div>
+</div>
+
 
 <div id="confirmationPopup" class="modal">
     <div class="modal-content">
@@ -211,8 +240,10 @@
     var currentGameId = null;
     var currentUsername = null;
     var currentTrumpSuit = null;
+    var searchSubscription = null;
 
     const BASE_URL = 'http://localhost:8080/game';
+    const SEARCH_GAME_URL = `${BASE_URL}/search`;
     const PLAY_CARD_URL = `${BASE_URL}/play-card`;
     const GET_STATE_URL = `${BASE_URL}/state`;
     const REPLACE_CARD_URL = `${BASE_URL}/replace-card`;
@@ -226,19 +257,56 @@
         'CLUBS': { symbol: '♣', color: 'black' }
     };
 
+    const RANK_MAP = {
+        'ACE': 'A',
+        'TEN': '10',
+        'KING': 'K',
+        'QUEEN': 'Q',
+        'JACK': 'J',
+        'NINE': '9'
+    };
+
+    function getDisplayRank(rankEnum) {
+        return RANK_MAP[rankEnum] || rankEnum;
+    }
+
     // --- Utility Functions ---
 
     function closeModal(id) {
         document.getElementById(id).style.display = 'none';
     }
 
-    function showErrorPopup(message) {
+    // 🛑 UPDATED: Dedicated function for true server/API errors 🛑
+    function showErrorModal(message) {
         document.getElementById('errorPopupMessage').textContent = message;
         document.getElementById('errorPopup').style.display = 'block';
     }
 
+    // 🛑 NEW: Generic function for winner/status messages 🛑
+    function showMessageModal(title, message, callback) {
+        document.getElementById('messageModalTitle').textContent = title;
+        document.getElementById('messageModalMessage').textContent = message;
+
+        const okButton = document.querySelector('#messageModal button');
+        okButton.onclick = () => {
+            closeModal('messageModal');
+            if (callback) {
+                callback();
+            }
+        };
+        document.getElementById('messageModal').style.display = 'block';
+    }
+
+
+    // Function to update the connection status display
+    function updateConnectionStatus(text, isSearching) {
+        const statusEl = document.getElementById('connection-status');
+        statusEl.textContent = text;
+        statusEl.className = isSearching ? 'searching-status' : 'connected-status';
+    }
+
     function showConfirmationPopup(action) {
-        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+        if (!currentGameId || !currentUsername) { return showErrorModal("Please connect to a game first!"); }
 
         let message = "";
         let confirmHandler;
@@ -272,52 +340,121 @@
         return 1 + order.indexOf(suit);
     }
 
-    // --- Core Connection and State Handlers ---
+    // --- Core Connection and Search Handlers ---
 
     function handleRestResponse(response) {
         if (response.ok) {
             return response.json();
         }
         return response.json().then(errorData => {
+            // 🛑 Use showErrorModal for actual errors 🛑
             throw new Error(errorData.message || 'Unknown server error.');
         });
     }
 
-    function tryConnect() {
-        const gameId = document.getElementById('gameIdInput').value.trim();
+    // NEW FUNCTION: Initiates the game search
+    function startSearch() {
         const username = document.getElementById('usernameInput').value.trim();
-        if (!gameId || !username) { showErrorPopup("Please enter both Game ID and Username."); return; }
-        currentGameId = gameId;
-        currentUsername = username;
-        document.getElementById('connection-status').textContent = "Connecting...";
-        document.getElementById('connection-status').style.color = "orange";
-        connect(gameId, username);
-    }
+        if (!username) { showErrorModal("Please enter your Username."); return; }
 
-    function connect(gameId, username) {
+        // Clear previous game state visibility
+        document.getElementById('game-ui').style.display = 'none';
+        document.getElementById('gameIdDisplay').textContent = "---";
+        currentGameId = null;
+
+        currentUsername = username;
+        document.getElementById('searchButton').disabled = true;
+        updateConnectionStatus("Connecting to search queue...", true);
+        document.getElementById('usernameDisplay').textContent = username;
+
+        // 1. Establish the general STOMP connection for search/queue updates
         var socket = new SockJS('/ws-game');
         stompClient = Stomp.over(socket);
         const headers = { 'login': username };
 
-        stompClient.connect(headers, function () {
-            document.getElementById('connection-status').textContent = "CONNECTED";
-            document.getElementById('connection-status').style.color = "green";
-            document.getElementById('gameIdDisplay').textContent = gameId;
-            document.getElementById('usernameDisplay').textContent = username;
+        stompClient.connect(headers, function (frame) {
 
-            getInitialGameState(gameId, username);
-
-            const topic = '/topic/game/' + gameId + "/" + username;
-            stompClient.subscribe(topic, function (message) {
-                showGameUpdate(JSON.parse(message.body));
+            // 2. Subscribe to the personal search topic
+            const searchTopic = '/topic/game/' + username;
+            searchSubscription = stompClient.subscribe(searchTopic, function (message) {
+                handleSearchUpdate(JSON.parse(message.body));
             });
+
+            // 3. Make the REST call to enter the queue
+            searchGameRestCall(username);
 
         }, function(error) {
             console.error("STOMP Connection Error:", error);
-            showErrorPopup("STOMP Connection Failed! See console for details.");
-            document.getElementById('connection-status').textContent = "Connection Failed!";
-            document.getElementById('connection-status').style.color = "red";
+            showErrorModal("STOMP Connection Failed! See console for details.");
+            updateConnectionStatus("Connection Failed!", false);
+            document.getElementById('searchButton').disabled = false;
             stompClient = null;
+        });
+    }
+
+    // REST call to trigger the queueing logic on the server
+    function searchGameRestCall(username) {
+        const requestBody = { username: username };
+
+        fetch(SEARCH_GAME_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+        })
+            .then(handleRestResponse)
+            .then(data => {
+                handleSearchUpdate(data);
+            })
+            .catch(error => {
+                console.error("Error starting search:", error);
+                showErrorModal("Error starting search: " + error.message);
+                document.getElementById('searchButton').disabled = false;
+                updateConnectionStatus("Disconnected", false);
+            });
+    }
+
+    // Handles updates from the /topic/game/{username} WebSocket
+    function handleSearchUpdate(data) {
+        if (data.status === 'WAITING') {
+            updateConnectionStatus("Searching... Waiting for opponent.", true);
+            document.getElementById('gameIdDisplay').textContent = "---";
+        } else if (data.status === 'GAME_STARTED') {
+            const gameId = data.gameId;
+
+            if (!gameId) {
+                console.error("CRITICAL: GAME_STARTED received but gameId is null or missing.");
+                showErrorModal("Internal Server Error: Game started without ID.");
+                document.getElementById('searchButton').disabled = false;
+                updateConnectionStatus("Disconnected", false);
+                return;
+            }
+
+            currentGameId = gameId;
+
+            if (searchSubscription) {
+                searchSubscription.unsubscribe();
+                searchSubscription = null;
+            }
+
+            connectToGameTopic(gameId, currentUsername);
+        } else {
+            showErrorModal("Unknown search status received: " + data.status);
+            document.getElementById('searchButton').disabled = false;
+            updateConnectionStatus("Disconnected", false);
+        }
+    }
+
+    // Subscribes to the game topic after search is complete
+    function connectToGameTopic(gameId, username) {
+        document.getElementById('gameIdDisplay').textContent = gameId;
+        updateConnectionStatus("CONNECTED", false);
+        document.getElementById('game-ui').style.display = 'block';
+
+        getInitialGameState(gameId, username);
+
+        const topic = '/topic/game/' + gameId + "/" + username;
+        stompClient.subscribe(topic, function (message) {
+            showGameUpdate(JSON.parse(message.body));
         });
     }
 
@@ -331,27 +468,76 @@
             })
             .catch(error => {
                 console.error("Error fetching initial game state:", error);
-                showErrorPopup("Error fetching initial state: " + error.message);
+                showErrorModal("Error fetching initial state: " + error.message);
             });
     }
 
     function showGameUpdate(gameState) {
+
+        // 🛑 HANDLE 1: Game Winner 🛑
+        if (gameState.winnerUsername) {
+            const title = `🏆 GAME OVER! 🏆`;
+            const message = `${gameState.winnerUsername} won the match!`;
+
+            // 🛑 Use the new message modal 🛑
+            showMessageModal(title, message);
+
+            // Halt further interaction
+            document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('searchButton').disabled = false;
+            currentGameId = null;
+            updateConnectionStatus(message, false);
+            return;
+        }
+
+        // 🛑 HANDLE 2: Trick Winner 🛑
+        if (gameState.trickWinnerUsername) {
+            const isFirstPlayer = gameState.firstPlayerUsername === currentUsername;
+
+            let myScore = isFirstPlayer ? gameState.trickFirstPlayerScore : gameState.trickSecondPlayerScore;
+            let opponentScore = isFirstPlayer ? gameState.trickSecondPlayerScore : gameState.trickFirstPlayerScore;
+
+            const isCurrentUserWinner = gameState.trickWinnerUsername === currentUsername;
+
+            let title = isCurrentUserWinner ? "You Won the Trick!" : "Opponent Won the Trick";
+            let message = `Your score for this trick: ${myScore} pts\n` +
+                `Opponent's score for this trick: ${opponentScore} pts`;
+
+            showMessageModal(title, message);
+            // DO NOT return here, as the rest of the game state (scores, hand) still needs to update.
+        }
+
+
+        // If no winner, proceed with normal game update
         currentTrumpSuit = gameState.trumpCard ? gameState.trumpCard.suit : null;
 
-        // 1. Render Status (UPDATED)
+        // 1. Render Status
         document.getElementById('remainingCardsCount').textContent = gameState.remainingCardsCount || 0;
 
-        // Set Player Usernames
+        const remainingCardsEl = document.getElementById('remainingCards');
+        const isDeckClosed = gameState.isClosed === true;
+
+        if (isDeckClosed) {
+            // Disable functionality and update visual state
+            remainingCardsEl.onclick = null;
+            remainingCardsEl.style.opacity = '0.5';
+            remainingCardsEl.style.cursor = 'default';
+            // Update the text to indicate the deck is closed
+            remainingCardsEl.querySelector('small').textContent = '(Deck is CLOSED)';
+        } else {
+            // Ensure functionality is active and visual state is normal
+            remainingCardsEl.onclick = () => showConfirmationPopup('closeDeck');
+            remainingCardsEl.style.opacity = '1';
+            remainingCardsEl.style.cursor = 'pointer';
+            remainingCardsEl.querySelector('small').textContent = '(Click to Close Deck)';
+        }
+
         document.getElementById('firstPlayerUsernameDisplay').textContent = gameState.firstPlayerUsername || 'Player 1';
         document.getElementById('secondPlayerUsernameDisplay').textContent = gameState.secondPlayerUsername || 'Player 2';
 
-        // FIX: Check strictly for the primitive boolean 'true'.
         const isTurn = (gameState.isOnTurn === true);
-
-        // Update the display text
         document.getElementById('isMineTurn').textContent = isTurn ? 'YES' : 'NO';
 
-        // Set Player Results
         document.getElementById('firstPlayerResult').textContent = gameState.firstPlayerResult || 0;
         document.getElementById('secondPlayerResult').textContent = gameState.secondPlayerResult || 0;
 
@@ -361,8 +547,6 @@
             const orderB = getSuitOrderValue(b.suit, currentTrumpSuit);
 
             if (orderA !== orderB) return orderA - orderB;
-
-            // Secondary sort: High points first
             return (b.points || 0) - (a.points || 0);
         });
         renderHand(sortedDeck);
@@ -382,12 +566,13 @@
 
         deck.forEach(card => {
             const suitData = SUIT_MAP[card.suit] || { symbol: '?', color: 'black' };
+            const displayRank = getDisplayRank(card.rank);
 
             const cardElement = document.createElement('div');
             cardElement.className = `card ${suitData.color}-card`;
             cardElement.setAttribute('data-card-id', card.id);
             cardElement.innerHTML = `
-                    <div class="card-rank">${card.rank}</div>
+                    <div class="card-rank">${displayRank}</div>
                     <div class="card-suit card-symbol">${suitData.symbol}</div>
                     <div class="card-points">${card.points} pts</div>
                 `;
@@ -409,10 +594,14 @@
             const suitData = SUIT_MAP[trumpCard.suit] || { symbol: '?', color: 'black' };
             const trumpEl = document.createElement('div');
             trumpEl.className = `card trump-card ${suitData.color}-card`;
+
+            const displayRank = getDisplayRank(trumpCard.rank);
+            const rankHtml = trumpCard.rank ? `<div class="card-rank">${displayRank}</div>` : '';
+
             trumpEl.innerHTML = `
-                    <div class="card-rank">${trumpCard.rank}</div>
+                    ${rankHtml}
                     <div class="card-suit card-symbol">${suitData.symbol}</div>
-                    <div class="card-points">${trumpCard.points} pts</div>
+                    <div class="card-points">${trumpCard.points || 0} pts</div>
                 `;
             trumpEl.onclick = replaceCard;
             trumpContainer.appendChild(trumpEl);
@@ -424,11 +613,13 @@
         const updatePlayedCard = (el, card, label) => {
             if (card) {
                 const suitData = SUIT_MAP[card.suit] || { symbol: '?', color: 'black' };
+                const displayRank = getDisplayRank(card.rank);
+
                 el.style.display = 'block';
                 el.className = `card card-played ${suitData.color}-card`;
                 el.innerHTML = `
                         <small>${label}</small>
-                        <div class="card-rank">${card.rank}</div>
+                        <div class="card-rank">${displayRank}</div>
                         <div class="card-suit card-symbol">${suitData.symbol}</div>
                     `;
             } else {
@@ -440,10 +631,10 @@
         updatePlayedCard(opponentCardEl, opponentPlayedCard, "OPPONENT'S PLAY");
     }
 
-    // --- Game Action Implementations (Unchanged Logic) ---
+    // --- Game Action Implementations (Use showErrorModal) ---
 
     function playCard(cardId) {
-        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+        if (!currentGameId || !currentUsername) { return showErrorModal("Please connect to a game first!"); }
         const requestBody = { gameId: currentGameId, username: currentUsername, cardId: cardId };
 
         fetch(PLAY_CARD_URL, {
@@ -451,11 +642,11 @@
         })
             .then(handleRestResponse)
             .then(() => { console.log("Card played successfully."); })
-            .catch(error => { console.error("Error playing card:", error); showErrorPopup(error.message); });
+            .catch(error => { console.error("Error playing card:", error); showErrorModal(error.message); });
     }
 
     function replaceCard() {
-        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+        if (!currentGameId || !currentUsername) { return showErrorModal("Please connect to a game first!"); }
         const requestBody = { gameId: currentGameId, username: currentUsername };
 
         fetch(REPLACE_CARD_URL, {
@@ -463,11 +654,11 @@
         })
             .then(handleRestResponse)
             .then(() => { console.log("Card replaced successfully."); })
-            .catch(error => { console.error("Error replacing card:", error); showErrorPopup(error.message); });
+            .catch(error => { console.error("Error replacing card:", error); showErrorModal(error.message); });
     }
 
     function closeDeck() {
-        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+        if (!currentGameId || !currentUsername) { return showErrorModal("Please connect to a game first!"); }
         const requestBody = { gameId: currentGameId, username: currentUsername };
 
         fetch(CLOSE_DECK_URL, {
@@ -475,11 +666,11 @@
         })
             .then(handleRestResponse)
             .then(() => { console.log("Deck closed successfully."); })
-            .catch(error => { console.error("Error closing deck:", error); showErrorPopup(error.message); });
+            .catch(error => { console.error("Error closing deck:", error); showErrorModal(error.message); });
     }
 
     function finishDeal() {
-        if (!currentGameId || !currentUsername) { return showErrorPopup("Please connect to a game first!"); }
+        if (!currentGameId || !currentUsername) { return showErrorModal("Please connect to a game first!"); }
         const requestBody = { gameId: currentGameId, username: currentUsername };
 
         fetch(FINISH_DEAL_URL, {
@@ -487,7 +678,7 @@
         })
             .then(handleRestResponse)
             .then(() => { console.log("Deal finished successfully."); })
-            .catch(error => { console.error("Error finishing deal:", error); showErrorPopup(error.message); });
+            .catch(error => { console.error("Error finishing deal:", error); showErrorModal(error.message); });
     }
 </script>
 </body>

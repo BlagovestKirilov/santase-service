@@ -1,5 +1,6 @@
 package com.bussiness.santaseservice.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -23,7 +24,7 @@ public class Game extends BaseEntity {
     @ManyToOne
     private User secondPlayer;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     private GameState state;
 
     @ManyToOne

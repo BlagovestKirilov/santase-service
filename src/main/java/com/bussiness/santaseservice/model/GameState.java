@@ -22,7 +22,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class GameState extends BaseEntity{
+public class GameState extends BaseEntity {
 
     @ElementCollection
     @CollectionTable(name = "game_deck",
@@ -76,4 +76,8 @@ public class GameState extends BaseEntity{
     private Boolean isFirstPlayerBlanked;
 
     private Boolean isSecondPlayerBlanked;
+
+    public boolean isClosed() {
+        return this.closedByUsername != null;
+    }
 }

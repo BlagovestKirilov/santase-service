@@ -6,13 +6,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
-@Builder
+@Builder(toBuilder = true)
+@ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GameStateResponse {
     private UUID gameId;
@@ -27,4 +29,10 @@ public class GameStateResponse {
     private int secondPlayerResult;
     @JsonProperty("isOnTurn")
     private boolean isOnTurn;
+    @JsonProperty("isClosed")
+    private boolean isClosed;
+    private String winnerUsername;
+    private String trickWinnerUsername;
+    private int trickFirstPlayerScore;
+    private int trickSecondPlayerScore;
 }
