@@ -4,12 +4,11 @@ import com.bussiness.santaseservice.enums.Rank;
 import com.bussiness.santaseservice.model.Card;
 import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.GameState;
-import com.bussiness.santaseservice.model.User;
+import com.bussiness.santaseservice.model.Player;
 import com.bussiness.santaseservice.model.request.CloseDeckRequest;
 import com.bussiness.santaseservice.model.request.FinishDealRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
 import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
-import com.bussiness.santaseservice.model.response.GameStateResponse;
 import com.bussiness.santaseservice.model.response.SearchGameResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,10 +28,10 @@ public class GameService {
     private final GameWebSocketService gameWebSocketService;
     private final GameUtilService gameUtilService;
 
-    private final Queue<User> matchQueue = new LinkedList<>();
+    private final Queue<String> matchQueue = new LinkedList<>();
     private final Lock queueLock = new ReentrantLock();
 
-    public GameStateResponse getGameState(UUID gameId, String username) {
+    public void getGameState(UUID gameId, String username) {
         Game game = gameUtilService.findGameById(gameId);
 
         if (!game.getFirstPlayer().getUsername().equals(username) &&
@@ -40,32 +39,32 @@ public class GameService {
             throw new RuntimeException("User is not part of this game");
         }
 
-        return gameWebSocketService.updateGameState(game, username);
+        gameWebSocketService.updateGameState(game, username);
     }
 
-    public SearchGameResponse searchGame(String username) {
-        User user = gameUtilService.findUserByUsername(username);
+    public void searchGame(String username) {
+        gameUtilService.checkIfUserExists(username); //TODO: And do not participate in unfinished game
 
         queueLock.lock();
         try {
-            if (matchQueue.contains(user)) {
+            if (matchQueue.contains(username)) {
                 gameWebSocketService.notifyGameSearch(username, SearchGameResponse.waiting());
-                return SearchGameResponse.waiting();
             }
 
-            User waitingUser = matchQueue.poll();
+            String waitingPlayerUsername = matchQueue.poll();
 
-            if (waitingUser == null) {
-                matchQueue.offer(user);
+            if (waitingPlayerUsername == null) {
+                matchQueue.offer(username);
                 gameWebSocketService.notifyGameSearch(username, SearchGameResponse.waiting());
-                return SearchGameResponse.waiting();
             } else {
-                Game newGame = gameUtilService.startGame(user, waitingUser);
-                gameWebSocketService.notifyGameSearch(newGame.getFirstPlayer().getUsername(),
+                Player firstPlayer = gameUtilService.findPlayerByUsername(username);
+                Player secondPlayer = gameUtilService.findPlayerByUsername(waitingPlayerUsername);
+
+                Game newGame = gameUtilService.startGame(firstPlayer, secondPlayer);
+                gameWebSocketService.notifyGameSearch(firstPlayer.getUsername(),
                         SearchGameResponse.started(newGame.getId()));
-                gameWebSocketService.notifyGameSearch(newGame.getSecondPlayer().getUsername(),
+                gameWebSocketService.notifyGameSearch(secondPlayer.getUsername(),
                         SearchGameResponse.started(newGame.getId()));
-                return SearchGameResponse.started(newGame.getId());
             }
 
         } finally {
@@ -74,48 +73,26 @@ public class GameService {
     }
 
     @Transactional
-    public GameStateResponse playCard(PlayCardRequest playCardRequest) {
+    public void playCard(PlayCardRequest playCardRequest) {
         Game game = gameUtilService.findGameById(playCardRequest.getGameId());
+
+        Player player = game.getPlayerByUsername(playCardRequest.getUsername());
 
         GameState state = game.getState();
 
-        // Check turn
-        if (!state.getInTurnPlayerUsername().equals(playCardRequest.getUsername())) {
+        if (!state.getInTurnPlayer().equals(player)) {
             throw new RuntimeException("Not your turn");
         }
 
-        boolean isFirstPlayer = game.getFirstPlayer().getUsername()
-                .equals(playCardRequest.getUsername());
-        boolean isSecondPlayer = game.getSecondPlayer().getUsername()
-                .equals(playCardRequest.getUsername());
+        Card cardForRemoval = player.getHand().stream()
+                .filter(c -> c.getId().equals(playCardRequest.getCardId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Card not found in player's hand"));
+        gameUtilService.removeCardFromHand(game, player, cardForRemoval);
+        player.setPlayedCard(cardForRemoval);
+        gameUtilService.checkTwentyForty(game, player, cardForRemoval);
 
-        if (!isFirstPlayer && !isSecondPlayer) {
-            throw new RuntimeException("User not in this game");
-        }
-
-        // Remove card from player's hand
-        if (isFirstPlayer) {
-            Card card = state.getFirstPlayerHand().stream()
-                    .filter(c -> c.getId().equals(playCardRequest.getCardId()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Card not found in player's hand"));
-            gameUtilService.removeCardFromHand(state.getFirstPlayerHand(),
-                    game.getFirstPlayer().getUsername(), card, game);
-            state.setFirstPlayerPlayedCard(card);
-            gameUtilService.checkTwentyForty(game, game.getFirstPlayer().getUsername(), card);
-        } else {
-            Card card = state.getSecondPlayerHand().stream()
-                    .filter(c -> c.getId().equals(playCardRequest.getCardId()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Card not found in player's hand"));
-            gameUtilService.removeCardFromHand(state.getSecondPlayerHand(),
-                    game.getSecondPlayer().getUsername(), card, game);
-            state.setSecondPlayerPlayedCard(card);
-            gameUtilService.checkTwentyForty(game, game.getSecondPlayer().getUsername(), card);
-        }
-
-        // If both players have played → evaluate trick
-        if (state.getFirstPlayerPlayedCard() != null && state.getSecondPlayerPlayedCard() != null) {
+        if (game.getFirstPlayer().getPlayedCard() != null && game.getSecondPlayer().getPlayedCard() != null) {
             gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
             gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername());
             try {
@@ -125,55 +102,40 @@ public class GameService {
             }
             gameUtilService.evaluateTrick(game);
         } else {
-            if (isFirstPlayer) {
-                state.setInTurnPlayerUsername(game.getSecondPlayer().getUsername());
-            } else {
-                state.setInTurnPlayerUsername(game.getFirstPlayer().getUsername());
-            }
+            state.setInTurnPlayer(game.getOpponent(player));
         }
 
         gameUtilService.saveGame(game);
 
-        GameStateResponse firstPlayerResponse = gameWebSocketService
-                .updateGameState(game, game.getFirstPlayer().getUsername());
-
-        GameStateResponse secondPlayerResponse = gameWebSocketService
-                .updateGameState(game, game.getSecondPlayer().getUsername());
-
-        return isFirstPlayer ? firstPlayerResponse : secondPlayerResponse;
+        gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
+        gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername());
     }
 
     @Transactional
-    public GameStateResponse closeDeck(CloseDeckRequest closeDeckRequest) {
+    public void closeDeck(CloseDeckRequest closeDeckRequest) {
         Game game = gameUtilService.findGameForClosingOrRemoval(closeDeckRequest.getGameId(),
                 closeDeckRequest.getUsername());
+        Player player = game.getPlayerByUsername(closeDeckRequest.getUsername());
 
         GameState state = game.getState();
         state.getDeck().clear();
-        state.setClosedByUsername(closeDeckRequest.getUsername());
+        state.setClosedByPlayer(player);
         gameUtilService.saveGameState(state);
 
-        boolean isFirstPlayer = game.getFirstPlayer().getUsername()
-                .equals(closeDeckRequest.getUsername());
+        gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
 
-        GameStateResponse firstPlayerResponse = gameWebSocketService
-                .updateGameState(game, game.getFirstPlayer().getUsername());
-
-        GameStateResponse secondPlayerResponse = gameWebSocketService
-                .updateGameState(game, game.getSecondPlayer().getUsername());
-
-        return isFirstPlayer ? firstPlayerResponse : secondPlayerResponse;
+        gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername());
     }
 
     @Transactional
-    public GameStateResponse replaceCard(ReplaceCardRequest replaceCardRequest) {
+    public void replaceCard(ReplaceCardRequest replaceCardRequest) {
         Game game = gameUtilService.findGameForClosingOrRemoval(replaceCardRequest.getGameId(),
                 replaceCardRequest.getUsername());
         GameState state = game.getState();
 
-        boolean isFirstPlayer = game.getFirstPlayer().getUsername()
-                .equals(replaceCardRequest.getUsername());
-        List<Card> playerCards = isFirstPlayer ? state.getFirstPlayerHand() : state.getSecondPlayerHand();
+        Player player = game.getPlayerByUsername(replaceCardRequest.getUsername());
+
+        List<Card> playerCards = player.getHand();
 
         Card cardForReplace = playerCards.stream()
                 .filter(card -> card.getRank() == Rank.NINE)
@@ -190,76 +152,45 @@ public class GameService {
         state.getDeck().addLast(cardForReplace);
         gameUtilService.saveGameState(state);
 
-        GameStateResponse firstPlayerResponse = gameWebSocketService
-                .updateGameState(game, game.getFirstPlayer().getUsername());
+        gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
 
-        GameStateResponse secondPlayerResponse = gameWebSocketService
-                .updateGameState(game, game.getSecondPlayer().getUsername());
-
-        return isFirstPlayer ? firstPlayerResponse : secondPlayerResponse;
+        gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername());
     }
 
     @Transactional
-    public GameStateResponse finishDeal(FinishDealRequest finishDealRequest) {
+    public void finishDeal(FinishDealRequest finishDealRequest) {
         Game game = gameUtilService.findGameById(finishDealRequest.getGameId());
 
         GameState state = game.getState();
 
-        String user = finishDealRequest.getUsername();
+        Player player = game.getPlayerByUsername(finishDealRequest.getUsername());
 
-        if (!state.getFirstTurnPlayerUsername().equals(user))
+        if (!state.getFirstTurnPlayer().equals(player))
             throw new RuntimeException("User is not first in turn in this game");
 
-        if (!state.getInTurnPlayerUsername().equals(user))
+        if (!state.getInTurnPlayer().equals(player))
             throw new RuntimeException("Not your turn");
 
-        boolean isFirstPlayer = game.getFirstPlayer().getUsername().equals(user);
-        int firstPlayerScore = state.getFirstPlayerScore();
-        int secondPlayerScore = state.getSecondPlayerScore();
+        Player opponentPlayer = game.getOpponent(player);
 
-        int playerScore = isFirstPlayer ? firstPlayerScore : secondPlayerScore;
-        int opponentScore = isFirstPlayer ? secondPlayerScore : firstPlayerScore;
-        boolean opponentBlanked = isFirstPlayer ? state.getIsSecondPlayerBlanked()
-                : state.getIsFirstPlayerBlanked();
-
-        // Determine round points
         int pointsAwarded;
+        String trickWinner;
 
-        if (playerScore >= 66) {
-            // Player wins normally
-            pointsAwarded = opponentBlanked ? 3 : (opponentScore < 33 ? 2 : 1);
+        if (player.getScore() >= 66) {
+            pointsAwarded = opponentPlayer.getIsBlanked() ? 3 : (opponentPlayer.getScore() < 33 ? 2 : 1);
+            player.setResult(player.getResult() + pointsAwarded);
+            trickWinner = player.getUsername();
         } else {
-            // Opponent wins (player failed to reach 66)
-            pointsAwarded = 3;
-            isFirstPlayer = !isFirstPlayer;  // flip winner
+            opponentPlayer.setResult(opponentPlayer.getResult() + 3);
+            trickWinner = opponentPlayer.getUsername();
         }
 
-        // Apply result
-        if (isFirstPlayer) {
-            if (state.isClosed() && state.getClosedByUsername().equals(game.getSecondPlayer().getUsername())) {
-                pointsAwarded = 3;
-            }
-            game.setFirstPlayerResult(game.getFirstPlayerResult() + pointsAwarded);
-            gameUtilService.prepareNewState(game, game.getFirstPlayer());
-        } else {
-            if (state.isClosed() && state.getClosedByUsername().equals(game.getFirstPlayer().getUsername())) {
-                pointsAwarded = 3;
-            }
-            game.setSecondPlayerResult(game.getSecondPlayerResult() + pointsAwarded);
-            gameUtilService.prepareNewState(game, game.getSecondPlayer());
-        }
+        gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername(),
+                trickWinner, game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
 
-        String trickWinner = isFirstPlayer ?
-                game.getFirstPlayer().getUsername() : game.getSecondPlayer().getUsername();
+        gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername(),
+                trickWinner, game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
 
-        GameStateResponse firstPlayerResponse = gameWebSocketService
-                .updateGameState(game, game.getFirstPlayer().getUsername(),
-                        trickWinner, firstPlayerScore, secondPlayerScore);
-
-        GameStateResponse secondPlayerResponse = gameWebSocketService
-                .updateGameState(game, game.getSecondPlayer().getUsername(),
-                        trickWinner, firstPlayerScore, secondPlayerScore);
-
-        return isFirstPlayer ? firstPlayerResponse : secondPlayerResponse;
+        gameUtilService.prepareNewState(game, game.getFirstPlayer());
     }
 }

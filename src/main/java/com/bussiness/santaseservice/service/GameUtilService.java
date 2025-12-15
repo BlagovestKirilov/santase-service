@@ -5,9 +5,10 @@ import com.bussiness.santaseservice.enums.Suit;
 import com.bussiness.santaseservice.model.Card;
 import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.GameState;
-import com.bussiness.santaseservice.model.User;
+import com.bussiness.santaseservice.model.Player;
 import com.bussiness.santaseservice.repository.GameRepository;
 import com.bussiness.santaseservice.repository.GameStateRepository;
+import com.bussiness.santaseservice.repository.PlayerRepository;
 import com.bussiness.santaseservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,20 +23,21 @@ import java.util.UUID;
 @Service
 public class GameUtilService {
     private final GameRepository gameRepository;
+    private final PlayerRepository playerRepository;
     private final GameStateRepository gameStateRepository;
     private final UserRepository userRepository;
     private final GameWebSocketService gameWebSocketService;
 
     @Transactional
-    protected Game startGame(User firstPlayer, User secondPlayer) {
+    protected Game startGame(Player firstPlayer, Player secondPlayer) {
         GameState gameState = GameState.builder().build();
+        firstPlayer.setResult(0);
+        secondPlayer.setResult(0);
 
         Game game = Game.builder()
                 .firstPlayer(firstPlayer)
                 .secondPlayer(secondPlayer)
                 .state(gameState)
-                .firstPlayerResult(0)
-                .secondPlayerResult(0)
                 .build();
 
         prepareNewState(game, null);
@@ -55,22 +57,30 @@ public class GameUtilService {
         gameStateRepository.save(gameState);
     }
 
-    protected User findUserByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    protected void checkIfUserExists(String username) {
+        if (!userRepository.existsByUsername(username)) {
+            throw new RuntimeException("User not found");
+        }
+    }
+
+    protected Player findPlayerByUsername(String username) {
+        return playerRepository.findByUserUsername(username)
+                .orElseThrow(() -> new RuntimeException("Player not found"));
     }
 
     protected Game findGameForClosingOrRemoval(UUID gameId, String username) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new RuntimeException("Game not found"));
 
+        Player player = game.getPlayerByUsername(username);
+
         GameState state = game.getState();
 
-        if (!state.getFirstTurnPlayerUsername().equals(username)) {
+        if (!state.getFirstTurnPlayer().equals(player)) {
             throw new RuntimeException("User is not first in turn in this game");
         }
 
-        if (!state.getInTurnPlayerUsername().equals(username)) {
+        if (!state.getInTurnPlayer().equals(player)) {
             throw new RuntimeException("Not your turn");
         }
 
@@ -81,7 +91,8 @@ public class GameUtilService {
         return game;
     }
 
-    protected void removeCardFromHand(List<Card> playerCards, String playerUsername, Card cardForRemoval, Game game) {
+    protected void removeCardFromHand(Game game, Player player, Card cardForRemoval) {
+        List<Card> playerCards = player.getHand();
 
         if (!playerCards.contains(cardForRemoval)) {
             throw new RuntimeException("Card not in player's hand");
@@ -94,17 +105,14 @@ public class GameUtilService {
         }
 
         // First player always allowed
-        if (playerUsername.equals(game.getState().getFirstTurnPlayerUsername())) {
+        if (player.equals(game.getState().getFirstTurnPlayer())) {
             playerCards.remove(cardForRemoval);
             return;
         }
 
-        // Determine opponent card
-        Card opponentCard = playerUsername.equals(game.getFirstPlayer().getUsername())
-                ? game.getState().getSecondPlayerPlayedCard()
-                : game.getState().getFirstPlayerPlayedCard();
+        Card opponentPlayerCard = game.getOpponent(player).getPlayedCard();
 
-        Suit opponentSuit = opponentCard.getSuit();
+        Suit opponentSuit = opponentPlayerCard.getSuit();
 
         boolean hasSameSuit = playerCards.stream()
                 .anyMatch(card -> card.getSuit() == opponentSuit);
@@ -112,7 +120,7 @@ public class GameUtilService {
         // --- CASE 1: Player has same suit as opponent ---
         if (hasSameSuit) {
             List<Card> playableCards = playerCards.stream()
-                    .filter(c -> c.getSuit() == opponentSuit && c.getPoints() > opponentCard.getPoints())
+                    .filter(c -> c.getSuit() == opponentSuit && c.getPoints() > opponentPlayerCard.getPoints())
                     .toList();
 
             if (playableCards.isEmpty()) {
@@ -152,130 +160,78 @@ public class GameUtilService {
 
     protected void evaluateTrick(Game game) {
         GameState state = game.getState();
-        User firstPlayer = game.getFirstPlayer();
+        Player firstPlayer = game.getFirstPlayer();
+        Player secondPlayer = game.getSecondPlayer();
 
-        Card firstCard = state.getFirstPlayerPlayedCard();
-        Card secondCard = state.getSecondPlayerPlayedCard();
-
-        User trickWinner = determineWinner(game);
-        boolean firstWins = trickWinner.equals(firstPlayer);
+        Player trickWinner = determineWinner(game);
 
         // --- Award trick points ---
-        int trickPoints = firstCard.getPoints() + secondCard.getPoints();
-        if (firstWins) {
-            state.setFirstPlayerScore(state.getFirstPlayerScore() + trickPoints);
-        } else {
-            state.setSecondPlayerScore(state.getSecondPlayerScore() + trickPoints);
-        }
+        int trickPoints = firstPlayer.getPlayedCard().getPoints() + secondPlayer.getPlayedCard().getPoints();
+        trickWinner.setScore(trickWinner.getScore() + trickPoints);
 
-        // --- Update turn ownership ---
-        String winnerName = trickWinner.getUsername();
-        state.setInTurnPlayerUsername(winnerName);
-        state.setFirstTurnPlayerUsername(winnerName);
+        state.setInTurnPlayer(trickWinner);
+        state.setFirstTurnPlayer(trickWinner);
 
-        // --- Reset blank flags only for the winner ---
-        if (firstWins) {
-            if (state.getIsFirstPlayerBlanked()) state.setIsFirstPlayerBlanked(false);
-        } else {
-            if (state.getIsSecondPlayerBlanked()) state.setIsSecondPlayerBlanked(false);
+        if (trickWinner.getIsBlanked()) {
+            trickWinner.setIsBlanked(false);
         }
 
         // --- Draw cards ---
-        drawCards(state, winnerName, firstPlayer);
+        drawCards(game, trickWinner);
 
         // --- End of game scoring ---
-        if (isLastCardPlayed(state)) {
+        if (isLastCardPlayed(game)) {
             gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername(),
-                    trickWinner.getUsername(), state.getFirstPlayerScore(), state.getSecondPlayerScore());
+                    trickWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
 
             gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername(),
-                    trickWinner.getUsername(), state.getFirstPlayerScore(), state.getSecondPlayerScore());
-            applyEndOfGameScore(game, state, trickWinner, firstPlayer, game.getSecondPlayer());
+                    trickWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
+            applyEndOfGameScore(game, trickWinner);
             prepareNewState(game, trickWinner);
         }
 
         // --- Cleanup ---
-        state.setFirstPlayerPlayedCard(null);
-        state.setSecondPlayerPlayedCard(null);
+        firstPlayer.setPlayedCard(null);
+        secondPlayer.setPlayedCard(null);
     }
 
-    protected void drawCards(GameState state, String winnerName, User first) {
-        if (state.getDeck().isEmpty()) return;
+    protected void drawCards(Game game, Player trickWinner) {
+        if (game.getState().getDeck().isEmpty()) return;
 
-        // Player in turn draws first
-        boolean firstInTurn = winnerName.equals(first.getUsername());
-
-        if (firstInTurn) {
-            state.getFirstPlayerHand().add(state.getDeck().removeFirst());
-        } else {
-            state.getSecondPlayerHand().add(state.getDeck().removeFirst());
-        }
-
-        // Other player draws second (if deck not empty)
-        if (!state.getDeck().isEmpty()) {
-            if (firstInTurn) {
-                state.getSecondPlayerHand().add(state.getDeck().removeFirst());
-            } else {
-                state.getFirstPlayerHand().add(state.getDeck().removeFirst());
-            }
-        }
+        trickWinner.getHand().add(game.getState().getDeck().removeFirst());
+        game.getOpponent(trickWinner).getHand().add(game.getState().getDeck().removeFirst());
     }
 
-    protected void applyEndOfGameScore(Game game, GameState state, User finalTrickWinner, User firstPlayer, User secondPlayer) {
-        User dealWinner;
+    protected void applyEndOfGameScore(Game game, Player trickWinner) {
+        GameState state = game.getState();
+
+        Player dealWinner;
         int bonusPoints;
 
-        // 1. Check if the game was closed
         if (state.isClosed()) {
+            Player closer = state.getClosedByPlayer();
+            Player opponent = game.getOpponent(closer);
 
-            // --- Closed Game Scenario (New Rule Set) ---
-
-            // Identify the closer and the non-closer
-            boolean closerIsFirst = state.getClosedByUsername().equals(firstPlayer.getUsername());
-            User closer = closerIsFirst ? firstPlayer : secondPlayer;
-            User nonCloser = closerIsFirst ? secondPlayer : firstPlayer;
-            int closerResult = closerIsFirst ?
-                    game.getState().getFirstPlayerScore() : game.getState().getSecondPlayerScore();
-
-            // Rule: The closer wins points if they reached 66 or more
-            if (closerResult >= 66) {
-                // Closer Wins Deal (Successful close)
+            if (closer.getScore() >= 66) {
+                // Successful close
                 dealWinner = closer;
-
-                // Points based on the non-closer's score (standard 1, 2, or 3)
-                bonusPoints = calculateStandardBonus(
-                        closerIsFirst ? game.getState().getSecondPlayerScore() : game.getState().getFirstPlayerScore(),
-                        closerIsFirst ? game.getState().getIsSecondPlayerBlanked() : game.getState().getIsFirstPlayerBlanked());
-
+                bonusPoints = calculateStandardBonus(opponent.getScore(), opponent.getIsBlanked());
             } else {
-                // Closer Fails (Did not reach 66 points)
-                dealWinner = nonCloser;
-
-                // Rule: The other player (non-closer) wins 3 points (Penalty)
+                // Failed close → penalty
+                dealWinner = opponent;
                 bonusPoints = 3;
             }
 
         } else {
-
-            // --- Open Game Scenario (Played to 66 or last trick - Original Rule Set) ---
-
-            // The player who won the deal is the winner
-            dealWinner = finalTrickWinner;
-            boolean winnerIsFirst = dealWinner.getUsername().equals(firstPlayer.getUsername());
-
-            // Points based on the loser's score (Standard Santase Scoring)
-            bonusPoints = calculateStandardBonus(
-                    winnerIsFirst ? game.getState().getSecondPlayerScore() : game.getState().getFirstPlayerScore(),
-                    winnerIsFirst ? game.getState().getIsSecondPlayerBlanked() : game.getState().getIsFirstPlayerBlanked());
+            // Open game (normal end)
+            dealWinner = trickWinner;
+            Player loser = game.getOpponent(trickWinner);
+            bonusPoints = calculateStandardBonus(loser.getScore(), loser.getIsBlanked());
         }
 
-        // --- Apply Scores to Game Result ---
-        if (dealWinner.equals(firstPlayer)) {
-            game.setFirstPlayerResult(game.getFirstPlayerResult() + bonusPoints);
-        } else {
-            game.setSecondPlayerResult(game.getSecondPlayerResult() + bonusPoints);
-        }
+        dealWinner.setScore(dealWinner.getScore() + bonusPoints);
     }
+
 
     private int calculateStandardBonus(int loserScore, boolean loserBlank) {
         if (loserBlank) {
@@ -287,9 +243,9 @@ public class GameUtilService {
         }
     }
 
-    protected void prepareNewState(Game game, User trickWinner) {
-        int firstPlayerResult = game.getFirstPlayerResult();
-        int secondPlayerResult = game.getSecondPlayerResult();
+    protected void prepareNewState(Game game, Player trickWinner) {
+        int firstPlayerResult = game.getFirstPlayer().getResult();
+        int secondPlayerResult = game.getSecondPlayer().getResult();
 
         int difference = Math.abs(firstPlayerResult - secondPlayerResult);
 
@@ -305,24 +261,26 @@ public class GameUtilService {
         game.getState().setDeck(getNewDeck());
 
         if (trickWinner == null || trickWinner.equals(game.getSecondPlayer())) {
-            game.getState().setFirstTurnPlayerUsername(game.getFirstPlayer().getUsername());
-            game.getState().setInTurnPlayerUsername(game.getFirstPlayer().getUsername());
+            game.getState().setFirstTurnPlayer(game.getFirstPlayer());
+            game.getState().setInTurnPlayer(game.getFirstPlayer());
         } else {
-            game.getState().setFirstTurnPlayerUsername(game.getSecondPlayer().getUsername());
-            game.getState().setInTurnPlayerUsername(game.getSecondPlayer().getUsername());
+            game.getState().setFirstTurnPlayer(game.getSecondPlayer());
+            game.getState().setInTurnPlayer(game.getSecondPlayer());
         }
 
-        game.getState().setFirstPlayerHand(new ArrayList<>());
-        game.getState().setSecondPlayerHand(new ArrayList<>());
-        game.getState().setFirstPlayerScore(0);
-        game.getState().setSecondPlayerScore(0);
-        game.getState().setIsFirstPlayerBlanked(true);
-        game.getState().setIsSecondPlayerBlanked(true);
-        game.getState().setClosedByUsername(null);
+        game.getFirstPlayer().setHand(new ArrayList<>());
+        game.getSecondPlayer().setHand(new ArrayList<>());
+        game.getFirstPlayer().setScore(0);
+        game.getSecondPlayer().setScore(0);
+        game.getFirstPlayer().setIsBlanked(true);
+        game.getSecondPlayer().setIsBlanked(true);
+        game.getState().setClosedByPlayer(null);
 
         // Deal 6 cards each
-        for (int i = 0; i < 6; i++) game.getState().getFirstPlayerHand().add(game.getState().getDeck().removeFirst());
-        for (int i = 0; i < 6; i++) game.getState().getSecondPlayerHand().add(game.getState().getDeck().removeFirst());
+        for (int i = 0; i < 3; i++) game.getFirstPlayer().getHand().add(game.getState().getDeck().removeFirst());
+        for (int i = 0; i < 3; i++) game.getSecondPlayer().getHand().add(game.getState().getDeck().removeFirst());
+        for (int i = 0; i < 3; i++) game.getFirstPlayer().getHand().add(game.getState().getDeck().removeFirst());
+        for (int i = 0; i < 3; i++) game.getSecondPlayer().getHand().add(game.getState().getDeck().removeFirst());
 
         game.getState().setTrumpCard(game.getState().getDeck().getLast());
     }
@@ -338,35 +296,35 @@ public class GameUtilService {
         return deck;
     }
 
-    protected boolean isLastCardPlayed(GameState state) {
-        return state.getDeck().isEmpty() && state.getFirstPlayerHand().isEmpty() && state.getSecondPlayerHand().isEmpty();
+    protected boolean isLastCardPlayed(Game game) {
+        return game.getState().getDeck().isEmpty()
+                && game.getFirstPlayer().getHand().isEmpty()
+                && game.getSecondPlayer().getHand().isEmpty();
     }
 
-    protected User determineWinner(Game game) {
+    protected Player determineWinner(Game game) {
         GameState state = game.getState();
+        Card firstPlayerCard = game.getFirstPlayer().getPlayedCard();
+        Card secondPlayerCard = game.getSecondPlayer().getPlayedCard();
 
-        boolean c1Trump = state.getFirstPlayerPlayedCard().getSuit().equals(state.getTrumpCard().getSuit());
-        boolean c2Trump = state.getSecondPlayerPlayedCard().getSuit().equals(state.getTrumpCard().getSuit());
+        boolean isFirstPlayerCardTrump = firstPlayerCard.getSuit().equals(state.getTrumpCard().getSuit());
+        boolean isSecondPlayerCardTrump = secondPlayerCard.getSuit().equals(state.getTrumpCard().getSuit());
 
-        if (c1Trump && !c2Trump) return game.getFirstPlayer();
-        if (c2Trump && !c1Trump) return game.getSecondPlayer();
+        if (isFirstPlayerCardTrump && !isSecondPlayerCardTrump) return game.getFirstPlayer();
+        if (isSecondPlayerCardTrump && !isFirstPlayerCardTrump) return game.getSecondPlayer();
 
-        if (state.getFirstPlayerPlayedCard().getSuit() == state.getSecondPlayerPlayedCard().getSuit()) {
-            return state.getFirstPlayerPlayedCard().getPoints() > state.getSecondPlayerPlayedCard().getPoints()
+        if (firstPlayerCard.getSuit() == secondPlayerCard.getSuit()) {
+            return firstPlayerCard.getPoints() > secondPlayerCard.getPoints()
                     ? game.getFirstPlayer() : game.getSecondPlayer();
         }
 
-        return state.getInTurnPlayerUsername().equals(game.getSecondPlayer().getUsername())
-                ? game.getFirstPlayer() : game.getSecondPlayer();
+        return game.getState().getFirstTurnPlayer();
     }
 
-    protected void checkTwentyForty(Game game, String playerInTurnUsername, Card playedCard) {
-        if (!playerInTurnUsername.equals(game.getState().getFirstTurnPlayerUsername()) ||
-                game.getState().getDeck().size() == 12) {
+    protected void checkTwentyForty(Game game, Player player, Card playedCard) {
+        if (game.getState().getDeck().size() == 12) {
             return;
         }
-
-        boolean isPlayerOne = game.getState().getInTurnPlayerUsername().equals(game.getFirstPlayer().getUsername());
 
         // Must play King OR Queen
         if (!(playedCard.getRank().name().equals("KING") || playedCard.getRank().name().equals("QUEEN"))) {
@@ -376,7 +334,7 @@ public class GameUtilService {
         Suit suit = playedCard.getSuit();
         Suit trumpSuit = game.getState().getTrumpCard().getSuit();
 
-        List<Card> hand = isPlayerOne ? game.getState().getFirstPlayerHand() : game.getState().getSecondPlayerHand();
+        List<Card> hand = player.getHand();
 
         boolean hasMatchingPair = hand.stream().anyMatch(c ->
                 c.getSuit() == suit &&
@@ -391,10 +349,6 @@ public class GameUtilService {
         // Bonus: 40 if trump, otherwise 20
         int bonus = (suit == trumpSuit) ? 40 : 20;
 
-        if (isPlayerOne) {
-            game.getState().setFirstPlayerScore(game.getState().getFirstPlayerScore() + bonus);
-        } else {
-            game.getState().setSecondPlayerScore(game.getState().getSecondPlayerScore() + bonus);
-        }
+        player.setScore(player.getScore() + bonus);
     }
 }

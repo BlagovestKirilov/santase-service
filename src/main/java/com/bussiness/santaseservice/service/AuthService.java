@@ -1,9 +1,11 @@
 package com.bussiness.santaseservice.service;
 
+import com.bussiness.santaseservice.model.Player;
 import com.bussiness.santaseservice.model.User;
 import com.bussiness.santaseservice.model.request.LoginRequest;
 import com.bussiness.santaseservice.model.request.RegisterRequest;
 import com.bussiness.santaseservice.model.response.AuthResponse;
+import com.bussiness.santaseservice.repository.PlayerRepository;
 import com.bussiness.santaseservice.repository.UserRepository;
 import com.bussiness.santaseservice.util.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final PlayerRepository playerRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
@@ -40,14 +43,16 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest registerRequest) {
-        if  (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
+        if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
             throw new RuntimeException("Username is already in use");
         }
 
         User user = userMapper.toEntity(registerRequest);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
         userRepository.save(user);
+
+        Player player = Player.builder().user(user).build();
+        playerRepository.save(player);
 
         return AuthResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())

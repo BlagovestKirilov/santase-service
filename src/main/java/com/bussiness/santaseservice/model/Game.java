@@ -19,18 +19,34 @@ import lombok.Setter;
 public class Game extends BaseEntity {
 
     @ManyToOne
-    private User firstPlayer;
+    private Player firstPlayer;
 
     @ManyToOne
-    private User secondPlayer;
+    private Player secondPlayer;
 
     @OneToOne(cascade = CascadeType.ALL)
     private GameState state;
 
     @ManyToOne
-    private User winner;
+    private Player winner;
 
-    private Integer firstPlayerResult;
+    public Player getPlayerByUsername(String username) {
+        if (username.equals(firstPlayer.getUsername())) {
+            return firstPlayer;
+        } else if (username.equals(secondPlayer.getUsername())) {
+            return secondPlayer;
+        } else {
+            throw new RuntimeException("Player is not part of the game");
+        }
+    }
 
-    private Integer secondPlayerResult;
+    public Player getOpponent(Player player) {
+        if (player.equals(firstPlayer)) {
+            return secondPlayer;
+        } else if (player.equals(secondPlayer)) {
+            return firstPlayer;
+        } else {
+            throw new RuntimeException("Player is not part of the game");
+        }
+    }
 }

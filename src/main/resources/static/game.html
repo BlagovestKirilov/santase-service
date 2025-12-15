@@ -340,16 +340,27 @@
         return 1 + order.indexOf(suit);
     }
 
-    // --- Core Connection and Search Handlers ---
-
     function handleRestResponse(response) {
         if (response.ok) {
-            return response.json();
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                return response.json();
+            }
+            return Promise.resolve();
         }
-        return response.json().then(errorData => {
-            // 🛑 Use showErrorModal for actual errors 🛑
-            throw new Error(errorData.message || 'Unknown server error.');
-        });
+
+        const contentType = response.headers.get("content-type");
+
+        if (contentType && contentType.includes("application/json")) {
+            return response.json()
+                .then(errorBody => Promise.reject(
+                    new Error(errorBody.message || "Unknown server error")
+                ));
+        }
+
+        return Promise.reject(
+            new Error(`Server error: ${response.status} ${response.statusText}`)
+        );
     }
 
     // NEW FUNCTION: Initiates the game search
@@ -392,9 +403,8 @@
         });
     }
 
-    // REST call to trigger the queueing logic on the server
     function searchGameRestCall(username) {
-        const requestBody = { username: username };
+        const requestBody = { username };
 
         fetch(SEARCH_GAME_URL, {
             method: 'POST',
@@ -402,12 +412,12 @@
             body: JSON.stringify(requestBody),
         })
             .then(handleRestResponse)
-            .then(data => {
-                handleSearchUpdate(data);
+            .then(() => {
+                console.log("Search command sent successfully.");
             })
             .catch(error => {
                 console.error("Error starting search:", error);
-                showErrorModal("Error starting search: " + error.message);
+                showErrorModal(error.message);
                 document.getElementById('searchButton').disabled = false;
                 updateConnectionStatus("Disconnected", false);
             });
@@ -463,12 +473,12 @@
 
         fetch(url, { method: 'GET' })
             .then(handleRestResponse)
-            .then(gameStateResponse => {
-                showGameUpdate(gameStateResponse);
+            .then(() => {
+                console.log("Initial state requested.");
             })
             .catch(error => {
                 console.error("Error fetching initial game state:", error);
-                showErrorModal("Error fetching initial state: " + error.message);
+                showErrorModal(error.message);
             });
     }
 
@@ -642,7 +652,10 @@
         })
             .then(handleRestResponse)
             .then(() => { console.log("Card played successfully."); })
-            .catch(error => { console.error("Error playing card:", error); showErrorModal(error.message); });
+            .catch(error => {
+                console.error("Error playing card:", error);
+                    showErrorModal(error.message);
+            });
     }
 
     function replaceCard() {
@@ -654,7 +667,10 @@
         })
             .then(handleRestResponse)
             .then(() => { console.log("Card replaced successfully."); })
-            .catch(error => { console.error("Error replacing card:", error); showErrorModal(error.message); });
+            .catch(error => {
+                console.error("Error replacing card:", error);
+                    showErrorModal(error.message);
+            });
     }
 
     function closeDeck() {
@@ -666,7 +682,10 @@
         })
             .then(handleRestResponse)
             .then(() => { console.log("Deck closed successfully."); })
-            .catch(error => { console.error("Error closing deck:", error); showErrorModal(error.message); });
+            .catch(error => {
+                console.error("Error closing deck:", error);
+                    showErrorModal(error.message);
+            });
     }
 
     function finishDeal() {
@@ -678,7 +697,10 @@
         })
             .then(handleRestResponse)
             .then(() => { console.log("Deal finished successfully."); })
-            .catch(error => { console.error("Error finishing deal:", error); showErrorModal(error.message); });
+            .catch(error => {
+                console.error("Error finishing deal:", error);
+                    showErrorModal(error.message);
+            });
     }
 </script>
 </body>

@@ -5,8 +5,6 @@ import com.bussiness.santaseservice.model.request.FinishDealRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
 import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
 import com.bussiness.santaseservice.model.request.SearchGameRequest;
-import com.bussiness.santaseservice.model.response.GameStateResponse;
-import com.bussiness.santaseservice.model.response.SearchGameResponse;
 import com.bussiness.santaseservice.service.GameService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,38 +28,44 @@ public class GameController {
     private final GameService gameService;
 
     @PostMapping("/search")
-    public ResponseEntity<SearchGameResponse> searchGame(@Valid @RequestBody SearchGameRequest searchGameRequest) {
+    public ResponseEntity<Void> searchGame(@Valid @RequestBody SearchGameRequest searchGameRequest) {
         log.info("Trying to start game, account with username {}", searchGameRequest.getUsername());
-        return ResponseEntity.ok(gameService.searchGame(searchGameRequest.getUsername()));
+        gameService.searchGame(searchGameRequest.getUsername());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/state")
-    public ResponseEntity<GameStateResponse> state(@RequestParam UUID gameId, @RequestParam String username) {
+    public ResponseEntity<Void> state(@RequestParam UUID gameId, @RequestParam String username) {
         log.info("Trying to get game state id: {}", gameId);
-        return ResponseEntity.ok(gameService.getGameState(gameId, username));
+        gameService.getGameState(gameId, username);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/play-card")
-    public ResponseEntity<GameStateResponse> playCard(@RequestBody PlayCardRequest playCardRequest) {
+    public ResponseEntity<Void> playCard(@RequestBody PlayCardRequest playCardRequest) {
         log.info("Trying to play card: {}", playCardRequest);
-        return ResponseEntity.ok(gameService.playCard(playCardRequest));
+        gameService.playCard(playCardRequest);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/close-deck")
-    public ResponseEntity<GameStateResponse> closeDeck(@RequestBody CloseDeckRequest closeDeckRequest) {
+    public ResponseEntity<Void> closeDeck(@RequestBody CloseDeckRequest closeDeckRequest) {
         log.info("Trying to close deck: {}", closeDeckRequest);
-        return ResponseEntity.ok(gameService.closeDeck(closeDeckRequest));
+        gameService.closeDeck(closeDeckRequest);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/replace-card")
-    public ResponseEntity<GameStateResponse> replaceCard(@RequestBody ReplaceCardRequest replaceCardRequest) {
+    public ResponseEntity<Void> replaceCard(@RequestBody ReplaceCardRequest replaceCardRequest) {
         log.info("Trying to replace card: {}", replaceCardRequest);
-        return ResponseEntity.ok(gameService.replaceCard(replaceCardRequest));
+        gameService.replaceCard(replaceCardRequest);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/finish-deal")
-    public ResponseEntity<GameStateResponse> finishDeal(@RequestBody FinishDealRequest finishDealRequest) {
+    public ResponseEntity<Void> finishDeal(@RequestBody FinishDealRequest finishDealRequest) {
         log.info("Trying to finish deal: {}", finishDealRequest);
-        return ResponseEntity.ok(gameService.finishDeal(finishDealRequest));
+        gameService.finishDeal(finishDealRequest);
+        return ResponseEntity.ok().build();
     }
 }

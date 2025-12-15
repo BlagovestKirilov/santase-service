@@ -2,6 +2,7 @@ package com.bussiness.santaseservice.service;
 
 import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.GameState;
+import com.bussiness.santaseservice.model.Player;
 import com.bussiness.santaseservice.model.dto.CardDTO;
 import com.bussiness.santaseservice.model.response.GameStateResponse;
 import com.bussiness.santaseservice.model.response.SearchGameResponse;
@@ -18,7 +19,7 @@ public class GameWebSocketService {
     private final SimpMessagingTemplate messagingTemplate;
     private final CardMapper cardMapper;
 
-    public GameStateResponse updateGameState(
+    public void updateGameState(
             Game game,
             String username,
             String trickWinnerUsername,
@@ -33,16 +34,13 @@ public class GameWebSocketService {
                 .build();
 
         notifyGameUpdate(game.getId().toString(), username, response);
-        return response;
     }
 
-    public GameStateResponse updateGameState(Game game, String username) {
+    public void updateGameState(Game game, String username) {
         GameStateResponse response = buildBaseGameStateResponse(game, username);
 
         notifyGameUpdate(game.getId().toString(), username, response);
-        return response;
     }
-
 
     public void notifyGameUpdate(String gameId, String username, GameStateResponse gameState) {
         String destination = "/topic/game/" + gameId + "/" + username;
@@ -63,28 +61,16 @@ public class GameWebSocketService {
     }
 
     private GameStateResponse buildBaseGameStateResponse(Game game, String username) {
-        boolean isFirstPlayer =
-                game.getFirstPlayer().getUsername().equals(username);
+        Player player = game.getPlayerByUsername(username);
+        Player opponentPlayer = game.getOpponent(player);
 
         GameState state = game.getState();
 
-        CardDTO playedCard = cardMapper.toDTO(
-                isFirstPlayer
-                        ? state.getFirstPlayerPlayedCard()
-                        : state.getSecondPlayerPlayedCard()
-        );
+        CardDTO playedCard = cardMapper.toDTO(player.getPlayedCard());
 
-        CardDTO opponentPlayedCard = cardMapper.toDTO(
-                isFirstPlayer
-                        ? state.getSecondPlayerPlayedCard()
-                        : state.getFirstPlayerPlayedCard()
-        );
+        CardDTO opponentPlayedCard = cardMapper.toDTO(opponentPlayer.getPlayedCard());
 
-        List<CardDTO> deck = cardMapper.toDTO(
-                isFirstPlayer
-                        ? state.getFirstPlayerHand()
-                        : state.getSecondPlayerHand()
-        );
+        List<CardDTO> deck = cardMapper.toDTO(player.getHand());
 
         return GameStateResponse.builder()
                 .gameId(game.getId())
@@ -93,11 +79,11 @@ public class GameWebSocketService {
                 .playedCard(playedCard)
                 .opponentPlayedCard(opponentPlayedCard)
                 .firstPlayerUsername(game.getFirstPlayer().getUsername())
-                .firstPlayerResult(game.getFirstPlayerResult())
+                .firstPlayerResult(game.getFirstPlayer().getResult())
                 .secondPlayerUsername(game.getSecondPlayer().getUsername())
-                .secondPlayerResult(game.getSecondPlayerResult())
+                .secondPlayerResult(game.getSecondPlayer().getResult())
                 .remainingCardsCount(state.getDeck().size())
-                .isOnTurn(username.equals(state.getInTurnPlayerUsername()))
+                .isOnTurn(username.equals(state.getInTurnPlayer().getUsername()))
                 .isClosed(state.isClosed())
                 .winnerUsername(game.getWinner() != null
                         ? game.getWinner().getUsername()

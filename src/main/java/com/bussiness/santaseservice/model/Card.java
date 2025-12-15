@@ -29,19 +29,23 @@ public class Card {
     @Enumerated(EnumType.STRING)
     private Rank rank;
 
-    public int getPoints() { return rank.getPoints(); }
-
-    @Override
-    public String toString() { return rank + " of " + suit; }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Card card = (Card) o;
-        return suit == card.suit && rank == card.rank;
+    public int getPoints() {
+        return rank.getPoints();
     }
 
     @Override
-    public int hashCode() { return Objects.hash(suit, rank); }
+    public String toString() {
+        return rank + " of " + suit;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Card card)) return false;
+        return Objects.equals(id, card.id) && suit == card.suit && rank == card.rank;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, suit, rank);
+    }
 }
