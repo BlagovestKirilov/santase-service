@@ -9,6 +9,7 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,6 +31,9 @@ public class Player extends BaseEntity {
     private Integer result;
 
     private Integer score;
+
+    @Transient
+    private Integer bonus;
 
     @ElementCollection
     @CollectionTable(name = "player_hand",

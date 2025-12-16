@@ -85,9 +85,8 @@ public class GameWebSocketService {
                 .remainingCardsCount(state.getDeck().size())
                 .isOnTurn(username.equals(state.getInTurnPlayer().getUsername()))
                 .isClosed(state.isClosed())
-                .winnerUsername(game.getWinner() != null
-                        ? game.getWinner().getUsername()
-                        : null)
+                .winnerUsername(game.getWinner() != null ? game.getWinner().getUsername() : null)
+                .bonus(player.getBonus())
                 .build();
     }
 }

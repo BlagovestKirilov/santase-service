@@ -31,41 +31,41 @@ public class GameController {
     public ResponseEntity<Void> searchGame(@Valid @RequestBody SearchGameRequest searchGameRequest) {
         log.info("Trying to start game, account with username {}", searchGameRequest.getUsername());
         gameService.searchGame(searchGameRequest.getUsername());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.accepted().build();
     }
 
     @GetMapping("/state")
     public ResponseEntity<Void> state(@RequestParam UUID gameId, @RequestParam String username) {
         log.info("Trying to get game state id: {}", gameId);
         gameService.getGameState(gameId, username);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/play-card")
     public ResponseEntity<Void> playCard(@RequestBody PlayCardRequest playCardRequest) {
         log.info("Trying to play card: {}", playCardRequest);
         gameService.playCard(playCardRequest);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/close-deck")
     public ResponseEntity<Void> closeDeck(@RequestBody CloseDeckRequest closeDeckRequest) {
         log.info("Trying to close deck: {}", closeDeckRequest);
         gameService.closeDeck(closeDeckRequest);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/replace-card")
     public ResponseEntity<Void> replaceCard(@RequestBody ReplaceCardRequest replaceCardRequest) {
         log.info("Trying to replace card: {}", replaceCardRequest);
         gameService.replaceCard(replaceCardRequest);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/finish-deal")
     public ResponseEntity<Void> finishDeal(@RequestBody FinishDealRequest finishDealRequest) {
         log.info("Trying to finish deal: {}", finishDealRequest);
         gameService.finishDeal(finishDealRequest);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.accepted().build();
     }
 }

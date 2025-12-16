@@ -349,6 +349,7 @@ public class GameUtilService {
         // Bonus: 40 if trump, otherwise 20
         int bonus = (suit == trumpSuit) ? 40 : 20;
 
+        player.setBonus(bonus);
         player.setScore(player.getScore() + bonus);
     }
 }
