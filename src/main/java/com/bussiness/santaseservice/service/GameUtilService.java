@@ -44,9 +44,11 @@ public class GameUtilService {
         return gameRepository.save(game);
     }
 
-    protected Game findGameById(UUID id) {
-        return gameRepository.findByIdAndWinnerIsNull(id)
-                .orElseThrow(() -> new RuntimeException("Game not found or finished"));
+    protected Game findGameByUsername(String username) {
+        return gameRepository.findActiveGamesByUsername(username)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No active game found for this user"));
     }
 
     protected void saveGame(Game game) {
@@ -57,9 +59,9 @@ public class GameUtilService {
         gameStateRepository.save(gameState);
     }
 
-    protected void checkIfUserExists(String username) {
-        if (!userRepository.existsByUsername(username)) {
-            throw new RuntimeException("User not found");
+    protected void checkIfUserExistsAndIsAvailable(String username) {
+        if (!userRepository.existsAndIsAvailable(username)) {
+            throw new RuntimeException("User not found or participate in another game");
         }
     }
 
@@ -68,9 +70,8 @@ public class GameUtilService {
                 .orElseThrow(() -> new RuntimeException("Player not found"));
     }
 
-    protected Game findGameForClosingOrRemoval(UUID gameId, String username) {
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new RuntimeException("Game not found"));
+    protected Game findGameForClosingOrRemoval(String username) {
+        Game game = findGameByUsername(username);
 
         Player player = game.getPlayerByUsername(username);
 
@@ -231,7 +232,6 @@ public class GameUtilService {
 
         dealWinner.setScore(dealWinner.getScore() + bonusPoints);
     }
-
 
     private int calculateStandardBonus(int loserScore, boolean loserBlank) {
         if (loserBlank) {

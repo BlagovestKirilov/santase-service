@@ -9,7 +9,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -17,7 +16,6 @@ import java.util.UUID;
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GameStateResponse {
-    private UUID gameId;
     private List<CardDTO> deck;
     private CardDTO trumpCard;
     private CardDTO playedCard;

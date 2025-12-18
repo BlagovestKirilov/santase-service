@@ -73,7 +73,6 @@ public class GameWebSocketService {
         List<CardDTO> deck = cardMapper.toDTO(player.getHand());
 
         return GameStateResponse.builder()
-                .gameId(game.getId())
                 .deck(deck)
                 .trumpCard(cardMapper.toDTO(state.getTrumpCard()))
                 .playedCard(playedCard)

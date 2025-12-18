@@ -5,10 +5,8 @@ import com.bussiness.santaseservice.model.Card;
 import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.GameState;
 import com.bussiness.santaseservice.model.Player;
-import com.bussiness.santaseservice.model.request.CloseDeckRequest;
-import com.bussiness.santaseservice.model.request.FinishDealRequest;
+import com.bussiness.santaseservice.model.request.GameRequest;
 import com.bussiness.santaseservice.model.request.PlayCardRequest;
-import com.bussiness.santaseservice.model.request.ReplaceCardRequest;
 import com.bussiness.santaseservice.model.response.SearchGameResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +16,6 @@ import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -31,8 +28,8 @@ public class GameService {
     private final Queue<String> matchQueue = new LinkedList<>();
     private final Lock queueLock = new ReentrantLock();
 
-    public void getGameState(UUID gameId, String username) {
-        Game game = gameUtilService.findGameById(gameId);
+    public void getGameState(String username) {
+        Game game = gameUtilService.findGameByUsername(username);
 
         if (!game.getFirstPlayer().getUsername().equals(username) &&
                 !game.getSecondPlayer().getUsername().equals(username)) {
@@ -43,7 +40,7 @@ public class GameService {
     }
 
     public void searchGame(String username) {
-        gameUtilService.checkIfUserExists(username); //TODO: And do not participate in unfinished game
+        gameUtilService.checkIfUserExistsAndIsAvailable(username);
 
         queueLock.lock();
         try {
@@ -74,7 +71,7 @@ public class GameService {
 
     @Transactional
     public void playCard(PlayCardRequest playCardRequest) {
-        Game game = gameUtilService.findGameById(playCardRequest.getGameId());
+        Game game = gameUtilService.findGameByUsername(playCardRequest.getUsername());
 
         Player player = game.getPlayerByUsername(playCardRequest.getUsername());
 
@@ -112,10 +109,9 @@ public class GameService {
     }
 
     @Transactional
-    public void closeDeck(CloseDeckRequest closeDeckRequest) {
-        Game game = gameUtilService.findGameForClosingOrRemoval(closeDeckRequest.getGameId(),
-                closeDeckRequest.getUsername());
-        Player player = game.getPlayerByUsername(closeDeckRequest.getUsername());
+    public void closeDeck(GameRequest gameRequest) {
+        Game game = gameUtilService.findGameForClosingOrRemoval(gameRequest.getUsername());
+        Player player = game.getPlayerByUsername(gameRequest.getUsername());
 
         GameState state = game.getState();
         state.getDeck().clear();
@@ -128,12 +124,11 @@ public class GameService {
     }
 
     @Transactional
-    public void replaceCard(ReplaceCardRequest replaceCardRequest) {
-        Game game = gameUtilService.findGameForClosingOrRemoval(replaceCardRequest.getGameId(),
-                replaceCardRequest.getUsername());
+    public void replaceCard(GameRequest gameRequest) {
+        Game game = gameUtilService.findGameForClosingOrRemoval(gameRequest.getUsername());
         GameState state = game.getState();
 
-        Player player = game.getPlayerByUsername(replaceCardRequest.getUsername());
+        Player player = game.getPlayerByUsername(gameRequest.getUsername());
 
         List<Card> playerCards = player.getHand();
 
@@ -158,12 +153,12 @@ public class GameService {
     }
 
     @Transactional
-    public void finishDeal(FinishDealRequest finishDealRequest) {
-        Game game = gameUtilService.findGameById(finishDealRequest.getGameId());
+    public void finishDeal(GameRequest gameRequest) {
+        Game game = gameUtilService.findGameByUsername(gameRequest.getUsername());
 
         GameState state = game.getState();
 
-        Player player = game.getPlayerByUsername(finishDealRequest.getUsername());
+        Player player = game.getPlayerByUsername(gameRequest.getUsername());
 
         if (!state.getFirstTurnPlayer().equals(player))
             throw new RuntimeException("User is not first in turn in this game");
@@ -192,5 +187,18 @@ public class GameService {
                 trickWinner, game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
 
         gameUtilService.prepareNewState(game, game.getFirstPlayer());
+    }
+
+    @Transactional
+    public void finishGame(GameRequest gameRequest) {
+        Game game = gameUtilService.findGameByUsername(gameRequest.getUsername());
+
+        Player opponentPlayer = game.getOpponentPlayerByUsername(gameRequest.getUsername());
+        game.setWinner(opponentPlayer);
+        gameUtilService.saveGame(game);
+
+        gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
+
+        gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername());
     }
 }

@@ -40,6 +40,16 @@ public class Game extends BaseEntity {
         }
     }
 
+    public Player getOpponentPlayerByUsername(String username) {
+        if (username.equals(firstPlayer.getUsername())) {
+            return secondPlayer;
+        } else if (username.equals(secondPlayer.getUsername())) {
+            return firstPlayer;
+        } else {
+            throw new RuntimeException("Player is not part of the game");
+        }
+    }
+
     public Player getOpponent(Player player) {
         if (player.equals(firstPlayer)) {
             return secondPlayer;
