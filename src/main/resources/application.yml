@@ -14,3 +14,10 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: update
+
+jwt:
+  secret-key: ${JWT_SECRET}
+        # 15 minutes in milliseconds
+  expiration: ${JWT_EXPIRATION}
+        # 7 days in milliseconds
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION}

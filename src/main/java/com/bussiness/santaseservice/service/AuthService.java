@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.bussiness.santaseservice.enums.Role.ROLE_USER;
+
 @Transactional
 @RequiredArgsConstructor
 @Service
@@ -23,6 +25,7 @@ public class AuthService {
     private final PlayerRepository playerRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final JwtService jwtService;
 
     public AuthResponse login(LoginRequest loginRequest) {
 
@@ -39,6 +42,8 @@ public class AuthService {
         return AuthResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())
                 .message("Successful login")
+                .token(jwtService.generateToken(user))
+                .refreshToken(jwtService.generateRefreshToken(user))
                 .build();
     }
 
@@ -49,6 +54,7 @@ public class AuthService {
 
         User user = userMapper.toEntity(registerRequest);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole(ROLE_USER);
         userRepository.save(user);
 
         Player player = Player.builder().user(user).build();
