@@ -11,12 +11,14 @@ import com.bussiness.santaseservice.repository.GameStateRepository;
 import com.bussiness.santaseservice.repository.PlayerRepository;
 import com.bussiness.santaseservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -57,6 +59,10 @@ public class GameUtilService {
 
     protected void saveGameState(GameState gameState) {
         gameStateRepository.save(gameState);
+    }
+
+    protected String getUsername() {
+        return Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
     }
 
     protected void checkIfUserExistsAndIsAvailable(String username) {

@@ -13,5 +13,4 @@ import java.util.UUID;
 @NoArgsConstructor
 public class PlayCardRequest {
     private UUID cardId;
-    private String username;
 }

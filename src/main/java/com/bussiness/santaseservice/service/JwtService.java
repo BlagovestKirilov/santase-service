@@ -24,12 +24,14 @@ public class JwtService {
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", user.getRole().name());
+        claims.put("username", user.getUsername());
         return buildToken(claims, user, jwtProperties.getExpiration());
     }
 
     public String generateRefreshToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", user.getRole().name());
+        claims.put("username", user.getUsername());
         return buildToken(claims, user, jwtProperties.getRefreshExpiration());
     }
 
