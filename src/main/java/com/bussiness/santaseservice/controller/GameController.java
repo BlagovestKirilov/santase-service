@@ -1,6 +1,6 @@
 package com.bussiness.santaseservice.controller;
 
-import com.bussiness.santaseservice.model.request.PlayCardRequest;
+import com.bussiness.santaseservice.model.request.CardRequest;
 import com.bussiness.santaseservice.service.GameService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -32,9 +32,16 @@ public class GameController {
     }
 
     @PostMapping("/play-card")
-    public ResponseEntity<Void> playCard(@RequestBody PlayCardRequest playCardRequest) {
-        log.info("Trying to play card: {}", playCardRequest);
-        gameService.playCard(playCardRequest);
+    public ResponseEntity<Void> playCard(@RequestBody CardRequest cardRequest) {
+        log.info("Trying to play card: {}", cardRequest);
+        gameService.playCard(cardRequest);
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/announce")
+    public ResponseEntity<Void> announceCombination(@RequestBody CardRequest cardRequest) {
+        log.info("Trying to announce combination: {}", cardRequest);
+        gameService.announceCombination(cardRequest);
         return ResponseEntity.accepted().build();
     }
 

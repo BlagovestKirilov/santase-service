@@ -293,9 +293,14 @@ public class GameUtilService {
 
     protected List<Card> getNewDeck() {
         List<Card> deck = new ArrayList<>();
-        for (Suit s : Suit.values()) {
-            for (Rank r : Rank.values()) {
-                deck.add(Card.builder().id(UUID.randomUUID()).suit(s).rank(r).build());
+        for (Suit suit : Suit.values()) {
+            for (Rank rank : Rank.values()) {
+                deck.add(Card.builder()
+                        .id(UUID.randomUUID())
+                        .suit(suit)
+                        .rank(rank)
+                        .isPlayable(true)
+                        .build());
             }
         }
         Collections.shuffle(deck);
@@ -338,24 +343,29 @@ public class GameUtilService {
         }
 
         Suit suit = playedCard.getSuit();
-        Suit trumpSuit = game.getState().getTrumpCard().getSuit();
-
         List<Card> hand = player.getHand();
 
-        boolean hasMatchingPair = hand.stream().anyMatch(c ->
-                c.getSuit() == suit &&
-                        (
-                                (playedCard.getRank().name().equals("KING") && c.getRank().name().equals("QUEEN")) ||
-                                        (playedCard.getRank().name().equals("QUEEN") && c.getRank().name().equals("KING"))
-                        )
-        );
+        Card matchingPartner = hand.stream()
+                .filter(c -> c.getSuit() == suit &&
+                        ((playedCard.getRank().name().equals("KING") && c.getRank().name().equals("QUEEN")) ||
+                                (playedCard.getRank().name().equals("QUEEN") && c.getRank().name().equals("KING"))))
+                .findFirst()
+                .orElse(null);
 
-        if (!hasMatchingPair) return;
+        if (matchingPartner == null) return;
+
+        Suit trumpSuit = game.getState().getTrumpCard().getSuit();
 
         // Bonus: 40 if trump, otherwise 20
         int bonus = (suit == trumpSuit) ? 40 : 20;
 
         player.setBonus(bonus);
         player.setScore(player.getScore() + bonus);
+
+        hand.forEach(card -> {
+            if (!card.equals(playedCard) && !card.equals(matchingPartner)) {
+                card.setIsPlayable(false);
+            }
+        });
     }
 }

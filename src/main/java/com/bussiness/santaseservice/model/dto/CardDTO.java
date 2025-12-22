@@ -1,5 +1,6 @@
 package com.bussiness.santaseservice.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,4 +13,6 @@ public class CardDTO {
     private String suit;
     private String rank;
     private int points;
+    @JsonProperty("isPlayable")
+    private boolean isPlayable;
 }

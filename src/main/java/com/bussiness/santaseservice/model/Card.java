@@ -10,11 +10,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Objects;
 import java.util.UUID;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -28,6 +30,8 @@ public class Card {
 
     @Enumerated(EnumType.STRING)
     private Rank rank;
+
+    private Boolean isPlayable;
 
     public int getPoints() {
         return rank.getPoints();

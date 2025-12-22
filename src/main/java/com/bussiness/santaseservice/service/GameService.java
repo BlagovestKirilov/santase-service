@@ -5,7 +5,7 @@ import com.bussiness.santaseservice.model.Card;
 import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.GameState;
 import com.bussiness.santaseservice.model.Player;
-import com.bussiness.santaseservice.model.request.PlayCardRequest;
+import com.bussiness.santaseservice.model.request.CardRequest;
 import com.bussiness.santaseservice.model.response.SearchGameResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -79,7 +79,7 @@ public class GameService {
     }
 
     @Transactional
-    public void playCard(PlayCardRequest playCardRequest) {
+    public void playCard(CardRequest cardRequest) {
         String username = gameUtilService.getUsername();
 
         Game game = gameUtilService.findGameByUsername(username);
@@ -93,12 +93,13 @@ public class GameService {
         }
 
         Card cardForRemoval = player.getHand().stream()
-                .filter(c -> c.getId().equals(playCardRequest.getCardId()))
+                .filter(c -> c.getId().equals(cardRequest.getCardId()))
+                .filter(Card::getIsPlayable)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Card not found in player's hand"));
         gameUtilService.removeCardFromHand(game, player, cardForRemoval);
         player.setPlayedCard(cardForRemoval);
-        gameUtilService.checkTwentyForty(game, player, cardForRemoval);
+        player.getHand().forEach(card -> card.setIsPlayable(true));
 
         if (game.getFirstPlayer().getPlayedCard() != null && game.getSecondPlayer().getPlayedCard() != null) {
             gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
@@ -117,6 +118,38 @@ public class GameService {
 
         gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
         gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername());
+    }
+
+    @Transactional
+    public void announceCombination(CardRequest cardRequest) {
+        String username = gameUtilService.getUsername();
+
+        Game game = gameUtilService.findGameByUsername(username);
+
+        Player player = game.getPlayerByUsername(username);
+
+        GameState state = game.getState();
+
+        if (!state.getInTurnPlayer().equals(player)) {
+            throw new RuntimeException("Not your turn");
+        }
+
+        if (!state.getFirstTurnPlayer().equals(player)) {
+            throw new RuntimeException("User is not first in turn in this trick");
+        }
+
+        Card card = player.getHand().stream()
+                .filter(c -> c.getId().equals(cardRequest.getCardId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Card not found in player's hand"));
+
+        gameUtilService.checkTwentyForty(game, player, card);
+
+        gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
+        gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername());
+
+        player.setBonus(null);
+        gameUtilService.saveGame(game);
     }
 
     @Transactional
@@ -220,6 +253,9 @@ public class GameService {
         Game game = gameUtilService.findGameByUsername(username);
 
         Player opponentPlayer = game.getOpponentPlayerByUsername(username);
+        game.getFirstPlayer().setPlayedCard(null);
+        game.getSecondPlayer().setPlayedCard(null);
+
         game.setWinner(opponentPlayer);
         gameUtilService.saveGame(game);
 

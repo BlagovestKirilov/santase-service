@@ -20,6 +20,7 @@ public class GameStateResponse {
     private CardDTO trumpCard;
     private CardDTO playedCard;
     private CardDTO opponentPlayedCard;
+    private int opponentPlayerCardsCount;
     private int remainingCardsCount;
     private String firstPlayerUsername;
     private int firstPlayerResult;

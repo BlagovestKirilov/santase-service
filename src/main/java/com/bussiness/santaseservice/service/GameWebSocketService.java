@@ -45,17 +45,11 @@ public class GameWebSocketService {
     public void notifyGameUpdate(String gameId, String username, GameStateResponse gameState) {
         String destination = "/topic/game/" + gameId + "/" + username;
 
-        System.out.println("Pushing update to destination: " + destination);
-        System.out.println("Payload: " + gameState.toString());
-
         messagingTemplate.convertAndSend(destination, gameState);
     }
 
     public void notifyGameSearch(String username, SearchGameResponse searchGameResponse) {
         String destination = "/topic/game/" + username;
-
-        System.out.println("Pushing update to destination: " + destination);
-        System.out.println("Payload: " + searchGameResponse.toString());
 
         messagingTemplate.convertAndSend(destination, searchGameResponse);
     }
@@ -77,6 +71,7 @@ public class GameWebSocketService {
                 .trumpCard(cardMapper.toDTO(state.getTrumpCard()))
                 .playedCard(playedCard)
                 .opponentPlayedCard(opponentPlayedCard)
+                .opponentPlayerCardsCount(opponentPlayer.getHand().size())
                 .firstPlayerUsername(game.getFirstPlayer().getUsername())
                 .firstPlayerResult(game.getFirstPlayer().getResult())
                 .secondPlayerUsername(game.getSecondPlayer().getUsername())

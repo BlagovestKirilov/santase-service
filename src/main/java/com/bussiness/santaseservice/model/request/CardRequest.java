@@ -1,5 +1,6 @@
 package com.bussiness.santaseservice.model.request;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +12,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-public class PlayCardRequest {
+public class CardRequest {
+    @NotNull(message = "cardId must not be null")
     private UUID cardId;
 }

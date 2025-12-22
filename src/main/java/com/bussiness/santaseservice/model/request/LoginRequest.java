@@ -15,7 +15,7 @@ import lombok.ToString;
 public class LoginRequest {
     @NotBlank(message = "Username cannot be empty")
     @Size(min = 5, max = 20, message = "Username must be between 5 and 20 characters")
-    @Pattern(regexp = "^[A-Za-z0-9!@#$%^&*()_+=\\-.,?]+$", message = "Username can contain only letters, digits, and special symbols")
+    @Pattern(regexp = "^[A-Za-z0-9]+$", message = "Username can contain only letters and digits")
     private String username;
 
     @NotBlank(message = "Password cannot be empty")
