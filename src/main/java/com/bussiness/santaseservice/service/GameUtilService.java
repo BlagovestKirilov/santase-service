@@ -236,7 +236,7 @@ public class GameUtilService {
             bonusPoints = calculateStandardBonus(loser.getScore(), loser.getIsBlanked());
         }
 
-        dealWinner.setScore(dealWinner.getScore() + bonusPoints);
+        dealWinner.setResult(dealWinner.getResult() + bonusPoints);
     }
 
     private int calculateStandardBonus(int loserScore, boolean loserBlank) {

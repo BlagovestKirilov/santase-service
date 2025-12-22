@@ -189,24 +189,28 @@ public class GameService {
         Player opponentPlayer = game.getOpponent(player);
 
         int pointsAwarded;
-        String trickWinner;
+        Player trickWinner;
 
         if (player.getScore() >= 66) {
             pointsAwarded = opponentPlayer.getIsBlanked() ? 3 : (opponentPlayer.getScore() < 33 ? 2 : 1);
             player.setResult(player.getResult() + pointsAwarded);
-            trickWinner = player.getUsername();
+            trickWinner = player;
         } else {
             opponentPlayer.setResult(opponentPlayer.getResult() + 3);
-            trickWinner = opponentPlayer.getUsername();
+            trickWinner = opponentPlayer;
         }
 
         gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername(),
-                trickWinner, game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
+                trickWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
 
         gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername(),
-                trickWinner, game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
+                trickWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
 
-        gameUtilService.prepareNewState(game, game.getFirstPlayer());
+        gameUtilService.prepareNewState(game, trickWinner);
+        gameUtilService.saveGame(game);
+
+        gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername());
+        gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername());
     }
 
     @Transactional
