@@ -33,10 +33,7 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Username or password is incorrect"));
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return AuthResponse.builder()
-                    .status(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                    .message("Username or password is incorrect")
-                    .build();
+            throw new RuntimeException("Username or password is incorrect");
         }
 
         return AuthResponse.builder()
