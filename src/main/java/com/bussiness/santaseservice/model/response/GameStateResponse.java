@@ -35,4 +35,5 @@ public class GameStateResponse {
     private int trickFirstPlayerScore;
     private int trickSecondPlayerScore;
     private Integer bonus;
+    private Integer opponentPlayerBonus;
 }

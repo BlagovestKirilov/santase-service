@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -255,6 +256,8 @@ public class GameService {
         Player opponentPlayer = game.getOpponentPlayerByUsername(username);
         game.getFirstPlayer().setPlayedCard(null);
         game.getSecondPlayer().setPlayedCard(null);
+        game.getFirstPlayer().setHand(new ArrayList<>());
+        game.getSecondPlayer().setHand(new ArrayList<>());
 
         game.setWinner(opponentPlayer);
         gameUtilService.saveGame(game);

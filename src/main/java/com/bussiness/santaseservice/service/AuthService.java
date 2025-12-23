@@ -65,4 +65,21 @@ public class AuthService {
                 .message("Successful registration")
                 .build();
     }
+
+    public AuthResponse refreshToken(String refreshToken) {
+        String username = jwtService.extractUsername(refreshToken);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Username or password is incorrect"));
+
+        if (username != null && jwtService.isTokenValid(refreshToken)) {
+            return AuthResponse.builder()
+                    .status(HttpStatus.OK.getReasonPhrase())
+                    .message("Successful token refresh")
+                    .token(jwtService.generateToken(user))
+                    .refreshToken(jwtService.generateRefreshToken(user))
+                    .build();
+        }
+        throw new RuntimeException("Invalid Refresh Token");
+    }
 }

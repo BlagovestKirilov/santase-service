@@ -1,6 +1,7 @@
 package com.bussiness.santaseservice.controller;
 
 import com.bussiness.santaseservice.model.request.LoginRequest;
+import com.bussiness.santaseservice.model.request.RefreshRequest;
 import com.bussiness.santaseservice.model.request.RegisterRequest;
 import com.bussiness.santaseservice.model.response.AuthResponse;
 import com.bussiness.santaseservice.service.AuthService;
@@ -31,5 +32,10 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
         log.info("Trying to register account with username {}", registerRequest.getUsername());
         return ResponseEntity.ok(authService.register(registerRequest));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
     }
 }

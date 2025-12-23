@@ -81,6 +81,7 @@ public class GameWebSocketService {
                 .isClosed(state.isClosed())
                 .winnerUsername(game.getWinner() != null ? game.getWinner().getUsername() : null)
                 .bonus(player.getBonus())
+                .opponentPlayerBonus(opponentPlayer.getBonus())
                 .build();
     }
 }
