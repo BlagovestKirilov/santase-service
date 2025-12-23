@@ -6,6 +6,7 @@ import com.bussiness.santaseservice.model.Card;
 import com.bussiness.santaseservice.model.Game;
 import com.bussiness.santaseservice.model.GameState;
 import com.bussiness.santaseservice.model.Player;
+import com.bussiness.santaseservice.model.response.SearchGameResponse;
 import com.bussiness.santaseservice.repository.GameRepository;
 import com.bussiness.santaseservice.repository.GameStateRepository;
 import com.bussiness.santaseservice.repository.PlayerRepository;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -65,9 +67,18 @@ public class GameUtilService {
         return Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
     }
 
-    protected void checkIfUserExistsAndIsAvailable(String username) {
-        if (!userRepository.existsAndIsAvailable(username)) {
-            throw new RuntimeException("User not found or participate in another game");
+    protected boolean checkIfUserExistsAndIsAvailable(String username) {
+        if (userRepository.existsByUsername(username)) {
+            Optional<UUID> gameId = userRepository.findActiveGameIdByUsername(username);
+
+            if (gameId.isPresent()) {
+                gameWebSocketService.notifyGameSearch(username, SearchGameResponse.started(gameId.get()));
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            throw new RuntimeException("User not found");
         }
     }
 
@@ -255,7 +266,7 @@ public class GameUtilService {
 
         int difference = Math.abs(firstPlayerResult - secondPlayerResult);
 
-        if ((firstPlayerResult >= 11 || secondPlayerResult >= 11) && difference >= 2) {
+        if ((firstPlayerResult >= 3 || secondPlayerResult >= 3) && difference >= 2) {
             if (firstPlayerResult > secondPlayerResult) {
                 game.setWinner(game.getFirstPlayer());
             } else {

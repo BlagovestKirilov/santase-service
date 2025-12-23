@@ -50,12 +50,15 @@ public class GameService {
         String username = gameUtilService.getUsername();
         log.info("Trying to start game, account with username {}", username);
 
-        gameUtilService.checkIfUserExistsAndIsAvailable(username);
+        if (!gameUtilService.checkIfUserExistsAndIsAvailable(username)) {
+            return;
+        }
 
         queueLock.lock();
         try {
             if (matchQueue.contains(username)) {
                 gameWebSocketService.notifyGameSearch(username, SearchGameResponse.waiting());
+                return;
             }
 
             String waitingPlayerUsername = matchQueue.poll();

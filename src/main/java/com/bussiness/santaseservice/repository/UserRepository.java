@@ -13,14 +13,13 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(String username);
 
+    boolean existsByUsername(String username);
+
     @Query("""
-                SELECT COUNT(u) > 0 FROM User u
-                WHERE u.username = :username
-                AND NOT EXISTS (
-                    SELECT g FROM Game g
-                    WHERE (g.firstPlayer.user = u OR g.secondPlayer.user = u)
-                    AND g.winner IS NULL
-                )
+                SELECT game.id FROM Game game
+                WHERE (game.firstPlayer.user.username = :username
+                   OR game.secondPlayer.user.username = :username)
+                AND game.winner IS NULL
             """)
-    boolean existsAndIsAvailable(@Param("username") String username);
+    Optional<UUID> findActiveGameIdByUsername(@Param("username") String username);
 }
