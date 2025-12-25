@@ -43,7 +43,7 @@ public class GameUtilService {
     private final GameWebSocketService gameWebSocketService;
 
     @Transactional
-    protected Game startGame(Player firstPlayer, Player secondPlayer) {
+    public Game startGame(Player firstPlayer, Player secondPlayer) {
         GameState gameState = GameState.builder().build();
         firstPlayer.setResult(0);
         secondPlayer.setResult(0);
@@ -58,26 +58,26 @@ public class GameUtilService {
         return gameRepository.save(game);
     }
 
-    protected Game findGameByUsername(String username) {
+    public Game findGameByUsername(String username) {
         return gameRepository.findActiveGamesByUsername(username)
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new NoActiveGameFoundException(username));
     }
 
-    protected void saveGame(Game game) {
+    public void saveGame(Game game) {
         gameRepository.save(game);
     }
 
-    protected void saveGameState(GameState gameState) {
+    public void saveGameState(GameState gameState) {
         gameStateRepository.save(gameState);
     }
 
-    protected String getUsername() {
+    public String getUsername() {
         return Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
     }
 
-    protected boolean checkIfUserExistsAndIsAvailable(String username) {
+    public boolean checkIfUserExistsAndIsAvailable(String username) {
         if (userRepository.existsByUsername(username)) {
             Optional<UUID> gameId = userRepository.findActiveGameIdByUsername(username);
 
@@ -92,12 +92,12 @@ public class GameUtilService {
         }
     }
 
-    protected Player findPlayerByUsername(String username) {
+    public Player findPlayerByUsername(String username) {
         return playerRepository.findByUserUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException(username));
     }
 
-    protected Game findGameForClosingOrRemoval(String username) {
+    public Game findGameForClosingOrRemoval(String username) {
         Game game = findGameByUsername(username);
 
         Player player = game.getPlayerByUsername(username);
@@ -119,7 +119,7 @@ public class GameUtilService {
         return game;
     }
 
-    protected void removeCardFromHand(Game game, Player player, Card cardForRemoval) {
+    public void removeCardFromHand(Game game, Player player, Card cardForRemoval) {
         List<Card> playerCards = player.getHand();
 
         if (!playerCards.contains(cardForRemoval)) {
@@ -186,7 +186,7 @@ public class GameUtilService {
         playerCards.remove(cardForRemoval);
     }
 
-    protected void evaluateTrick(Game game) {
+    public void evaluateTrick(Game game) {
         GameState state = game.getState();
         Player firstPlayer = game.getFirstPlayer();
         Player secondPlayer = game.getSecondPlayer();
@@ -232,7 +232,7 @@ public class GameUtilService {
         game.getOpponent(trickWinner).getHand().add(game.getState().getDeck().removeFirst());
     }
 
-    protected void applyEndOfGameScore(Game game, Player trickWinner) {
+    public void applyEndOfGameScore(Game game, Player trickWinner) {
         GameState state = game.getState();
 
         Player dealWinner;
@@ -272,7 +272,7 @@ public class GameUtilService {
         }
     }
 
-    protected void prepareNewState(Game game, Player trickWinner) {
+    public void prepareNewState(Game game, Player trickWinner) {
         int firstPlayerResult = game.getFirstPlayer().getResult();
         int secondPlayerResult = game.getSecondPlayer().getResult();
 
@@ -355,7 +355,7 @@ public class GameUtilService {
         return game.getState().getFirstTurnPlayer();
     }
 
-    protected boolean checkTwentyForty(Game game, Player player, Card playedCard) {
+    public boolean checkTwentyForty(Game game, Player player, Card playedCard) {
         if (game.getState().getDeck().size() == 12) {
             return false;
         }
