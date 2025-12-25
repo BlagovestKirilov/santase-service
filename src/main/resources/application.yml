@@ -1,4 +1,7 @@
 spring:
+  profiles:
+    active: dev
+
   application:
     name: SantaseService
 
@@ -6,18 +9,80 @@ spring:
     url: jdbc:postgresql://localhost:5432/santase
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
-    properties:
-      hibernate:
-        dialect: ${DB_DIALECT}
     show-sql: true
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        dialect: ${DB_DIALECT}
+        format_sql: true
+        jdbc:
+          time_zone: UTC
 
 jwt:
   secret-key: ${JWT_SECRET}
-        # 15 minutes in milliseconds
   expiration: ${JWT_EXPIRATION}
-        # 7 days in milliseconds
   refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+
+# ============================================================
+# DEV PROFILE
+# ============================================================
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    hikari:
+      pool-name: SantaseHikariDev
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 600000
+      connection-timeout: 30000
+      max-lifetime: 1800000
+      auto-commit: true
+      validation-timeout: 5000
+      leak-detection-threshold: 30000
+
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+
+# ============================================================
+# PROD PROFILE
+# ============================================================
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    hikari:
+      pool-name: SantaseHikariProd
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1700000
+      auto-commit: false
+      validation-timeout: 3000
+      leak-detection-threshold: 20000
+      keepalive-time: 300000
+
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
