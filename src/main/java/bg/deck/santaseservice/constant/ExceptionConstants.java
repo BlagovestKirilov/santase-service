@@ -1,5 +1,8 @@
 package bg.deck.santaseservice.constant;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class ExceptionConstants {
     public static final String USERNAME_NOT_EXIST = "Username '%s' does not exist.";
     public static final String INVALID_TOKEN = "Invalid token.";

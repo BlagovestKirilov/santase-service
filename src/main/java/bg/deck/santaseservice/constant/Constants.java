@@ -1,5 +1,8 @@
 package bg.deck.santaseservice.constant;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class Constants {
     public static final String SUCCESSFUL_LOGIN = "Successfully logged in";
     public static final String SUCCESSFUL_REGISTER = "Successfully registered";

@@ -1,5 +1,8 @@
 package bg.deck.santaseservice.constant;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class ValidationConstants {
     public static final int USERNAME_MIN = 5;
     public static final int USERNAME_MAX = 20;

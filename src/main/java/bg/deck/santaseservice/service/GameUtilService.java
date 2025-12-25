@@ -200,7 +200,9 @@ public class GameUtilService {
         state.setInTurnPlayer(trickWinner);
         state.setFirstTurnPlayer(trickWinner);
 
-        if (trickWinner.getIsBlanked()) {
+        boolean isTrickWinnerBlanked = trickWinner.getIsBlanked();
+
+        if (isTrickWinnerBlanked) {
             trickWinner.setIsBlanked(false);
         }
 

@@ -240,7 +240,14 @@ public class GameService {
         Player trickWinner;
 
         if (player.getScore() >= 66) {
-            pointsAwarded = opponentPlayer.getIsBlanked() ? 3 : (opponentPlayer.getScore() < 33 ? 2 : 1);
+            boolean isBlanked = opponentPlayer.getIsBlanked();
+            if (isBlanked) {
+                pointsAwarded = 3;
+            } else if (opponentPlayer.getScore() < 33) {
+                pointsAwarded = 2;
+            } else {
+                pointsAwarded = 1;
+            }
             player.setResult(player.getResult() + pointsAwarded);
             trickWinner = player;
         } else {

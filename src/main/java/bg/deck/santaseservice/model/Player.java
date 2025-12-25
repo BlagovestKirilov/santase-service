@@ -1,7 +1,6 @@
 package bg.deck.santaseservice.model;
 
 import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -43,11 +42,9 @@ public class Player extends BaseEntity {
     private List<Card> hand;
 
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "id", column = @Column(name = "played_card_id")),
-            @AttributeOverride(name = "suit", column = @Column(name = "played_card_suit")),
-            @AttributeOverride(name = "rank", column = @Column(name = "played_card_rank"))
-    })
+    @AttributeOverride(name = "id", column = @Column(name = "played_card_id"))
+    @AttributeOverride(name = "suit", column = @Column(name = "played_card_suit"))
+    @AttributeOverride(name = "rank", column = @Column(name = "played_card_rank"))
     private Card playedCard;
 
     private Boolean isBlanked;

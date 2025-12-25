@@ -1,5 +1,8 @@
 package bg.deck.santaseservice.constant;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class LogConstants {
     public static final String SUCCESSFUL_LOGIN_LOG = "Successfully logged in user: {}";
     public static final String TRY_LOGIN_LOG = "Trying to login account with username {}";

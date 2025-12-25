@@ -1,7 +1,6 @@
 package bg.deck.santaseservice.model;
 
 import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -31,11 +30,9 @@ public class GameState extends BaseEntity {
     private List<Card> deck;
 
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "id", column = @Column(name = "trump_card_id")),
-            @AttributeOverride(name = "suit", column = @Column(name = "trump_card_suit")),
-            @AttributeOverride(name = "rank", column = @Column(name = "trump_card_rank"))
-    })
+    @AttributeOverride(name = "id", column = @Column(name = "trump_card_id"))
+    @AttributeOverride(name = "suit", column = @Column(name = "trump_card_suit"))
+    @AttributeOverride(name = "rank", column = @Column(name = "trump_card_rank"))
     private Card trumpCard;
 
     @ManyToOne

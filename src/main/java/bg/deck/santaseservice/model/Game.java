@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.model;
 
+import bg.deck.santaseservice.exception.UserNotPartOfGameException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
@@ -36,7 +37,7 @@ public class Game extends BaseEntity {
         } else if (username.equals(secondPlayer.getUsername())) {
             return secondPlayer;
         } else {
-            throw new RuntimeException("Player is not part of the game");
+            throw new UserNotPartOfGameException(username);
         }
     }
 
@@ -46,7 +47,7 @@ public class Game extends BaseEntity {
         } else if (username.equals(secondPlayer.getUsername())) {
             return firstPlayer;
         } else {
-            throw new RuntimeException("Player is not part of the game");
+            throw new UserNotPartOfGameException(username);
         }
     }
 
@@ -56,7 +57,7 @@ public class Game extends BaseEntity {
         } else if (player.equals(secondPlayer)) {
             return firstPlayer;
         } else {
-            throw new RuntimeException("Player is not part of the game");
+            throw new UserNotPartOfGameException(player.getUsername());
         }
     }
 }
