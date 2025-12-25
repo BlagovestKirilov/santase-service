@@ -12,13 +12,11 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
-    show-sql: true
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         dialect: ${DB_DIALECT}
-        format_sql: true
         jdbc:
           time_zone: UTC
 
@@ -48,12 +46,9 @@ spring:
       validation-timeout: 5000
       leak-detection-threshold: 30000
 
-  jpa:
-    show-sql: true
-
 logging:
   level:
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 
@@ -78,9 +73,6 @@ spring:
       validation-timeout: 3000
       leak-detection-threshold: 20000
       keepalive-time: 300000
-
-  jpa:
-    show-sql: false
 
 logging:
   level:
