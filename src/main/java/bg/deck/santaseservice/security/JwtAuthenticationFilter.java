@@ -18,6 +18,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+import static bg.deck.santaseservice.constant.Constants.BEARER;
+import static bg.deck.santaseservice.constant.Constants.TOKEN_PARAM;
+import static bg.deck.santaseservice.constant.Constants.WEB_SOCKET_ENDPOINT;
+import static bg.deck.santaseservice.constant.ExceptionConstants.INVALID_TOKEN;
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -28,9 +33,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (request.getRequestURI().startsWith(WEB_SOCKET_ENDPOINT)) {
+            authHeader = BEARER.concat(request.getParameter(TOKEN_PARAM));
+        }
+
+        if (authHeader == null || !authHeader.startsWith(BEARER)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -53,9 +62,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             filterChain.doFilter(request, response);
         } catch (Exception e) {
-            // If token is expired or malformed, we stop here and return 401
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token expired or invalid");
+            response.getWriter().write(INVALID_TOKEN);
         }
     }
 }

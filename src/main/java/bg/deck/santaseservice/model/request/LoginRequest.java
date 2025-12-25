@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.model.request;
 
+import bg.deck.santaseservice.constant.ValidationConstants;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -13,13 +14,13 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 public class LoginRequest {
-    @NotBlank(message = "Username cannot be empty")
-    @Size(min = 5, max = 20, message = "Username must be between 5 and 20 characters")
-    @Pattern(regexp = "^[A-Za-z0-9]+$", message = "Username can contain only letters and digits")
+    @NotBlank(message = ValidationConstants.USERNAME_EMPTY)
+    @Size(min = ValidationConstants.USERNAME_MIN, max = ValidationConstants.USERNAME_MAX, message = ValidationConstants.USERNAME_SIZE)
+    @Pattern(regexp = ValidationConstants.ALPHANUMERIC_PATTERN, message = ValidationConstants.USERNAME_PATTERN)
     private String username;
 
-    @NotBlank(message = "Password cannot be empty")
-    @Size(min = 5, max = 50, message = "Password must be between 5 and 20 characters")
-    @Pattern(regexp = "^[A-Za-z0-9!@#$%^&*()_+=\\-.,?]+$", message = "Password can contain only letters, digits, and special symbols")
+    @NotBlank(message = ValidationConstants.PASSWORD_EMPTY)
+    @Size(min = ValidationConstants.PASSWORD_MIN, max = ValidationConstants.PASSWORD_MAX, message = ValidationConstants.PASSWORD_SIZE)
+    @Pattern(regexp = ValidationConstants.PASSWORD_PATTERN, message = ValidationConstants.PASSWORD_PATTERN_MSG)
     private String password;
 }

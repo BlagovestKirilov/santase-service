@@ -2,6 +2,13 @@ package bg.deck.santaseservice.service;
 
 import bg.deck.santaseservice.enums.Rank;
 import bg.deck.santaseservice.enums.Suit;
+import bg.deck.santaseservice.exception.CardNotFoundException;
+import bg.deck.santaseservice.exception.CardNotPlayableException;
+import bg.deck.santaseservice.exception.DeckSizeException;
+import bg.deck.santaseservice.exception.InvalidCredentialsException;
+import bg.deck.santaseservice.exception.NoActiveGameFoundException;
+import bg.deck.santaseservice.exception.NotFirstInTurnException;
+import bg.deck.santaseservice.exception.NotInTurnException;
 import bg.deck.santaseservice.model.Card;
 import bg.deck.santaseservice.model.Game;
 import bg.deck.santaseservice.model.GameState;
@@ -22,6 +29,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+
+import static bg.deck.santaseservice.constant.Constants.KING;
+import static bg.deck.santaseservice.constant.Constants.QUEEN;
 
 @RequiredArgsConstructor
 @Service
@@ -52,7 +62,7 @@ public class GameUtilService {
         return gameRepository.findActiveGamesByUsername(username)
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("No active game found for this user"));
+                .orElseThrow(() -> new NoActiveGameFoundException(username));
     }
 
     protected void saveGame(Game game) {
@@ -78,13 +88,13 @@ public class GameUtilService {
                 return true;
             }
         } else {
-            throw new RuntimeException("User not found");
+            throw new InvalidCredentialsException(username);
         }
     }
 
     protected Player findPlayerByUsername(String username) {
         return playerRepository.findByUserUsername(username)
-                .orElseThrow(() -> new RuntimeException("Player not found"));
+                .orElseThrow(() -> new InvalidCredentialsException(username));
     }
 
     protected Game findGameForClosingOrRemoval(String username) {
@@ -95,15 +105,15 @@ public class GameUtilService {
         GameState state = game.getState();
 
         if (!state.getFirstTurnPlayer().equals(player)) {
-            throw new RuntimeException("User is not first in turn in this game");
+            throw new NotFirstInTurnException(username);
         }
 
         if (!state.getInTurnPlayer().equals(player)) {
-            throw new RuntimeException("Not your turn");
+            throw new NotInTurnException(username);
         }
 
         if (state.getDeck().size() <= 2 || state.getDeck().size() == 12) {
-            throw new IllegalStateException("Deck size must be greater than 2 and less than 12");
+            throw new DeckSizeException(2, 12);
         }
 
         return game;
@@ -113,7 +123,7 @@ public class GameUtilService {
         List<Card> playerCards = player.getHand();
 
         if (!playerCards.contains(cardForRemoval)) {
-            throw new RuntimeException("Card not in player's hand");
+            throw new CardNotFoundException(player.getUsername());
         }
 
         // If deck still has cards → always allowed
@@ -148,7 +158,7 @@ public class GameUtilService {
             }
 
             if (!playableCards.contains(cardForRemoval)) {
-                throw new RuntimeException("Card cannot be played");
+                throw new CardNotPlayableException();
             }
 
             playerCards.remove(cardForRemoval);
@@ -170,7 +180,7 @@ public class GameUtilService {
                 .anyMatch(c -> c.getSuit() == trumpSuit);
 
         if (hasTrump && cardForRemoval.getSuit() != trumpSuit) {
-            throw new RuntimeException("Card cannot be played");
+            throw new CardNotPlayableException();
         }
 
         playerCards.remove(cardForRemoval);
@@ -343,14 +353,14 @@ public class GameUtilService {
         return game.getState().getFirstTurnPlayer();
     }
 
-    protected void checkTwentyForty(Game game, Player player, Card playedCard) {
+    protected boolean checkTwentyForty(Game game, Player player, Card playedCard) {
         if (game.getState().getDeck().size() == 12) {
-            return;
+            return false;
         }
 
         // Must play King OR Queen
-        if (!(playedCard.getRank().name().equals("KING") || playedCard.getRank().name().equals("QUEEN"))) {
-            return;
+        if (!(playedCard.getRank().name().equals(KING) || playedCard.getRank().name().equals(QUEEN))) {
+            return false;
         }
 
         Suit suit = playedCard.getSuit();
@@ -358,16 +368,15 @@ public class GameUtilService {
 
         Card matchingPartner = hand.stream()
                 .filter(c -> c.getSuit() == suit &&
-                        ((playedCard.getRank().name().equals("KING") && c.getRank().name().equals("QUEEN")) ||
-                                (playedCard.getRank().name().equals("QUEEN") && c.getRank().name().equals("KING"))))
+                        ((playedCard.getRank().name().equals(KING) && c.getRank().name().equals(QUEEN)) ||
+                                (playedCard.getRank().name().equals(QUEEN) && c.getRank().name().equals(KING))))
                 .findFirst()
                 .orElse(null);
 
-        if (matchingPartner == null) return;
+        if (matchingPartner == null) return false;
 
         Suit trumpSuit = game.getState().getTrumpCard().getSuit();
 
-        // Bonus: 40 if trump, otherwise 20
         int bonus = (suit == trumpSuit) ? 40 : 20;
 
         player.setBonus(bonus);
@@ -378,5 +387,7 @@ public class GameUtilService {
                 card.setIsPlayable(false);
             }
         });
+
+        return true;
     }
 }

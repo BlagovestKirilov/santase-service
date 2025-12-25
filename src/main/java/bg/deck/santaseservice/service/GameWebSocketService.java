@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static bg.deck.santaseservice.constant.Constants.NOTIFY_GAME_DESTINATION;
+import static bg.deck.santaseservice.constant.Constants.NOTIFY_GAME_SEARCH_DESTINATION;
+
 @RequiredArgsConstructor
 @Service
 public class GameWebSocketService {
@@ -36,22 +39,54 @@ public class GameWebSocketService {
         notifyGameUpdate(game.getId().toString(), username, response);
     }
 
+    public void updateGameState(Game game) {
+        List<String> players = List.of(game.getFirstPlayer().getUsername(),
+                game.getSecondPlayer().getUsername());
+
+        for (String player : players) {
+            GameStateResponse response = buildBaseGameStateResponse(game, player);
+            notifyGameUpdate(game.getId().toString(), player, response);
+        }
+    }
+
+    public void updateGameStateWithTrickWinner(Game game, String trickWinner) {
+        List<Player> players = List.of(game.getFirstPlayer(), game.getSecondPlayer());
+
+        for (Player player : players) {
+            String username = player.getUsername();
+
+            GameStateResponse response = buildBaseGameStateResponse(game, username);
+
+            response.setTrickWinnerUsername(trickWinner);
+            response.setTrickFirstPlayerScore(game.getFirstPlayer().getScore());
+            response.setTrickSecondPlayerScore(game.getSecondPlayer().getScore());
+
+            notifyGameUpdate(game.getId().toString(), username, response);
+        }
+    }
+
     public void updateGameState(Game game, String username) {
         GameStateResponse response = buildBaseGameStateResponse(game, username);
-
         notifyGameUpdate(game.getId().toString(), username, response);
     }
 
     public void notifyGameUpdate(String gameId, String username, GameStateResponse gameState) {
-        String destination = "/topic/game/" + gameId + "/" + username;
+        String destination = String.format(NOTIFY_GAME_DESTINATION, gameId, username);
 
         messagingTemplate.convertAndSend(destination, gameState);
     }
 
     public void notifyGameSearch(String username, SearchGameResponse searchGameResponse) {
-        String destination = "/topic/game/" + username;
+        String destination = String.format(NOTIFY_GAME_SEARCH_DESTINATION, username);
 
         messagingTemplate.convertAndSend(destination, searchGameResponse);
+    }
+
+    public void notifyGameSearch(List<String> usernames, SearchGameResponse searchGameResponse) {
+        for (String username : usernames) {
+            String destination = String.format(NOTIFY_GAME_SEARCH_DESTINATION, username);
+            messagingTemplate.convertAndSend(destination, searchGameResponse);
+        }
     }
 
     private GameStateResponse buildBaseGameStateResponse(Game game, String username) {

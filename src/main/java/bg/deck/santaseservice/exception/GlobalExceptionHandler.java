@@ -22,24 +22,43 @@ import static bg.deck.santaseservice.constant.ExceptionConstants.VALIDATION_DETA
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler({
+            CardNotFoundException.class,
+            NoCardForReplacingException.class,
+            NotFirstInTurnException.class,
+            NotInTurnException.class,
+            UserNotPartOfGameException.class,
+            CardNotPlayableException.class,
+            DeckSizeException.class,
+            NoActiveGameFoundException.class
+    })
+    public ResponseEntity<ErrorResponse> handleSecurityAndBusinessExceptions(RuntimeException ex, HttpServletRequest request) {
+        log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI());
+
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentialsException(InvalidCredentialsException ex, HttpServletRequest request) {
-        log.warn(String.format(LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI()));
+        log.warn(LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI());
 
         return buildResponse(HttpStatus.BAD_REQUEST, INCORRECT_CREDENTIALS_MESSAGE, request.getRequestURI());
     }
 
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
-        log.error(String.format(ExceptionConstants.LOG_FORMAT_SECURITY,
-                ex.getMessage(), request.getRemoteAddr(), request.getRequestURI()));
+        log.error(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI());
 
         return buildResponse(HttpStatus.UNAUTHORIZED, HttpStatus.UNAUTHORIZED.getReasonPhrase(), request.getRequestURI());
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex, HttpServletRequest request) {
-        log.warn(String.format(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI()));
+        log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI());
 
         return buildResponse(HttpStatus.CONFLICT, HttpStatus.CONFLICT.getReasonPhrase(), ex.getMessage(), request.getRequestURI());
     }
@@ -52,8 +71,8 @@ public class GlobalExceptionHandler {
                 .map(error -> String.format(VALIDATION_DETAILS_FORMAT, error.getField(), error.getDefaultMessage()))
                 .collect(Collectors.joining(COMMA_DELIMITER));
 
-        log.error(String.format(ExceptionConstants.LOG_FORMAT_ERROR,
-                ExceptionConstants.VALIDATION_ERROR_TITLE, request.getRequestURI(), validationDetails));
+        log.error(ExceptionConstants.LOG_FORMAT_ERROR,
+                ExceptionConstants.VALIDATION_ERROR_TITLE, request.getRequestURI(), validationDetails);
 
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
@@ -65,8 +84,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex, HttpServletRequest request) {
-        log.error(String.format(ExceptionConstants.LOG_FORMAT_UNHANDLED, request.getRemoteAddr(), request.getRequestURI(),
-                ex.getClass().getSimpleName(), request.getRequestURI()), ex);
+        log.error(ExceptionConstants.LOG_FORMAT_UNHANDLED, request.getRemoteAddr(), request.getRequestURI(),
+                ex.getClass().getSimpleName(), request.getRequestURI(), ex);
 
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,

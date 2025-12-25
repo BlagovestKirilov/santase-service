@@ -9,6 +9,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import static bg.deck.santaseservice.constant.Constants.USER;
+
 @RequiredArgsConstructor
 @Configuration
 public class SecurityConfig {
@@ -22,9 +24,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Professional addition for JWT
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/game/**").hasRole("USER")
-                        .requestMatchers("/ws-game/**").permitAll()
-                        .requestMatchers("/game.html").permitAll()
+                        .requestMatchers("/game/**").hasRole(USER)
+                        .requestMatchers("/ws-game/**").hasRole(USER)
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

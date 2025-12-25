@@ -24,13 +24,11 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        log.info("Trying to login account with username {}", loginRequest.getUsername());
         return ResponseEntity.ok(authService.login(loginRequest));
     }
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        log.info("Trying to register account with username {}", registerRequest.getUsername());
         return ResponseEntity.ok(authService.register(registerRequest));
     }
 

@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import static bg.deck.santaseservice.constant.Constants.ROLE;
+import static bg.deck.santaseservice.constant.Constants.USERNAME;
+
 @RequiredArgsConstructor
 @Service
 public class JwtService {
@@ -23,15 +26,15 @@ public class JwtService {
 
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", user.getRole().name());
-        claims.put("username", user.getUsername());
+        claims.put(ROLE, user.getRole().name());
+        claims.put(USERNAME, user.getUsername());
         return buildToken(claims, user, jwtProperties.getExpiration());
     }
 
     public String generateRefreshToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", user.getRole().name());
-        claims.put("username", user.getUsername());
+        claims.put(ROLE, user.getRole().name());
+        claims.put(USERNAME, user.getUsername());
         return buildToken(claims, user, jwtProperties.getRefreshExpiration());
     }
 
@@ -55,7 +58,7 @@ public class JwtService {
     }
 
     public String extractRole(String token) {
-        return extractAllClaims(token).get("role", String.class);
+        return extractAllClaims(token).get(ROLE, String.class);
     }
 
     public boolean isTokenValid(String token) {
