@@ -278,7 +278,7 @@ public class GameUtilService {
 
         int difference = Math.abs(firstPlayerResult - secondPlayerResult);
 
-        if ((firstPlayerResult >= 3 || secondPlayerResult >= 3) && difference >= 2) {
+        if ((firstPlayerResult >= 11 || secondPlayerResult >= 11) && difference >= 2) {
             if (firstPlayerResult > secondPlayerResult) {
                 game.setWinner(game.getFirstPlayer());
             } else {
