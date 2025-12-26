@@ -1,24 +1,30 @@
 services:
-  # --- The Gateway (Nginx) ---
   nginx:
     image: nginx:alpine
     container_name: nginx_proxy
     restart: always
     ports:
-      - "80:80"  # Only port 80 is open to the world
+      - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
+      - frontend
       - backend
     networks:
       - santase_network
 
-  # --- The API (Private) ---
+  frontend:
+    image: bkirilov/santase_frontend:latest
+    container_name: santase_frontend
+    restart: always
+    # No ports exposed! The main nginx proxy handles external traffic.
+    networks:
+      - santase_network
+
   backend:
     image: ${DOCKERHUB_USERNAME}/santase_backend:latest
     container_name: santase_backend
     restart: always
-    # NO ports here! Backend is hidden from the internet.
     env_file: .env
     networks:
       - santase_network
