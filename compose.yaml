@@ -1,9 +1,28 @@
 services:
-  postgres:
-    image: 'postgres:latest'
-    environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
+  # --- The Gateway (Nginx) ---
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_proxy
+    restart: always
     ports:
-      - '5432'
+      - "80:80"  # Only port 80 is open to the world
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - santase_network
+
+  # --- The API (Private) ---
+  backend:
+    image: ${DOCKERHUB_USERNAME}/santase_backend:latest
+    container_name: santase_backend
+    restart: always
+    # NO ports here! Backend is hidden from the internet.
+    env_file: .env
+    networks:
+      - santase_network
+
+networks:
+  santase_network:
+    driver: bridge
