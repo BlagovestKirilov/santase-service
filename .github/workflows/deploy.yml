@@ -29,10 +29,10 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/santase_app:latest .
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/santase_backend:latest .
 
       - name: Push image to Docker Hub
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/santase_app:latest
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/santase_backend:latest
 
       - name: Copy docker-compose.yml to EC2
         uses: appleboy/scp-action@master
@@ -51,11 +51,15 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             set -e
+            # 1. Move to the application directory
+            cd /home/ubuntu/app
+
             echo "Logging into Docker Hub..."
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             echo "Creating environment file..."
-            cat <<EOF > .env
+            # Using quotes around 'EOF' prevents the shell from trying to interpret variables locally
+            cat << 'EOF' > .env
             DB_URL_SANTASE=${{ secrets.DB_URL_SANTASE }}
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
@@ -65,11 +69,14 @@ jobs:
             JWT_REFRESH_EXPIRATION=${{ secrets.JWT_REFRESH_EXPIRATION }}
             DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
             EOF
-            
-            echo "Cleaning up old containers and images..."
-            docker compose -p santase_service down || true
-            docker container prune -f || true
-            docker image prune -a -f || true
-            
-            echo "Starting the containers..."
-            docker compose -p santase_service up -d
+
+            echo "Pulling latest images..."
+            # This ensures you get the image you just pushed to Docker Hub
+            docker compose pull
+
+            echo "Restarting the containers..."
+            # -d runs in background; --remove-orphans cleans up old service definitions
+            docker compose up -d --remove-orphans
+
+            echo "Cleaning up unused Docker data..."
+            docker image prune -f
