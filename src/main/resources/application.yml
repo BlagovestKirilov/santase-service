@@ -6,7 +6,7 @@ spring:
     name: SantaseService
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/santase
+    url: ${DB_URL_SANTASE}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
@@ -79,7 +79,7 @@ spring:
 
 server:
   port: 8080
-  address: 127.0.0.1
+  address: 0.0.0.0
 
 logging:
   level:
