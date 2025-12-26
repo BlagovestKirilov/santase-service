@@ -9,7 +9,6 @@ spring:
     url: jdbc:postgresql://localhost:5432/santase
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
@@ -47,7 +46,7 @@ spring:
       leak-detection-threshold: 30000
 
 server:
-  port: 8090
+  port: 8080
   address: 127.0.0.1
 
 logging:
@@ -79,7 +78,7 @@ spring:
       keepalive-time: 300000
 
 server:
-  port: 8090
+  port: 8080
   address: 127.0.0.1
 
 logging:
