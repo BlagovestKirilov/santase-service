@@ -76,7 +76,7 @@ jobs:
 
             echo "Restarting the containers..."
             # -d runs in background; --remove-orphans cleans up old service definitions
-            docker compose up -d --remove-orphans
+            docker compose up -d --force-recreate --remove-orphans
 
             echo "Cleaning up unused Docker data..."
             docker image prune -f
