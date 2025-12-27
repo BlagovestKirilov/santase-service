@@ -19,7 +19,7 @@ public class Constants {
     public static final String TOPIC = "/topic";
     public static final String APP = "/app";
     public static final String LOCALHOST = "http://localhost:3000";
-    public static final String DECK_BG = "http://18.193.73.81";
+    public static final String DECK_BG = "https://deck.bg";
     public static final String USER = "USER";
     public static final String PROD = "prod";
 }
