@@ -33,7 +33,7 @@ services:
     restart: always
     env_file: .env
     volumes:
-      - ./logs:/app/backend_logs
+      - ./backend_logs:/app/logs
     environment:
       - TZ=Europe/Sofia
       - JAVA_OPTS=-Duser.timezone=Europe/Sofia
