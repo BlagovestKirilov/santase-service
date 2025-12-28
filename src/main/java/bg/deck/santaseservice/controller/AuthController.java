@@ -5,6 +5,7 @@ import bg.deck.santaseservice.model.request.RefreshRequest;
 import bg.deck.santaseservice.model.request.RegisterRequest;
 import bg.deck.santaseservice.model.response.AuthResponse;
 import bg.deck.santaseservice.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -23,8 +24,8 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        return ResponseEntity.ok(authService.login(loginRequest));
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+        return ResponseEntity.ok(authService.login(loginRequest, request));
     }
 
     @PostMapping("/register")

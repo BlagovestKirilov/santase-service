@@ -13,6 +13,7 @@ import bg.deck.santaseservice.repository.UserRepository;
 import bg.deck.santaseservice.service.AuthService;
 import bg.deck.santaseservice.service.JwtService;
 import bg.deck.santaseservice.util.UserMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
+import static bg.deck.santaseservice.constant.Constants.REAL_IP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -49,6 +51,8 @@ class AuthServiceTest {
     private UserMapper userMapper;
     @Mock
     private JwtService jwtService;
+    @Mock
+    private HttpServletRequest httpServletRequest;
     @InjectMocks
     private AuthService authService;
     private User testUser;
@@ -65,33 +69,59 @@ class AuthServiceTest {
     class LoginTests {
         @Test
         void login_Success() {
+            // given
             LoginRequest request = new LoginRequest();
             request.setUsername(username);
             request.setPassword(password);
 
-            when(userRepository.findByUsername(username)).thenReturn(Optional.of(testUser));
-            when(passwordEncoder.matches(password, testUser.getPassword())).thenReturn(true);
-            when(jwtService.generateToken(testUser)).thenReturn("access-token");
-            when(jwtService.generateRefreshToken(testUser)).thenReturn("refresh-token");
+            when(userRepository.findByUsername(username))
+                    .thenReturn(Optional.of(testUser));
+            when(passwordEncoder.matches(password, testUser.getPassword()))
+                    .thenReturn(true);
+            when(jwtService.generateToken(testUser))
+                    .thenReturn("access-token");
+            when(jwtService.generateRefreshToken(testUser))
+                    .thenReturn("refresh-token");
+            when(httpServletRequest.getHeader(REAL_IP))
+                    .thenReturn("127.0.0.1");
 
-            AuthResponse response = authService.login(request);
+            // when
+            AuthResponse response = authService.login(request, httpServletRequest);
 
+            // then
             assertNotNull(response);
             assertEquals(HttpStatus.OK.getReasonPhrase(), response.getStatus());
             assertEquals("access-token", response.getToken());
+            assertEquals("refresh-token", response.getRefreshToken());
+            assertEquals("127.0.0.1", testUser.getIpAddress());
+
             verify(userRepository).findByUsername(username);
+            verify(userRepository).save(testUser);
+            verify(jwtService).generateToken(testUser);
+            verify(jwtService).generateRefreshToken(testUser);
         }
 
         @Test
         void login_InvalidCredentials_ThrowsException() {
+            // given
             LoginRequest request = new LoginRequest();
             request.setUsername(username);
             request.setPassword("wrong-password");
 
-            when(userRepository.findByUsername(username)).thenReturn(Optional.of(testUser));
-            when(passwordEncoder.matches("wrong-password", testUser.getPassword())).thenReturn(false);
+            when(userRepository.findByUsername(username))
+                    .thenReturn(Optional.of(testUser));
+            when(passwordEncoder.matches("wrong-password", testUser.getPassword()))
+                    .thenReturn(false);
 
-            assertThrows(InvalidCredentialsException.class, () -> authService.login(request));
+            // then
+            assertThrows(
+                    InvalidCredentialsException.class,
+                    () -> authService.login(request, httpServletRequest)
+            );
+
+            verify(userRepository).findByUsername(username);
+            verify(userRepository, never()).save(any());
+            verify(jwtService, never()).generateToken(any());
         }
     }
 

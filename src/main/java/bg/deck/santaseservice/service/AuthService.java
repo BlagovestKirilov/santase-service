@@ -11,6 +11,7 @@ import bg.deck.santaseservice.model.response.AuthResponse;
 import bg.deck.santaseservice.repository.PlayerRepository;
 import bg.deck.santaseservice.repository.UserRepository;
 import bg.deck.santaseservice.util.UserMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static bg.deck.santaseservice.constant.Constants.REAL_IP;
 import static bg.deck.santaseservice.constant.Constants.SUCCESSFUL_LOGIN;
 import static bg.deck.santaseservice.constant.Constants.SUCCESSFUL_REFRESH_TOKEN;
 import static bg.deck.santaseservice.constant.Constants.SUCCESSFUL_REGISTER;
@@ -39,7 +41,7 @@ public class AuthService {
     private final UserMapper userMapper;
     private final JwtService jwtService;
 
-    public AuthResponse login(LoginRequest loginRequest) {
+    public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request) {
         log.info(TRY_LOGIN_LOG, loginRequest.getUsername());
 
         User user = userRepository.findByUsername(loginRequest.getUsername())
@@ -47,6 +49,9 @@ public class AuthService {
                 .orElseThrow(() -> new InvalidCredentialsException(loginRequest.getUsername()));
 
         log.info(SUCCESSFUL_LOGIN_LOG, loginRequest.getUsername());
+
+        user.setIpAddress(request.getHeader(REAL_IP));
+        userRepository.save(user);
 
         return AuthResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())
