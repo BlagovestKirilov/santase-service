@@ -22,4 +22,5 @@ public class Constants {
     public static final String DECK_BG = "https://deck.bg";
     public static final String USER = "USER";
     public static final String PROD = "prod";
+    public static final String REAL_IP = "X-Real-IP";
 }
