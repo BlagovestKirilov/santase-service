@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.Instant;
 import java.util.stream.Collectors;
 
+import static bg.deck.santaseservice.constant.Constants.REAL_IP;
 import static bg.deck.santaseservice.constant.ExceptionConstants.COMMA_DELIMITER;
 import static bg.deck.santaseservice.constant.ExceptionConstants.INCORRECT_CREDENTIALS_MESSAGE;
 import static bg.deck.santaseservice.constant.ExceptionConstants.LOG_FORMAT_SECURITY;
@@ -33,7 +34,7 @@ public class GlobalExceptionHandler {
             NoActiveGameFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleSecurityAndBusinessExceptions(RuntimeException ex, HttpServletRequest request) {
-        log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI());
+        log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(REAL_IP), request.getRequestURI());
 
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
@@ -44,21 +45,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentialsException(InvalidCredentialsException ex, HttpServletRequest request) {
-        log.warn(LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI());
+        log.warn(LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(REAL_IP), request.getRequestURI());
 
         return buildResponse(HttpStatus.BAD_REQUEST, INCORRECT_CREDENTIALS_MESSAGE, request.getRequestURI());
     }
 
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
-        log.error(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI());
+        log.error(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(REAL_IP), request.getRequestURI());
 
         return buildResponse(HttpStatus.UNAUTHORIZED, HttpStatus.UNAUTHORIZED.getReasonPhrase(), request.getRequestURI());
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex, HttpServletRequest request) {
-        log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getRemoteAddr(), request.getRequestURI());
+        log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(REAL_IP), request.getRequestURI());
 
         return buildResponse(HttpStatus.CONFLICT, HttpStatus.CONFLICT.getReasonPhrase(), ex.getMessage(), request.getRequestURI());
     }
@@ -84,7 +85,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex, HttpServletRequest request) {
-        log.error(ExceptionConstants.LOG_FORMAT_UNHANDLED, request.getRemoteAddr(), request.getRequestURI(),
+        log.error(ExceptionConstants.LOG_FORMAT_UNHANDLED, request.getHeader(REAL_IP), request.getRequestURI(),
                 ex.getClass().getSimpleName(), request.getRequestURI(), ex);
 
         return buildResponse(
