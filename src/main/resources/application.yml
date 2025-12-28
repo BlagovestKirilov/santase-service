@@ -66,11 +66,11 @@ spring:
   datasource:
     hikari:
       pool-name: SantaseHikariProd
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 300000
-      connection-timeout: 20000
-      max-lifetime: 1700000
+      maximum-pool-size: 6
+      minimum-idle: 2
+      connection-timeout: 20000      # 20s wait for connection
+      idle-timeout: 300000           # 5 min
+      max-lifetime: 1700000          # 28 min (safe for RDS / PG)
       auto-commit: false
       validation-timeout: 3000
       leak-detection-threshold: 20000
@@ -78,6 +78,10 @@ spring:
 
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 50
+      min-spare: 10
 
 logging:
   level:
