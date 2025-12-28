@@ -47,7 +47,6 @@ spring:
 
 server:
   port: 8080
-  address: 127.0.0.1
 
 logging:
   level:
@@ -79,7 +78,6 @@ spring:
 
 server:
   port: 8080
-  address: 0.0.0.0
 
 logging:
   level:
