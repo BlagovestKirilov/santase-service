@@ -211,13 +211,13 @@ public class GameUtilService {
 
         // --- End of game scoring ---
         if (isLastCardPlayed(game)) {
+            Player dealWinner = applyEndOfGameScore(game, trickWinner);
             gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername(),
-                    trickWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
+                    dealWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
 
             gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername(),
-                    trickWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
-            applyEndOfGameScore(game, trickWinner);
-            prepareNewState(game, trickWinner);
+                    dealWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
+            prepareNewState(game, dealWinner);
         }
 
         // --- Cleanup ---
@@ -232,7 +232,7 @@ public class GameUtilService {
         game.getOpponent(trickWinner).drawCard(game.getState().getDeck().removeFirst());
     }
 
-    public void applyEndOfGameScore(Game game, Player trickWinner) {
+    public Player applyEndOfGameScore(Game game, Player trickWinner) {
         GameState state = game.getState();
 
         Player dealWinner;
@@ -260,6 +260,7 @@ public class GameUtilService {
         }
 
         dealWinner.setResult(dealWinner.getResult() + bonusPoints);
+        return dealWinner;
     }
 
     private int calculateStandardBonus(int loserScore, boolean loserBlank) {
