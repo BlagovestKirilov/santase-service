@@ -59,7 +59,7 @@ class GameServiceTest {
                 .inTurnPlayer(p1)
                 .firstTurnPlayer(p1)
                 .deck(new ArrayList<>())
-                .trumpCard(new Card(UUID.randomUUID(), Suit.HEARTS, Rank.ACE, true))
+                .trumpCard(new Card(UUID.randomUUID(), Suit.HEARTS, Rank.ACE, true, false))
                 .build();
 
         game = Game.builder()
@@ -118,7 +118,7 @@ class GameServiceTest {
 
         @Test
         void playCard_Success_TurnSwitches() {
-            Card card = new Card(UUID.randomUUID(), Suit.CLUBS, Rank.TEN, true);
+            Card card = new Card(UUID.randomUUID(), Suit.CLUBS, Rank.TEN, true, false);
             p1.getHand().add(card);
             CardRequest request = new CardRequest(card.getId());
 
@@ -135,10 +135,10 @@ class GameServiceTest {
 
         @Test
         void playCard_WhenBothPlayed_TriggersEvaluation() {
-            Card p2Card = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.KING, true);
+            Card p2Card = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.KING, true, false);
             p2.setPlayedCard(p2Card); // Bob already played
 
-            Card p1Card = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.TEN, true);
+            Card p1Card = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.TEN, true, false);
             p1.getHand().add(p1Card);
 
             when(gameUtilService.getUsername()).thenReturn(p1Name);
@@ -171,7 +171,7 @@ class GameServiceTest {
 
         @Test
         void announceCombination_Success() {
-            Card king = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.KING, true);
+            Card king = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.KING, true, false);
             p1.getHand().add(king);
 
             when(gameUtilService.getUsername()).thenReturn(p1Name);
@@ -187,8 +187,8 @@ class GameServiceTest {
         @Test
         void replaceCard_Success() {
             // 1. Set up the specific cards needed for the Santase "9 of Trumps" replacement rule
-            Card aceOfHearts = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.ACE, true);
-            Card nineOfHearts = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.NINE, true);
+            Card aceOfHearts = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.ACE, true, false);
+            Card nineOfHearts = new Card(UUID.randomUUID(), Suit.HEARTS, Rank.NINE, true, false);
 
             // The trump card is the Ace, the player has the Nine
             state.setTrumpCard(aceOfHearts);

@@ -228,8 +228,8 @@ public class GameUtilService {
     protected void drawCards(Game game, Player trickWinner) {
         if (game.getState().getDeck().isEmpty()) return;
 
-        trickWinner.getHand().add(game.getState().getDeck().removeFirst());
-        game.getOpponent(trickWinner).getHand().add(game.getState().getDeck().removeFirst());
+        trickWinner.drawCard(game.getState().getDeck().removeFirst());
+        game.getOpponent(trickWinner).drawCard(game.getState().getDeck().removeFirst());
     }
 
     public void applyEndOfGameScore(Game game, Player trickWinner) {
@@ -323,6 +323,7 @@ public class GameUtilService {
                         .suit(suit)
                         .rank(rank)
                         .isPlayable(true)
+                        .isLastDrawn(false)
                         .build());
             }
         }

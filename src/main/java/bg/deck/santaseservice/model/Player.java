@@ -37,8 +37,7 @@ public class Player extends BaseEntity {
     private Integer bonus;
 
     @ElementCollection
-    @CollectionTable(name = "player_hand",
-            joinColumns = @JoinColumn(name = "player_id"))
+    @CollectionTable(name = "player_hand", joinColumns = @JoinColumn(name = "player_id"))
     private List<Card> hand;
 
     @Embedded
@@ -51,5 +50,11 @@ public class Player extends BaseEntity {
 
     public String getUsername() {
         return user.getUsername();
+    }
+
+    public void drawCard(Card lastDrawnCard) {
+        hand.forEach(card -> card.setIsLastDrawn(false));
+        lastDrawnCard.setIsLastDrawn(true);
+        hand.add(lastDrawnCard);
     }
 }
