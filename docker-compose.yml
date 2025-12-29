@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: nginx:alpine
+    image: nginx:1.28.1-alpine
     environment:
       - TZ=Europe/Sofia
     container_name: nginx_proxy

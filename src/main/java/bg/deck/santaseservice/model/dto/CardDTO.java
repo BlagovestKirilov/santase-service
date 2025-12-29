@@ -15,4 +15,6 @@ public class CardDTO {
     private int points;
     @JsonProperty("isPlayable")
     private boolean isPlayable;
+    @JsonProperty("isLastDrawn")
+    private boolean isLastDrawn;
 }

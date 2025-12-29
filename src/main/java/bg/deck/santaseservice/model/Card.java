@@ -33,6 +33,8 @@ public class Card {
 
     private Boolean isPlayable;
 
+    private Boolean isLastDrawn;
+
     public int getPoints() {
         return rank.getPoints();
     }

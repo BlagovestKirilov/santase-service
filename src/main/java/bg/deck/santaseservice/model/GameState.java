@@ -25,8 +25,7 @@ import java.util.List;
 public class GameState extends BaseEntity {
 
     @ElementCollection
-    @CollectionTable(name = "game_deck",
-            joinColumns = @JoinColumn(name = "game_id"))
+    @CollectionTable(name = "game_deck", joinColumns = @JoinColumn(name = "game_id"))
     private List<Card> deck;
 
     @Embedded
