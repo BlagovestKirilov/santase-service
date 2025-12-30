@@ -19,21 +19,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Log4j2
 @RequiredArgsConstructor
 @Service
 public class GameService {
-    private final GameWebSocketService gameWebSocketService;
+    private final WebSocketService webSocketService;
+    private final WebSocketUtilService webSocketUtilService;
     private final GameUtilService gameUtilService;
 
-    private final Queue<String> matchQueue = new LinkedList<>();
-    private final Lock queueLock = new ReentrantLock();
+    private final Queue<String> matchQueue = new ConcurrentLinkedQueue<>();
 
     public void getGameState() {
         String username = gameUtilService.getUsername();
@@ -46,7 +44,7 @@ public class GameService {
             throw new UserNotPartOfGameException(username);
         }
 
-        gameWebSocketService.updateGameState(game, username);
+        webSocketUtilService.updateGameState(game, username);
 
         log.info(LogConstants.GOT_STATE_LOG, username);
     }
@@ -60,37 +58,31 @@ public class GameService {
             return;
         }
 
-        queueLock.lock();
-        try {
-            if (matchQueue.contains(username)) {
-                log.info(LogConstants.GAME_SEARCH_ALREADY_IN_QUEUE, username);
-                gameWebSocketService.notifyGameSearch(username, SearchGameResponse.waiting());
-                return;
-            }
+        if (matchQueue.contains(username)) {
+            log.info(LogConstants.GAME_SEARCH_ALREADY_IN_QUEUE, username);
+            webSocketService.notifyGameSearch(username, SearchGameResponse.waiting());
+            return;
+        }
 
-            String waitingPlayerUsername = matchQueue.poll();
+        String waitingPlayerUsername = matchQueue.poll();
 
-            if (waitingPlayerUsername == null) {
-                matchQueue.offer(username);
-                log.info(LogConstants.GAME_SEARCH_ADDED_TO_QUEUE, username);
-                gameWebSocketService.notifyGameSearch(username, SearchGameResponse.waiting());
-            } else {
-                Player firstPlayer = gameUtilService.findPlayerByUsername(username);
-                Player secondPlayer = gameUtilService.findPlayerByUsername(waitingPlayerUsername);
+        if (waitingPlayerUsername == null) {
+            matchQueue.offer(username);
+            log.info(LogConstants.GAME_SEARCH_ADDED_TO_QUEUE, username);
+            webSocketService.notifyGameSearch(username, SearchGameResponse.waiting());
+        } else {
+            Player firstPlayer = gameUtilService.findPlayerByUsername(username);
+            Player secondPlayer = gameUtilService.findPlayerByUsername(waitingPlayerUsername);
 
-                Game newGame = gameUtilService.startGame(firstPlayer, secondPlayer);
+            Game newGame = gameUtilService.startGame(firstPlayer, secondPlayer);
 
-                log.info(LogConstants.GAME_SEARCH_MATCH_FOUND,
-                        firstPlayer.getUsername(),
-                        secondPlayer.getUsername(),
-                        newGame.getId());
+            log.info(LogConstants.GAME_SEARCH_MATCH_FOUND,
+                    firstPlayer.getUsername(),
+                    secondPlayer.getUsername(),
+                    newGame.getId());
 
-                gameWebSocketService.notifyGameSearch(List.of(firstPlayer.getUsername(), secondPlayer.getUsername()),
-                        SearchGameResponse.started(newGame.getId()));
-            }
-
-        } finally {
-            queueLock.unlock();
+            webSocketService.notifyGameSearch(List.of(firstPlayer.getUsername(), secondPlayer.getUsername()),
+                    SearchGameResponse.started(newGame.getId()));
         }
     }
 
@@ -121,7 +113,7 @@ public class GameService {
             log.info(LogConstants.PLAY_CARD_TRICK_EVALUATING,
                     game.getFirstPlayer().getPlayedCard(), game.getSecondPlayer().getPlayedCard());
 
-            gameWebSocketService.updateGameState(game);
+            webSocketUtilService.updateGameState(game);
             gameUtilService.evaluateTrick(game);
         } else {
             log.info(LogConstants.PLAY_CARD_SUCCESS, username, cardForRemoval.getId());
@@ -130,7 +122,7 @@ public class GameService {
 
         gameUtilService.saveGame(game);
 
-        gameWebSocketService.updateGameState(game);
+        webSocketUtilService.updateGameState(game);
     }
 
     @Transactional
@@ -160,7 +152,7 @@ public class GameService {
         if (gameUtilService.checkTwentyForty(game, player, card)) {
             log.info(LogConstants.ANNOUNCE_SUCCESS, username, player.getBonus());
 
-            gameWebSocketService.updateGameState(game);
+            webSocketUtilService.updateGameState(game);
 
             player.setBonus(null);
             gameUtilService.saveGame(game);
@@ -182,7 +174,7 @@ public class GameService {
 
         log.info(LogConstants.CLOSE_DECK_SUCCESS, username);
 
-        gameWebSocketService.updateGameState(game);
+        webSocketUtilService.updateGameState(game);
     }
 
     @Transactional
@@ -215,7 +207,7 @@ public class GameService {
         gameUtilService.saveGameState(state);
         log.info(LogConstants.REPLACE_CARD_SUCCESS, username, currentTrump.getRank());
 
-        gameWebSocketService.updateGameState(game);
+        webSocketUtilService.updateGameState(game);
     }
 
     @Transactional
@@ -258,12 +250,12 @@ public class GameService {
 
         log.info(LogConstants.FINISH_DEAL_SUCCESS, trickWinner.getUsername(), pointsAwarded);
 
-        gameWebSocketService.updateGameStateWithTrickWinner(game, trickWinner.getUsername());
+        webSocketUtilService.updateGameStateWithTrickWinner(game, trickWinner.getUsername());
 
         gameUtilService.prepareNewState(game, trickWinner);
         gameUtilService.saveGame(game);
 
-        gameWebSocketService.updateGameState(game);
+        webSocketUtilService.updateGameState(game);
     }
 
     @Transactional
@@ -280,8 +272,17 @@ public class GameService {
         game.getSecondPlayer().setHand(new ArrayList<>());
 
         game.setWinner(opponentPlayer);
-        gameUtilService.saveGame(game);
+        log.info(
+                LogConstants.FINISH_GAME,
+                game.getId(),
+                opponentPlayer.getUsername(),
+                game.getFirstPlayer().getUsername(),
+                game.getFirstPlayer().getResult(),
+                game.getSecondPlayer().getUsername(),
+                game.getSecondPlayer().getResult()
+        );
 
-        gameWebSocketService.updateGameState(game);
+        gameUtilService.saveGame(game);
+        webSocketUtilService.updateGameState(game);
     }
 }

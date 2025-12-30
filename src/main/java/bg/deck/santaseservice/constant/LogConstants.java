@@ -27,4 +27,5 @@ public class LogConstants {
     public static final String FINISH_DEAL_START = "User {} is attempting to claim 66 points and finish the deal.";
     public static final String FINISH_DEAL_SUCCESS = "Deal finished. Winner: {} | Points awarded: {}.";
     public static final String FINISH_GAME_SURRENDER = "User {} has surrendered. Opponent {} wins the game.";
+    public static final String FINISH_GAME = "Game finished gameId={} winner={} result={}({}) vs {}({}).";
 }

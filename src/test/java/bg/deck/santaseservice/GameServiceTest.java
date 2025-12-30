@@ -12,7 +12,8 @@ import bg.deck.santaseservice.model.request.CardRequest;
 import bg.deck.santaseservice.model.response.SearchGameResponse;
 import bg.deck.santaseservice.service.GameService;
 import bg.deck.santaseservice.service.GameUtilService;
-import bg.deck.santaseservice.service.GameWebSocketService;
+import bg.deck.santaseservice.service.WebSocketService;
+import bg.deck.santaseservice.service.WebSocketUtilService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,7 +42,9 @@ class GameServiceTest {
     private final String p1Name = "Alice";
     private final String p2Name = "Bob";
     @Mock
-    private GameWebSocketService gameWebSocketService;
+    private WebSocketUtilService webSocketUtilService;
+    @Mock
+    private WebSocketService webSocketService;
     @Mock
     private GameUtilService gameUtilService;
     @InjectMocks
@@ -85,7 +88,7 @@ class GameServiceTest {
 
             gameService.searchGame();
 
-            verify(gameWebSocketService).notifyGameSearch(eq(p1Name), any(SearchGameResponse.class));
+            verify(webSocketService).notifyGameSearch(eq(p1Name), any(SearchGameResponse.class));
             verify(gameUtilService, never()).startGame(any(), any());
         }
 
@@ -97,7 +100,7 @@ class GameServiceTest {
             gameService.searchGame();
 
             // Second player enters queue
-            reset(gameWebSocketService);
+            reset(webSocketUtilService);
             when(gameUtilService.getUsername()).thenReturn(p2Name);
             when(gameUtilService.checkIfUserExistsAndIsAvailable(p2Name)).thenReturn(true);
             when(gameUtilService.findPlayerByUsername(p2Name)).thenReturn(p2);
@@ -107,7 +110,7 @@ class GameServiceTest {
             gameService.searchGame();
 
             verify(gameUtilService).startGame(any(), any());
-            verify(gameWebSocketService).notifyGameSearch(anyList(), any(SearchGameResponse.class));
+            verify(webSocketService).notifyGameSearch(anyList(), any(SearchGameResponse.class));
         }
     }
 
@@ -180,7 +183,7 @@ class GameServiceTest {
 
             gameService.announceCombination(new CardRequest(king.getId()));
 
-            verify(gameWebSocketService).updateGameState(game);
+            verify(webSocketUtilService).updateGameState(game);
             assertThat(p1.getBonus()).isNull(); // Reset after successful logic
         }
 
@@ -214,7 +217,7 @@ class GameServiceTest {
 
             // Verify persistence
             verify(gameUtilService).saveGameState(state);
-            verify(gameWebSocketService).updateGameState(game);
+            verify(webSocketUtilService).updateGameState(game);
         }
     }
 
@@ -235,7 +238,7 @@ class GameServiceTest {
             // P1 wins with 2 Result points because P2 is under 33 but not blanked
             assertThat(p1.getResult()).isEqualTo(2);
             verify(gameUtilService).prepareNewState(game, p1);
-            verify(gameWebSocketService).updateGameState(any());
+            verify(webSocketUtilService).updateGameState(any());
         }
 
         @Test
@@ -259,7 +262,7 @@ class GameServiceTest {
 
             // Verify interactions
             verify(gameUtilService).saveGame(game);
-            verify(gameWebSocketService).updateGameState(game);
+            verify(webSocketUtilService).updateGameState(game);
         }
     }
 }

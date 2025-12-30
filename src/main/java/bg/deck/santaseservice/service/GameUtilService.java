@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.service;
 
+import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.enums.Rank;
 import bg.deck.santaseservice.enums.Suit;
 import bg.deck.santaseservice.exception.CardNotFoundException;
@@ -19,6 +20,7 @@ import bg.deck.santaseservice.repository.GameStateRepository;
 import bg.deck.santaseservice.repository.PlayerRepository;
 import bg.deck.santaseservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,7 @@ import java.util.UUID;
 import static bg.deck.santaseservice.constant.Constants.KING;
 import static bg.deck.santaseservice.constant.Constants.QUEEN;
 
+@Log4j2
 @RequiredArgsConstructor
 @Service
 public class GameUtilService {
@@ -40,7 +43,8 @@ public class GameUtilService {
     private final PlayerRepository playerRepository;
     private final GameStateRepository gameStateRepository;
     private final UserRepository userRepository;
-    private final GameWebSocketService gameWebSocketService;
+    private final WebSocketUtilService webSocketUtilService;
+    private final WebSocketService webSocketService;
 
     @Transactional
     public Game startGame(Player firstPlayer, Player secondPlayer) {
@@ -82,7 +86,7 @@ public class GameUtilService {
             Optional<UUID> gameId = userRepository.findActiveGameIdByUsername(username);
 
             if (gameId.isPresent()) {
-                gameWebSocketService.notifyGameSearch(username, SearchGameResponse.started(gameId.get()));
+                webSocketService.notifyGameSearch(username, SearchGameResponse.started(gameId.get()));
                 return false;
             } else {
                 return true;
@@ -212,10 +216,10 @@ public class GameUtilService {
         // --- End of game scoring ---
         if (isLastCardPlayed(game)) {
             Player dealWinner = applyEndOfGameScore(game, trickWinner);
-            gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername(),
+            webSocketUtilService.updateGameState(game, game.getFirstPlayer().getUsername(),
                     dealWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
 
-            gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername(),
+            webSocketUtilService.updateGameState(game, game.getSecondPlayer().getUsername(),
                     dealWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
             prepareNewState(game, dealWinner);
         }
@@ -285,6 +289,15 @@ public class GameUtilService {
             } else {
                 game.setWinner(game.getSecondPlayer());
             }
+            log.info(
+                    LogConstants.FINISH_GAME,
+                    game.getId(),
+                    game.getWinner().getUsername(),
+                    game.getFirstPlayer().getUsername(),
+                    game.getFirstPlayer().getResult(),
+                    game.getSecondPlayer().getUsername(),
+                    game.getSecondPlayer().getResult()
+            );
             return;
         }
 
