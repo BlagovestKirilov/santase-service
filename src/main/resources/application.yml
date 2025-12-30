@@ -10,14 +10,16 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
+  threads:
+    virtual:
+      enabled: true
+
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         dialect: ${DB_DIALECT}
-        jdbc:
-          time_zone: UTC
 
 jwt:
   secret-key: ${JWT_SECRET}
@@ -36,14 +38,14 @@ spring:
   datasource:
     hikari:
       pool-name: SantaseHikariDev
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: 12
+      minimum-idle: 4
+      connection-timeout: 10000
       idle-timeout: 600000
-      connection-timeout: 30000
       max-lifetime: 1800000
-      auto-commit: true
-      validation-timeout: 5000
-      leak-detection-threshold: 30000
+      auto-commit: false
+      validation-timeout: 3000
+      leak-detection-threshold: 20000
 
 server:
   port: 8080
@@ -66,22 +68,18 @@ spring:
   datasource:
     hikari:
       pool-name: SantaseHikariProd
-      maximum-pool-size: 6
+      maximum-pool-size: 4
       minimum-idle: 2
-      connection-timeout: 20000      # 20s wait for connection
-      idle-timeout: 300000           # 5 min
-      max-lifetime: 1700000          # 28 min (safe for RDS / PG)
+      connection-timeout: 8000
+      idle-timeout: 300000
+      max-lifetime: 1700000
+      keepalive-time: 300000
       auto-commit: false
       validation-timeout: 3000
-      leak-detection-threshold: 20000
-      keepalive-time: 300000
+      leak-detection-threshold: 15000
 
 server:
   port: 8080
-  tomcat:
-    threads:
-      max: 50
-      min-spare: 10
 
 logging:
   level:

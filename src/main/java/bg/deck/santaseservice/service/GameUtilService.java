@@ -43,7 +43,8 @@ public class GameUtilService {
     private final PlayerRepository playerRepository;
     private final GameStateRepository gameStateRepository;
     private final UserRepository userRepository;
-    private final GameWebSocketService gameWebSocketService;
+    private final WebSocketUtilService webSocketUtilService;
+    private final WebSocketService webSocketService;
 
     @Transactional
     public Game startGame(Player firstPlayer, Player secondPlayer) {
@@ -85,7 +86,7 @@ public class GameUtilService {
             Optional<UUID> gameId = userRepository.findActiveGameIdByUsername(username);
 
             if (gameId.isPresent()) {
-                gameWebSocketService.notifyGameSearch(username, SearchGameResponse.started(gameId.get()));
+                webSocketService.notifyGameSearch(username, SearchGameResponse.started(gameId.get()));
                 return false;
             } else {
                 return true;
@@ -215,10 +216,10 @@ public class GameUtilService {
         // --- End of game scoring ---
         if (isLastCardPlayed(game)) {
             Player dealWinner = applyEndOfGameScore(game, trickWinner);
-            gameWebSocketService.updateGameState(game, game.getFirstPlayer().getUsername(),
+            webSocketUtilService.updateGameState(game, game.getFirstPlayer().getUsername(),
                     dealWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
 
-            gameWebSocketService.updateGameState(game, game.getSecondPlayer().getUsername(),
+            webSocketUtilService.updateGameState(game, game.getSecondPlayer().getUsername(),
                     dealWinner.getUsername(), game.getFirstPlayer().getScore(), game.getSecondPlayer().getScore());
             prepareNewState(game, dealWinner);
         }

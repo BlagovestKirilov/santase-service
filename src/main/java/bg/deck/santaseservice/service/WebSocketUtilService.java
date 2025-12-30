@@ -5,21 +5,16 @@ import bg.deck.santaseservice.model.GameState;
 import bg.deck.santaseservice.model.Player;
 import bg.deck.santaseservice.model.dto.CardDTO;
 import bg.deck.santaseservice.model.response.GameStateResponse;
-import bg.deck.santaseservice.model.response.SearchGameResponse;
 import bg.deck.santaseservice.util.CardMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static bg.deck.santaseservice.constant.Constants.NOTIFY_GAME_DESTINATION;
-import static bg.deck.santaseservice.constant.Constants.NOTIFY_GAME_SEARCH_DESTINATION;
-
 @RequiredArgsConstructor
 @Service
-public class GameWebSocketService {
-    private final SimpMessagingTemplate messagingTemplate;
+public class WebSocketUtilService {
+    private final WebSocketService webSocketService;
     private final CardMapper cardMapper;
 
     public void updateGameState(
@@ -36,7 +31,7 @@ public class GameWebSocketService {
                 .trickSecondPlayerScore(trickSecondPlayerScore)
                 .build();
 
-        notifyGameUpdate(game.getId().toString(), username, response);
+        webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
     }
 
     public void updateGameState(Game game) {
@@ -45,7 +40,7 @@ public class GameWebSocketService {
 
         for (String player : players) {
             GameStateResponse response = buildBaseGameStateResponse(game, player);
-            notifyGameUpdate(game.getId().toString(), player, response);
+            webSocketService.notifyGameUpdate(game.getId().toString(), player, response);
         }
     }
 
@@ -61,33 +56,15 @@ public class GameWebSocketService {
             response.setTrickFirstPlayerScore(game.getFirstPlayer().getScore());
             response.setTrickSecondPlayerScore(game.getSecondPlayer().getScore());
 
-            notifyGameUpdate(game.getId().toString(), username, response);
+            webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
         }
     }
 
     public void updateGameState(Game game, String username) {
         GameStateResponse response = buildBaseGameStateResponse(game, username);
-        notifyGameUpdate(game.getId().toString(), username, response);
+        webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
     }
 
-    public void notifyGameUpdate(String gameId, String username, GameStateResponse gameState) {
-        String destination = String.format(NOTIFY_GAME_DESTINATION, gameId, username);
-
-        messagingTemplate.convertAndSend(destination, gameState);
-    }
-
-    public void notifyGameSearch(String username, SearchGameResponse searchGameResponse) {
-        String destination = String.format(NOTIFY_GAME_SEARCH_DESTINATION, username);
-
-        messagingTemplate.convertAndSend(destination, searchGameResponse);
-    }
-
-    public void notifyGameSearch(List<String> usernames, SearchGameResponse searchGameResponse) {
-        for (String username : usernames) {
-            String destination = String.format(NOTIFY_GAME_SEARCH_DESTINATION, username);
-            messagingTemplate.convertAndSend(destination, searchGameResponse);
-        }
-    }
 
     private GameStateResponse buildBaseGameStateResponse(Game game, String username) {
         Player player = game.getPlayerByUsername(username);
