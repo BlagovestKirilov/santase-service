@@ -280,8 +280,17 @@ public class GameService {
         game.getSecondPlayer().setHand(new ArrayList<>());
 
         game.setWinner(opponentPlayer);
-        gameUtilService.saveGame(game);
+        log.info(
+                LogConstants.FINISH_GAME,
+                game.getId(),
+                opponentPlayer.getUsername(),
+                game.getFirstPlayer().getUsername(),
+                game.getFirstPlayer().getResult(),
+                game.getSecondPlayer().getUsername(),
+                game.getSecondPlayer().getResult()
+        );
 
+        gameUtilService.saveGame(game);
         gameWebSocketService.updateGameState(game);
     }
 }

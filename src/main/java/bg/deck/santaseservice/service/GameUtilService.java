@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.service;
 
+import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.enums.Rank;
 import bg.deck.santaseservice.enums.Suit;
 import bg.deck.santaseservice.exception.CardNotFoundException;
@@ -19,6 +20,7 @@ import bg.deck.santaseservice.repository.GameStateRepository;
 import bg.deck.santaseservice.repository.PlayerRepository;
 import bg.deck.santaseservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,7 @@ import java.util.UUID;
 import static bg.deck.santaseservice.constant.Constants.KING;
 import static bg.deck.santaseservice.constant.Constants.QUEEN;
 
+@Log4j2
 @RequiredArgsConstructor
 @Service
 public class GameUtilService {
@@ -285,6 +288,15 @@ public class GameUtilService {
             } else {
                 game.setWinner(game.getSecondPlayer());
             }
+            log.info(
+                    LogConstants.FINISH_GAME,
+                    game.getId(),
+                    game.getWinner().getUsername(),
+                    game.getFirstPlayer().getUsername(),
+                    game.getFirstPlayer().getResult(),
+                    game.getSecondPlayer().getUsername(),
+                    game.getSecondPlayer().getResult()
+            );
             return;
         }
 
