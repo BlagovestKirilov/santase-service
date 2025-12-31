@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.service;
 
+import bg.deck.santaseservice.config.TransactionalWebSocketDispatcher;
 import bg.deck.santaseservice.model.Game;
 import bg.deck.santaseservice.model.GameState;
 import bg.deck.santaseservice.model.Player;
@@ -16,6 +17,7 @@ import java.util.List;
 public class WebSocketUtilService {
     private final WebSocketService webSocketService;
     private final CardMapper cardMapper;
+    private final TransactionalWebSocketDispatcher dispatcher;
 
     public void updateGameState(
             Game game,
@@ -24,45 +26,54 @@ public class WebSocketUtilService {
             int trickFirstPlayerScore,
             int trickSecondPlayerScore
     ) {
-        GameStateResponse response = buildBaseGameStateResponse(game, username)
-                .toBuilder()
-                .trickWinnerUsername(trickWinnerUsername)
-                .trickFirstPlayerScore(trickFirstPlayerScore)
-                .trickSecondPlayerScore(trickSecondPlayerScore)
-                .build();
+        dispatcher.send(() -> {
+            GameStateResponse response = buildBaseGameStateResponse(game, username)
+                    .toBuilder()
+                    .trickWinnerUsername(trickWinnerUsername)
+                    .trickFirstPlayerScore(trickFirstPlayerScore)
+                    .trickSecondPlayerScore(trickSecondPlayerScore)
+                    .build();
 
-        webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
+            webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
+        });
     }
 
     public void updateGameState(Game game) {
-        List<String> players = List.of(game.getFirstPlayer().getUsername(),
-                game.getSecondPlayer().getUsername());
+        dispatcher.send(() -> {
+            List<String> players = List.of(
+                    game.getFirstPlayer().getUsername(),
+                    game.getSecondPlayer().getUsername());
 
-        for (String player : players) {
-            GameStateResponse response = buildBaseGameStateResponse(game, player);
-            webSocketService.notifyGameUpdate(game.getId().toString(), player, response);
-        }
+            for (String player : players) {
+                GameStateResponse response = buildBaseGameStateResponse(game, player);
+                webSocketService.notifyGameUpdate(game.getId().toString(), player, response);
+            }
+        });
     }
 
     public void updateGameStateWithTrickWinner(Game game, String trickWinner) {
-        List<Player> players = List.of(game.getFirstPlayer(), game.getSecondPlayer());
+        dispatcher.send(() -> {
+            List<Player> players = List.of(game.getFirstPlayer(), game.getSecondPlayer());
 
-        for (Player player : players) {
-            String username = player.getUsername();
+            for (Player player : players) {
+                String username = player.getUsername();
 
-            GameStateResponse response = buildBaseGameStateResponse(game, username);
+                GameStateResponse response = buildBaseGameStateResponse(game, username);
 
-            response.setTrickWinnerUsername(trickWinner);
-            response.setTrickFirstPlayerScore(game.getFirstPlayer().getScore());
-            response.setTrickSecondPlayerScore(game.getSecondPlayer().getScore());
+                response.setTrickWinnerUsername(trickWinner);
+                response.setTrickFirstPlayerScore(game.getFirstPlayer().getScore());
+                response.setTrickSecondPlayerScore(game.getSecondPlayer().getScore());
 
-            webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
-        }
+                webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
+            }
+        });
     }
 
     public void updateGameState(Game game, String username) {
-        GameStateResponse response = buildBaseGameStateResponse(game, username);
-        webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
+        dispatcher.send(() -> {
+            GameStateResponse response = buildBaseGameStateResponse(game, username);
+            webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
+        });
     }
 
 
