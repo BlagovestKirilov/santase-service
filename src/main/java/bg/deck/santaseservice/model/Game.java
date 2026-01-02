@@ -60,4 +60,11 @@ public class Game extends BaseEntity {
             throw new UserNotPartOfGameException(player.getUsername());
         }
     }
+
+    public void setWinner(Player winnerPlayer) {
+        this.winner = winnerPlayer;
+
+        winnerPlayer.getUser().incrementSantaseWins();
+        getOpponent(winnerPlayer).getUser().incrementSantaseLosses();
+    }
 }

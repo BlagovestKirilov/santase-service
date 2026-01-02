@@ -2,9 +2,23 @@ package bg.deck.santaseservice.util;
 
 import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.request.RegisterRequest;
+import bg.deck.santaseservice.model.response.ProfileResponse;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+
+import static bg.deck.santaseservice.enums.Role.ROLE_USER;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
     User toEntity(RegisterRequest registerRequest);
+
+    @AfterMapping
+    default void setDefaults(@MappingTarget User user) {
+        user.setRole(ROLE_USER);
+        user.setSantaseWins(0);
+        user.setSantaseLosses(0);
+    }
+
+    ProfileResponse toProfileResponse(User user);
 }
