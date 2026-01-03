@@ -19,7 +19,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
         dialect: ${DB_DIALECT}
@@ -51,10 +51,14 @@ spring:
       auto-commit: false
       validation-timeout: 3000
       leak-detection-threshold: 20000
-
-server:
-  port: 8080
-
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: ${DB_DIALECT}
+        jdbc:
+          time_zone: Europe/Sofia
 logging:
   level:
     org.hibernate.SQL: INFO
@@ -82,10 +86,14 @@ spring:
       auto-commit: false
       validation-timeout: 3000
       leak-detection-threshold: 15000
-
-server:
-  port: 8080
-
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: ${DB_DIALECT}
+        jdbc:
+          time_zone: Europe/Sofia
 logging:
   level:
     root: INFO

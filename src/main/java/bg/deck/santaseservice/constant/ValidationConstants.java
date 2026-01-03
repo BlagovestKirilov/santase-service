@@ -22,4 +22,7 @@ public class ValidationConstants {
 
     public static final String REFRESH_TOKEN_EMPTY = "refreshToken cannot be empty";
     public static final String CARD_ID_NULL = "cardId must not be null";
+
+    public static final String EMAIL_EMPTY = "Email cannot be empty";
+    public static final String EMAIL_INVALID = "Email format is invalid";
 }

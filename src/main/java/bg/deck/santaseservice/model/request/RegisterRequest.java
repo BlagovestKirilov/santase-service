@@ -1,6 +1,7 @@
 package bg.deck.santaseservice.model.request;
 
 import bg.deck.santaseservice.constant.ValidationConstants;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -23,4 +24,8 @@ public class RegisterRequest {
     @Size(min = ValidationConstants.PASSWORD_MIN, max = ValidationConstants.PASSWORD_MAX, message = ValidationConstants.PASSWORD_SIZE)
     @Pattern(regexp = ValidationConstants.PASSWORD_PATTERN, message = ValidationConstants.PASSWORD_PATTERN_MSG)
     private String password;
+
+    @NotBlank(message = ValidationConstants.EMAIL_EMPTY)
+    @Email(message = ValidationConstants.EMAIL_INVALID)
+    private String email;
 }

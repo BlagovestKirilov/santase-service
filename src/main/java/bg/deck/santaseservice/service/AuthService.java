@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.service;
 
+import bg.deck.santaseservice.exception.EmailAlreadyExistsException;
 import bg.deck.santaseservice.exception.InvalidCredentialsException;
 import bg.deck.santaseservice.exception.InvalidTokenException;
 import bg.deck.santaseservice.exception.UserAlreadyExistsException;
@@ -64,8 +65,12 @@ public class AuthService {
     public AuthResponse register(RegisterRequest registerRequest) {
         log.info(TRY_REGISTER_LOG, registerRequest.getUsername());
 
-        if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
+        if (userRepository.existsByUsername(registerRequest.getUsername())) {
             throw new UserAlreadyExistsException(registerRequest.getUsername());
+        }
+
+        if (userRepository.existsByEmail(registerRequest.getEmail())) {
+            throw new EmailAlreadyExistsException(registerRequest.getEmail());
         }
 
         User user = userMapper.toEntity(registerRequest);
