@@ -2,6 +2,9 @@ spring:
   profiles:
     active: dev
 
+  jackson:
+    time-zone: Europe/Sofia
+
   application:
     name: SantaseService
 
@@ -20,6 +23,8 @@ spring:
     properties:
       hibernate:
         dialect: ${DB_DIALECT}
+        jdbc:
+          time_zone: Europe/Sofia
 
 jwt:
   secret-key: ${JWT_SECRET}
