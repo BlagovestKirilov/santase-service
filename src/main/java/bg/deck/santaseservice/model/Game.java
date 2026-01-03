@@ -11,6 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Getter
 @Setter
 @Builder
@@ -30,6 +32,8 @@ public class Game extends BaseEntity {
 
     @ManyToOne
     private Player winner;
+
+    private Instant finishedAt;
 
     public Player getPlayerByUsername(String username) {
         if (username.equals(firstPlayer.getUsername())) {
@@ -63,6 +67,7 @@ public class Game extends BaseEntity {
 
     public void setWinner(Player winnerPlayer) {
         this.winner = winnerPlayer;
+        this.finishedAt = Instant.now();
 
         winnerPlayer.getUser().incrementSantaseWins();
         getOpponent(winnerPlayer).getUser().incrementSantaseLosses();
