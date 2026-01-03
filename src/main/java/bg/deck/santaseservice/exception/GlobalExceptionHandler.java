@@ -57,8 +57,11 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNAUTHORIZED, HttpStatus.UNAUTHORIZED.getReasonPhrase(), request.getRequestURI());
     }
 
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex, HttpServletRequest request) {
+    @ExceptionHandler({
+            UserAlreadyExistsException.class,
+            EmailAlreadyExistsException.class,
+    })
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(RuntimeException ex, HttpServletRequest request) {
         log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(REAL_IP), request.getRequestURI());
 
         return buildResponse(HttpStatus.CONFLICT, HttpStatus.CONFLICT.getReasonPhrase(), ex.getMessage(), request.getRequestURI());

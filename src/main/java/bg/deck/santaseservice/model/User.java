@@ -16,7 +16,8 @@ import lombok.Setter;
 @RequiredArgsConstructor
 @Entity
 @Table(name = "users", indexes = {
-        @Index(name = "idx_username", columnList = "username")
+        @Index(name = "idx_username", columnList = "username"),
+        @Index(name = "idx_email", columnList = "email")
 })
 public class User extends BaseEntity {
 
@@ -35,6 +36,9 @@ public class User extends BaseEntity {
     private Integer santaseWins;
 
     private Integer santaseLosses;
+
+    @Column(nullable = false, unique = true)
+    private String email;
 
     public void incrementSantaseWins() {
         this.santaseWins++;

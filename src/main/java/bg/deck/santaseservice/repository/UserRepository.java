@@ -15,6 +15,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByUsername(String username);
 
+    boolean existsByEmail(String email);
+
     @Query("""
                 SELECT game.id FROM Game game
                 WHERE (game.firstPlayer.user.username = :username
