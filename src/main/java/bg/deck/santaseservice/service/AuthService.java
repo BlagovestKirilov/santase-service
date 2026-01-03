@@ -26,8 +26,8 @@ import static bg.deck.santaseservice.constant.Constants.SUCCESSFUL_REGISTER;
 import static bg.deck.santaseservice.constant.LogConstants.SUCCESSFUL_LOGIN_LOG;
 import static bg.deck.santaseservice.constant.LogConstants.SUCCESSFUL_REGISTER_LOG;
 import static bg.deck.santaseservice.constant.LogConstants.TRY_LOGIN_LOG;
+import static bg.deck.santaseservice.constant.LogConstants.TRY_REFRESH_TOKEN;
 import static bg.deck.santaseservice.constant.LogConstants.TRY_REGISTER_LOG;
-import static bg.deck.santaseservice.enums.Role.ROLE_USER;
 
 @Log4j2
 @Transactional
@@ -70,7 +70,6 @@ public class AuthService {
 
         User user = userMapper.toEntity(registerRequest);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole(ROLE_USER);
         userRepository.save(user);
 
         Player player = Player.builder().user(user).build();
@@ -86,6 +85,8 @@ public class AuthService {
 
     public AuthResponse refreshToken(String refreshToken) {
         String username = jwtService.extractUsername(refreshToken);
+
+        log.info(TRY_REFRESH_TOKEN, username);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException(username));

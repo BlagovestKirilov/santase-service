@@ -8,6 +8,8 @@ public class LogConstants {
     public static final String TRY_LOGIN_LOG = "Trying to login account with username {}";
     public static final String SUCCESSFUL_REGISTER_LOG = "Successfully registered user: {}";
     public static final String TRY_REGISTER_LOG = "Trying to register account with username {}";
+    public static final String TRY_REFRESH_TOKEN = "Trying to refresh token user: {}";
+    public static final String TRY_GET_PROFILE = "Trying to get profile user: {}";
     public static final String GET_STATE_LOG = "Trying to get game state: {}";
     public static final String GOT_STATE_LOG = "Successfully got game state: {}";
     public static final String GAME_SEARCH_START = "Initiating game search for user: {}";

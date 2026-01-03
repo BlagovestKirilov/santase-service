@@ -31,4 +31,16 @@ public class User extends BaseEntity {
     private Role role;
 
     private String ipAddress;
+
+    private Integer santaseWins;
+
+    private Integer santaseLosses;
+
+    public void incrementSantaseWins() {
+        this.santaseWins++;
+    }
+
+    public void incrementSantaseLosses() {
+        this.santaseLosses++;
+    }
 }
