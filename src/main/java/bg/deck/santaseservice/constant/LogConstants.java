@@ -5,6 +5,9 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class LogConstants {
     public static final String SUCCESSFUL_LOGIN_LOG = "Successfully logged in user: {}";
+    public static final String SUCCESSFUL_LOGIN = "Successfully logged in";
+    public static final String SUCCESSFUL_REGISTER = "Successfully registered";
+    public static final String SUCCESSFUL_REFRESH_TOKEN = "Successfully refreshed token";
     public static final String TRY_LOGIN_LOG = "Trying to login account with username {}";
     public static final String SUCCESSFUL_REGISTER_LOG = "Successfully registered user: {}";
     public static final String TRY_REGISTER_LOG = "Trying to register account with username {}";
@@ -30,5 +33,14 @@ public class LogConstants {
     public static final String FINISH_DEAL_SUCCESS = "Deal finished. Winner: {} | Points awarded: {}.";
     public static final String FINISH_GAME_SURRENDER = "User {} has surrendered. Opponent {} wins the game.";
     public static final String FINISH_GAME = "Game finished gameId={} winner={} result={}({}) vs {}({}).";
-    public static final String EMAIL_SENT_LOG = "Confirmation email sent to: {}";
+    public static final String EMAIL_SENT_LOG = "Confirmation email sent successfully to email={}";
+    public static final String EMAIL_CONFIRMATION_ATTEMPT = "Attempting email confirmation with token={}";
+    public static final String EMAIL_CONFIRMATION_TOKEN_NOT_FOUND = "Email confirmation failed. Token not found: {}";
+    public static final String EMAIL_ALREADY_CONFIRMED = "Email already confirmed. Token={}, username={}";
+    public static final String EMAIL_CONFIRMED_SUCCESSFULLY = "Email confirmed successfully. Token={}, username={}";
+    public static final String EMAIL_RESEND_ATTEMPT = "Attempting to resend email confirmation for username={}";
+    public static final String EMAIL_RESEND_CONFIRMATION_NOT_FOUND = "Email confirmation record not found for username={}";
+    public static final String EMAIL_RESEND_ALREADY_CONFIRMED = "Email resend skipped. Email already confirmed for username={}";
+    public static final String EMAIL_RESEND_SUCCESS = "Email confirmation resent successfully for username={}";
+    public static final String EMAIL_SEND_FAILED = "Failed to send confirmation email to email={}";
 }

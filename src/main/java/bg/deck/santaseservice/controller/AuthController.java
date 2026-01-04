@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 
+import static bg.deck.santaseservice.constant.Constants.DECK_BG_CONFIRMATION_INVALID;
 import static bg.deck.santaseservice.constant.Constants.DECK_BG_SUCCESS_CONFIRMATION;
 
 @RequiredArgsConstructor
@@ -45,9 +46,13 @@ public class AuthController {
 
     @GetMapping("/confirm-email")
     public ResponseEntity<Void> confirmEmail(@RequestParam("token") String confirmationToken) {
-        authService.confirmEmail(confirmationToken);
+
+        boolean confirmed = authService.confirmEmail(confirmationToken);
+
+        String redirectUrl = confirmed ? DECK_BG_SUCCESS_CONFIRMATION : DECK_BG_CONFIRMATION_INVALID;
+
         return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(DECK_BG_SUCCESS_CONFIRMATION))
+                .location(URI.create(redirectUrl))
                 .build();
     }
 }

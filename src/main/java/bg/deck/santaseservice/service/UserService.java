@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.service;
 
+import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.enums.EmailConfirmationStatus;
 import bg.deck.santaseservice.exception.EmailConfirmationNotFoundException;
 import bg.deck.santaseservice.exception.InvalidCredentialsException;
@@ -15,8 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-import static bg.deck.santaseservice.constant.LogConstants.TRY_GET_PROFILE;
-
 @Log4j2
 @RequiredArgsConstructor
 @Service
@@ -31,7 +30,7 @@ public class UserService {
     public ProfileResponse getProfile() {
         String username = gameUtilService.getUsername();
 
-        log.info(TRY_GET_PROFILE, username);
+        log.info(LogConstants.TRY_GET_PROFILE, username);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException(username));
@@ -42,12 +41,19 @@ public class UserService {
     public boolean resendEmail() {
         String username = gameUtilService.getUsername();
 
+        log.info(LogConstants.EMAIL_RESEND_ATTEMPT, username);
+
         EmailConfirmation emailConfirmation =
                 emailConfirmationRepository.findByUserUsername(username)
-                        .orElseThrow(() -> new EmailConfirmationNotFoundException(username));
+                        .orElseThrow(() -> {
+                            log.warn(LogConstants.EMAIL_RESEND_CONFIRMATION_NOT_FOUND, username);
+                            return new EmailConfirmationNotFoundException(username);
+                        });
 
-        if (Boolean.TRUE.equals(emailConfirmation.getUser().getIsEmailConfirmed()) ||
-                emailConfirmation.getStatus().equals(EmailConfirmationStatus.CONFIRMED)) {
+        if (Boolean.TRUE.equals(emailConfirmation.getUser().getIsEmailConfirmed())
+                || EmailConfirmationStatus.CONFIRMED.equals(emailConfirmation.getStatus())) {
+
+            log.info(LogConstants.EMAIL_RESEND_ALREADY_CONFIRMED, username);
             return false;
         }
 
@@ -56,6 +62,9 @@ public class UserService {
 
         emailService.sendConfirmationEmail(emailConfirmation);
 
+        log.info(LogConstants.EMAIL_RESEND_SUCCESS, username);
+
         return true;
     }
+
 }

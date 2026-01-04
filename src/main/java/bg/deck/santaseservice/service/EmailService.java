@@ -1,6 +1,7 @@
 package bg.deck.santaseservice.service;
 
 import bg.deck.santaseservice.config.TemplateLoader;
+import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.exception.NotSendEmailException;
 import bg.deck.santaseservice.model.EmailConfirmation;
 import jakarta.mail.MessagingException;
@@ -21,7 +22,6 @@ import static bg.deck.santaseservice.constant.Constants.DECK_BG_PERSONAL;
 import static bg.deck.santaseservice.constant.Constants.EMAIL_CONFIRMATION_LINK;
 import static bg.deck.santaseservice.constant.Constants.EMAIL_CONFIRMATION_TEMPLATE;
 import static bg.deck.santaseservice.constant.Constants.EMAIL_USERNAME;
-import static bg.deck.santaseservice.constant.LogConstants.EMAIL_SENT_LOG;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -32,19 +32,24 @@ public class EmailService {
     private final TemplateLoader templateLoader;
 
     public void sendConfirmationEmail(EmailConfirmation emailConfirmation) {
+        String email = emailConfirmation.getUser().getEmail();
+
         try {
             MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, DECK_BG_EMAIL_ENCODING);
 
             helper.setFrom(DECK_BG_EMAIL, DECK_BG_PERSONAL);
-            helper.setTo(emailConfirmation.getUser().getEmail());
+            helper.setTo(email);
             helper.setSubject(DECK_BG_EMAIL_SUBJECT);
             helper.setText(buildConfirmationBody(emailConfirmation), true);
 
             javaMailSender.send(message);
-            log.info(EMAIL_SENT_LOG, emailConfirmation.getUser().getEmail());
-        } catch (MessagingException | UnsupportedEncodingException _) {
-            throw new NotSendEmailException(emailConfirmation.getUser().getEmail());
+
+            log.info(LogConstants.EMAIL_SENT_LOG, email);
+
+        } catch (MessagingException | UnsupportedEncodingException ex) {
+            log.error(LogConstants.EMAIL_SEND_FAILED, email, ex);
+            throw new NotSendEmailException(email);
         }
     }
 
