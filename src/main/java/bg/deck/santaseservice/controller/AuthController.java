@@ -8,11 +8,18 @@ import bg.deck.santaseservice.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.net.URI;
+
+import static bg.deck.santaseservice.constant.Constants.DECK_BG_SUCCESS_CONFIRMATION;
 
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -34,5 +41,13 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
         return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
+    }
+
+    @GetMapping("/confirm-email")
+    public ResponseEntity<Void> confirmEmail(@RequestParam("token") String confirmationToken) {
+        authService.confirmEmail(confirmationToken);
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(DECK_BG_SUCCESS_CONFIRMATION))
+                .build();
     }
 }

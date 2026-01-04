@@ -2,11 +2,11 @@ spring:
   profiles:
     active: dev
 
-  jackson:
-    time-zone: Europe/Sofia
-
   application:
     name: SantaseService
+
+  jackson:
+    time-zone: Europe/Sofia
 
   datasource:
     url: ${DB_URL_SANTASE}
@@ -25,6 +25,12 @@ spring:
         dialect: ${DB_DIALECT}
         jdbc:
           time_zone: Europe/Sofia
+
+  mail:
+    host: ${SANTASE_MAIL_HOST}
+    port: ${SANTASE_MAIL_PORT}
+    username: ${SANTASE_MAIL_USERNAME}
+    password: ${SANTASE_MAIL_PASSWORD}
 
 jwt:
   secret-key: ${JWT_SECRET}

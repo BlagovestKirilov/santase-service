@@ -68,6 +68,10 @@ jobs:
             JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
             JWT_REFRESH_EXPIRATION=${{ secrets.JWT_REFRESH_EXPIRATION }}
             DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            SANTASE_MAIL_HOST=${{ secrets.SANTASE_MAIL_HOST }}
+            SANTASE_MAIL_PORT=${{ secrets.SANTASE_MAIL_PORT }}
+            SANTASE_MAIL_USERNAME=${{ secrets.SANTASE_MAIL_USERNAME }}
+            SANTASE_MAIL_PASSWORD=${{ secrets.SANTASE_MAIL_PASSWORD }}
             EOF
 
             echo "Pulling latest images..."
