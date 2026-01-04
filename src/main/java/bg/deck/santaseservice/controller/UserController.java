@@ -22,11 +22,7 @@ public class UserController {
     }
 
     @PostMapping("/resend-email")
-    public ResponseEntity<Void> confirmEmail() {
-        if (userService.resendEmail()) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<Void> resendEmail() {
+        return userService.resendEmail() ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
     }
 }

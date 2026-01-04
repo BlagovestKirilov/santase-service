@@ -4,9 +4,6 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class Constants {
-    public static final String SUCCESSFUL_LOGIN = "Successfully logged in";
-    public static final String SUCCESSFUL_REGISTER = "Successfully registered";
-    public static final String SUCCESSFUL_REFRESH_TOKEN = "Successfully refreshed token";
     public static final String KING = "KING";
     public static final String QUEEN = "QUEEN";
     public static final String NOTIFY_GAME_DESTINATION = "/topic/game/%s/%s";
@@ -22,6 +19,7 @@ public class Constants {
     public static final String DECK_BG = "https://deck.bg";
     public static final String DECK_BG_CONFIRM_EMAIL = "https://deck.bg/api/auth/confirm-email?token=";
     public static final String DECK_BG_SUCCESS_CONFIRMATION = "https://deck.bg/confirmation-success";
+    public static final String DECK_BG_CONFIRMATION_INVALID = "https://deck.bg/confirmation-invalid";
     public static final String DECK_BG_EMAIL = "no.reply.deck.bg@gmail.com";
     public static final String DECK_BG_PERSONAL = "DECK.BG";
     public static final String DECK_BG_EMAIL_SUBJECT = "Потвърди своя профил в DECK.BG";

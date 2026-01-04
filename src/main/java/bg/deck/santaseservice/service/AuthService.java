@@ -1,8 +1,8 @@
 package bg.deck.santaseservice.service;
 
+import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.enums.EmailConfirmationStatus;
 import bg.deck.santaseservice.exception.EmailAlreadyExistsException;
-import bg.deck.santaseservice.exception.EmailConfirmationNotFoundException;
 import bg.deck.santaseservice.exception.InvalidCredentialsException;
 import bg.deck.santaseservice.exception.InvalidTokenException;
 import bg.deck.santaseservice.exception.UserAlreadyExistsException;
@@ -24,14 +24,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 import static bg.deck.santaseservice.constant.Constants.REAL_IP;
-import static bg.deck.santaseservice.constant.Constants.SUCCESSFUL_LOGIN;
-import static bg.deck.santaseservice.constant.Constants.SUCCESSFUL_REFRESH_TOKEN;
-import static bg.deck.santaseservice.constant.Constants.SUCCESSFUL_REGISTER;
 import static bg.deck.santaseservice.constant.LogConstants.SUCCESSFUL_LOGIN_LOG;
 import static bg.deck.santaseservice.constant.LogConstants.SUCCESSFUL_REGISTER_LOG;
 import static bg.deck.santaseservice.constant.LogConstants.TRY_LOGIN_LOG;
-import static bg.deck.santaseservice.constant.LogConstants.TRY_REFRESH_TOKEN;
 import static bg.deck.santaseservice.constant.LogConstants.TRY_REGISTER_LOG;
 
 @Log4j2
@@ -62,7 +60,7 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())
-                .message(SUCCESSFUL_LOGIN)
+                .message(LogConstants.SUCCESSFUL_LOGIN)
                 .token(jwtService.generateToken(user))
                 .refreshToken(jwtService.generateRefreshToken(user))
                 .build();
@@ -96,25 +94,25 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())
-                .message(SUCCESSFUL_REGISTER)
+                .message(LogConstants.SUCCESSFUL_REGISTER)
                 .build();
     }
 
     public AuthResponse refreshToken(String refreshToken) {
         String username = jwtService.extractUsername(refreshToken);
 
-        log.info(TRY_REFRESH_TOKEN, username);
+        log.info(LogConstants.TRY_REFRESH_TOKEN, username);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException(username));
 
         if (username != null && jwtService.isTokenValid(refreshToken)) {
 
-            log.info(SUCCESSFUL_REFRESH_TOKEN);
+            log.info(LogConstants.SUCCESSFUL_REFRESH_TOKEN);
 
             return AuthResponse.builder()
                     .status(HttpStatus.OK.getReasonPhrase())
-                    .message(SUCCESSFUL_REFRESH_TOKEN)
+                    .message(LogConstants.SUCCESSFUL_REFRESH_TOKEN)
                     .token(jwtService.generateToken(user))
                     .refreshToken(jwtService.generateRefreshToken(user))
                     .build();
@@ -123,17 +121,40 @@ public class AuthService {
         throw new InvalidTokenException();
     }
 
-    public void confirmEmail(String confirmationToken) {
-        EmailConfirmation emailConfirmation =
-                emailConfirmationRepository.findByConfirmationToken(confirmationToken)
-                        .orElseThrow(() -> new EmailConfirmationNotFoundException(confirmationToken));
+    public boolean confirmEmail(String confirmationToken) {
+        log.info(LogConstants.EMAIL_CONFIRMATION_ATTEMPT, confirmationToken);
 
-        if (emailConfirmation.getStatus().equals(EmailConfirmationStatus.CONFIRMED)) {
-            return;
+        Optional<EmailConfirmation> optionalEmailConfirmation =
+                emailConfirmationRepository.findByConfirmationToken(confirmationToken);
+
+        if (optionalEmailConfirmation.isEmpty()) {
+            log.warn(LogConstants.EMAIL_CONFIRMATION_TOKEN_NOT_FOUND, confirmationToken);
+            return false;
+        }
+
+        EmailConfirmation emailConfirmation = optionalEmailConfirmation.get();
+
+        if (EmailConfirmationStatus.CONFIRMED.equals(emailConfirmation.getStatus())) {
+            log.info(
+                    LogConstants.EMAIL_ALREADY_CONFIRMED,
+                    confirmationToken,
+                    emailConfirmation.getUser().getUsername()
+            );
+            return false;
         }
 
         emailConfirmation.setStatus(EmailConfirmationStatus.CONFIRMED);
         emailConfirmation.getUser().setIsEmailConfirmed(true);
+
         emailConfirmationRepository.save(emailConfirmation);
+
+        log.info(
+                LogConstants.EMAIL_CONFIRMED_SUCCESSFULLY,
+                confirmationToken,
+                emailConfirmation.getUser().getUsername()
+        );
+
+        return true;
     }
+
 }
