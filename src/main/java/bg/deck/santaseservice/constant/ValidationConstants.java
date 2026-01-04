@@ -4,7 +4,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class ValidationConstants {
-    public static final int USERNAME_MIN = 5;
+    public static final int USERNAME_MIN = 4;
     public static final int USERNAME_MAX = 20;
     public static final int PASSWORD_MIN = 5;
     public static final int PASSWORD_MAX = 50;
