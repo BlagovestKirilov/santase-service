@@ -25,6 +25,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final EmailConfirmationRepository emailConfirmationRepository;
     private final GameUtilService gameUtilService;
+    private final EmailService emailService;
     private final UserMapper userMapper;
 
     public ProfileResponse getProfile() {
@@ -52,6 +53,9 @@ public class UserService {
 
         emailConfirmation.setConfirmationToken(UUID.randomUUID().toString());
         emailConfirmationRepository.save(emailConfirmation);
+
+        emailService.sendConfirmationEmail(emailConfirmation);
+
         return true;
     }
 }
