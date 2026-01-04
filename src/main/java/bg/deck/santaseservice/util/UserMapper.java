@@ -5,6 +5,7 @@ import bg.deck.santaseservice.model.request.RegisterRequest;
 import bg.deck.santaseservice.model.response.ProfileResponse;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import static bg.deck.santaseservice.enums.Role.ROLE_USER;
@@ -20,5 +21,6 @@ public interface UserMapper {
         user.setSantaseLosses(0);
     }
 
+    @Mapping(source = "isEmailConfirmed", target = "emailConfirmed")
     ProfileResponse toProfileResponse(User user);
 }
