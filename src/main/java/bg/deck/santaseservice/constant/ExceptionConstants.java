@@ -27,4 +27,6 @@ public class ExceptionConstants {
     public static final String NO_ACTIVE_GAME = "No active game found for %s.";
     public static final String DECK_SIZE_EXCEPTION = "Deck size must be greater than %s and less than %s.";
     public static final String CARD_NOT_PLAYABLE = "Card not playable.";
+    public static final String EMAIL_CONFIRMATION_NOT_FOUND = "Email confirmation with token %s does not found.";
+    public static final String FAILED_SENDING_EMAIL = "Failed to send confirmation email to %s";
 }

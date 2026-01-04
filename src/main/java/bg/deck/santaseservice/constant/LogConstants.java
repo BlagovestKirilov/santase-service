@@ -30,4 +30,5 @@ public class LogConstants {
     public static final String FINISH_DEAL_SUCCESS = "Deal finished. Winner: {} | Points awarded: {}.";
     public static final String FINISH_GAME_SURRENDER = "User {} has surrendered. Opponent {} wins the game.";
     public static final String FINISH_GAME = "Game finished gameId={} winner={} result={}({}) vs {}({}).";
+    public static final String EMAIL_SENT_LOG = "Confirmation email sent to: {}";
 }

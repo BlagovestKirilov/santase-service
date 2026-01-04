@@ -1,6 +1,7 @@
 package bg.deck.santaseservice.model.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,4 +11,6 @@ import lombok.Setter;
 public class ProfileResponse {
     private int santaseWins;
     private int santaseLosses;
+    @JsonProperty("isEmailConfirmed")
+    private boolean emailConfirmed;
 }

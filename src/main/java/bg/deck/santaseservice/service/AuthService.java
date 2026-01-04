@@ -1,14 +1,18 @@
 package bg.deck.santaseservice.service;
 
+import bg.deck.santaseservice.enums.EmailConfirmationStatus;
 import bg.deck.santaseservice.exception.EmailAlreadyExistsException;
+import bg.deck.santaseservice.exception.EmailConfirmationNotFoundException;
 import bg.deck.santaseservice.exception.InvalidCredentialsException;
 import bg.deck.santaseservice.exception.InvalidTokenException;
 import bg.deck.santaseservice.exception.UserAlreadyExistsException;
+import bg.deck.santaseservice.model.EmailConfirmation;
 import bg.deck.santaseservice.model.Player;
 import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.request.LoginRequest;
 import bg.deck.santaseservice.model.request.RegisterRequest;
 import bg.deck.santaseservice.model.response.AuthResponse;
+import bg.deck.santaseservice.repository.EmailConfirmationRepository;
 import bg.deck.santaseservice.repository.PlayerRepository;
 import bg.deck.santaseservice.repository.UserRepository;
 import bg.deck.santaseservice.util.UserMapper;
@@ -38,9 +42,11 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
+    private final EmailConfirmationRepository emailConfirmationRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final JwtService jwtService;
+    private final EmailService emailService;
 
     public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request) {
         log.info(TRY_LOGIN_LOG, loginRequest.getUsername());
@@ -80,6 +86,11 @@ public class AuthService {
         Player player = Player.builder().user(user).build();
         playerRepository.save(player);
 
+        EmailConfirmation emailConfirmation = new EmailConfirmation(user);
+        emailConfirmationRepository.save(emailConfirmation);
+
+        emailService.sendConfirmationEmail(emailConfirmation);
+
         log.info(SUCCESSFUL_REGISTER_LOG, registerRequest.getUsername());
 
         return AuthResponse.builder()
@@ -109,5 +120,19 @@ public class AuthService {
         }
 
         throw new InvalidTokenException();
+    }
+
+    public void confirmEmail(String confirmationToken) {
+        EmailConfirmation emailConfirmation =
+                emailConfirmationRepository.findByConfirmationToken(confirmationToken)
+                        .orElseThrow(() -> new EmailConfirmationNotFoundException(confirmationToken));
+
+        if (emailConfirmation.getStatus().equals(EmailConfirmationStatus.CONFIRMED)) {
+            return;
+        }
+
+        emailConfirmation.setStatus(EmailConfirmationStatus.CONFIRMED);
+        emailConfirmation.getUser().setIsEmailConfirmed(true);
+        emailConfirmationRepository.save(emailConfirmation);
     }
 }
