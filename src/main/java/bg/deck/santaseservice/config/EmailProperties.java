@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "mail")
+@ConfigurationProperties(prefix = "spring.mail")
 @Configuration
 public class EmailProperties {
     public static final String SMTP_AUTH = "mail.smtp.auth";
