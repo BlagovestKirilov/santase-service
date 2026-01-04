@@ -36,8 +36,7 @@ public class EmailService {
 
         try {
             MimeMessage message = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, true, DECK_BG_EMAIL_ENCODING);
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, DECK_BG_EMAIL_ENCODING);
 
             helper.setFrom(DECK_BG_EMAIL, DECK_BG_PERSONAL);
             helper.setTo(email);
