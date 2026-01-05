@@ -13,10 +13,10 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import static bg.deck.santaseservice.constant.Constants.DECK_BG_CONFIRM_EMAIL;
 import static bg.deck.santaseservice.constant.Constants.DECK_BG_EMAIL;
-import static bg.deck.santaseservice.constant.Constants.DECK_BG_EMAIL_ENCODING;
 import static bg.deck.santaseservice.constant.Constants.DECK_BG_EMAIL_SUBJECT;
 import static bg.deck.santaseservice.constant.Constants.DECK_BG_PERSONAL;
 import static bg.deck.santaseservice.constant.Constants.EMAIL_CONFIRMATION_LINK;
@@ -36,7 +36,7 @@ public class EmailService {
 
         try {
             MimeMessage message = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, DECK_BG_EMAIL_ENCODING);
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.toString());
 
             helper.setFrom(DECK_BG_EMAIL, DECK_BG_PERSONAL);
             helper.setTo(email);

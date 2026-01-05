@@ -23,7 +23,6 @@ public class Constants {
     public static final String DECK_BG_EMAIL = "no.reply.deck.bg@gmail.com";
     public static final String DECK_BG_PERSONAL = "DECK.BG";
     public static final String DECK_BG_EMAIL_SUBJECT = "Потвърди своя профил в DECK.BG";
-    public static final String DECK_BG_EMAIL_ENCODING = "UTF-8";
     public static final String EMAIL_USERNAME = "{{USERNAME}}";
     public static final String EMAIL_CONFIRMATION_LINK = "{{CONFIRMATION_LINK}}";
     public static final String EMAIL_CONFIRMATION_TEMPLATE = "/templates/email-confirmation.html";
