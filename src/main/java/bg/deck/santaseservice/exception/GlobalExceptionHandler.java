@@ -33,7 +33,10 @@ public class GlobalExceptionHandler {
             DeckSizeException.class,
             NoActiveGameFoundException.class,
             EmailConfirmationNotFoundException.class,
-            NotSendEmailException.class
+            NotSendEmailException.class,
+            EmailNotConfirmedException.class,
+            UserNotFoundException.class,
+            InvalidPasswordException.class
     })
     public ResponseEntity<ErrorResponse> handleSecurityAndBusinessExceptions(RuntimeException ex, HttpServletRequest request) {
         log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(REAL_IP), request.getRequestURI());

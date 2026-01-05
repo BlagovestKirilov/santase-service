@@ -24,6 +24,7 @@ public class BaseEntity {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(nullable = false)
     private Instant updatedAt;
 
     @PrePersist

@@ -1,11 +1,13 @@
 package bg.deck.santaseservice.controller;
 
+import bg.deck.santaseservice.model.request.ChangePasswordRequest;
 import bg.deck.santaseservice.model.response.ProfileResponse;
 import bg.deck.santaseservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,5 +26,11 @@ public class UserController {
     @PostMapping("/resend-email")
     public ResponseEntity<Void> resendEmail() {
         return userService.resendEmail() ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
+        userService.changePassword(changePasswordRequest);
+        return ResponseEntity.ok().build();
     }
 }
