@@ -43,4 +43,10 @@ public class LogConstants {
     public static final String EMAIL_RESEND_ALREADY_CONFIRMED = "Email resend skipped. Email already confirmed for username={}";
     public static final String EMAIL_RESEND_SUCCESS = "Email confirmation resent successfully for username={}";
     public static final String EMAIL_SEND_FAILED = "Failed to send confirmation email to email={}";
+    public static final String PASSWORD_CHANGE_STARTED = "Password change attempt started for user {}";
+    public static final String PASSWORD_CHANGE_SUCCESS = "Password successfully changed for user {}";
+    public static final String USER_NOT_FOUND = "Password change failed: user {} not found";
+    public static final String INVALID_CURRENT_PASSWORD = "Password change failed: invalid current password for user {}";
+    public static final String SAME_PASSWORD = "Password change failed: new password equals old password for user {}";
+    public static final String EMAIL_NOT_CONFIRMED = "Password change failed: email not confirmed for user {}";
 }
