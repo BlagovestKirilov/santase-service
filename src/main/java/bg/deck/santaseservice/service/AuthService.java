@@ -221,4 +221,10 @@ public class AuthService {
 
         log.info(LogConstants.PASSWORD_CHANGE_SUCCESS, user.getUsername());
     }
+
+    public void validateForgotPassword(String token) {
+        forgotPasswordRepository
+                .findByForgotPasswordTokenAndStatus(token, ForgotPasswordStatus.PENDING)
+                .orElseThrow(() -> new InvalidCredentialsException(token));
+    }
 }
