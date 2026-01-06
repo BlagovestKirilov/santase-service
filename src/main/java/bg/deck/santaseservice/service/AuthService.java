@@ -201,7 +201,7 @@ public class AuthService {
 
         User user = forgotPassword.getUser();
 
-        log.info(LogConstants.PASSWORD_CHANGE_STARTED, user.getPassword());
+        log.info(LogConstants.PASSWORD_CHANGE_STARTED, user.getUsername());
 
         if (Boolean.FALSE.equals(user.getIsEmailConfirmed())) {
             log.warn(LogConstants.EMAIL_NOT_CONFIRMED, user.getUsername());
