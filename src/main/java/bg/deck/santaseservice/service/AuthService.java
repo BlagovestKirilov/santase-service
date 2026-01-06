@@ -1,18 +1,25 @@
 package bg.deck.santaseservice.service;
 
+import bg.deck.santaseservice.constant.ExceptionConstants;
 import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.enums.EmailConfirmationStatus;
 import bg.deck.santaseservice.exception.EmailAlreadyExistsException;
+import bg.deck.santaseservice.exception.EmailNotConfirmedException;
 import bg.deck.santaseservice.exception.InvalidCredentialsException;
+import bg.deck.santaseservice.exception.InvalidPasswordException;
 import bg.deck.santaseservice.exception.InvalidTokenException;
 import bg.deck.santaseservice.exception.UserAlreadyExistsException;
 import bg.deck.santaseservice.model.EmailConfirmation;
+import bg.deck.santaseservice.model.ForgotPassword;
 import bg.deck.santaseservice.model.Player;
 import bg.deck.santaseservice.model.User;
+import bg.deck.santaseservice.model.request.ChangePasswordRequest;
+import bg.deck.santaseservice.model.request.ForgotPasswordRequest;
 import bg.deck.santaseservice.model.request.LoginRequest;
 import bg.deck.santaseservice.model.request.RegisterRequest;
 import bg.deck.santaseservice.model.response.AuthResponse;
 import bg.deck.santaseservice.repository.EmailConfirmationRepository;
+import bg.deck.santaseservice.repository.ForgotPasswordRepository;
 import bg.deck.santaseservice.repository.PlayerRepository;
 import bg.deck.santaseservice.repository.UserRepository;
 import bg.deck.santaseservice.util.UserMapper;
@@ -40,6 +47,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
+    private final ForgotPasswordRepository forgotPasswordRepository;
     private final EmailConfirmationRepository emailConfirmationRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
@@ -157,4 +165,48 @@ public class AuthService {
         return true;
     }
 
+    public void forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
+
+        String email = forgotPasswordRequest.getEmail();
+        log.info(LogConstants.FORGOT_PASSWORD_STARTED, email);
+
+        User user = userRepository.findByEmail(email)
+                .filter(u -> Boolean.TRUE.equals(u.getIsEmailConfirmed()))
+                .orElseThrow(() -> {
+                    log.warn(LogConstants.FORGOT_PASSWORD_EMAIL_NOT_CONFIRMED, email);
+                    return new EmailNotConfirmedException(email);
+                });
+
+        ForgotPassword forgotPassword = new ForgotPassword(user);
+        forgotPasswordRepository.save(forgotPassword);
+
+        emailService.sendForgotPasswordEmail(forgotPassword);
+
+        log.info(LogConstants.FORGOT_PASSWORD_EMAIL_SENT, email);
+    }
+
+
+    public void changePassword(ChangePasswordRequest changePasswordRequest) {
+        ForgotPassword forgotPassword = forgotPasswordRepository.findByForgotPasswordToken(changePasswordRequest.getToken())
+                .orElseThrow(() -> new InvalidCredentialsException(changePasswordRequest.getToken()));
+
+        User user = forgotPassword.getUser();
+
+        log.info(LogConstants.PASSWORD_CHANGE_STARTED, user.getPassword());
+
+        if (Boolean.FALSE.equals(user.getIsEmailConfirmed())) {
+            log.warn(LogConstants.EMAIL_NOT_CONFIRMED, user.getUsername());
+            throw new EmailNotConfirmedException(user.getEmail());
+        }
+
+        if (passwordEncoder.matches(changePasswordRequest.getNewPassword(), user.getPassword())) {
+            log.warn(LogConstants.SAME_PASSWORD, user.getUsername());
+            throw new InvalidPasswordException(ExceptionConstants.SAME_PASSWORD);
+        }
+
+        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        userRepository.save(user);
+
+        log.info(LogConstants.PASSWORD_CHANGE_SUCCESS, user.getUsername());
+    }
 }

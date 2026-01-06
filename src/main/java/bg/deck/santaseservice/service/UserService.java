@@ -87,7 +87,7 @@ public class UserService {
 
         if (Boolean.FALSE.equals(user.getIsEmailConfirmed())) {
             log.warn(LogConstants.EMAIL_NOT_CONFIRMED, username);
-            throw new EmailNotConfirmedException(ExceptionConstants.EMAIL_NOT_CONFIRMED);
+            throw new EmailNotConfirmedException(user.getEmail());
         }
 
         if (!passwordEncoder.matches(changePasswordRequest.getCurrentPassword(), user.getPassword())) {
