@@ -58,8 +58,8 @@ public class AuthController {
                 .build();
     }
 
-    @PostMapping("/validate-link")
-    public ResponseEntity<Void> forgotPassword(@RequestParam("token") String forgotPasswordToken) {
+    @GetMapping("/validate-link")
+    public ResponseEntity<Void> validateForgotPassword(@RequestParam("token") String forgotPasswordToken) {
         authService.validateForgotPassword(forgotPasswordToken);
         return ResponseEntity.ok().build();
     }
