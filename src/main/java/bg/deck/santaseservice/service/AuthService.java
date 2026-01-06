@@ -3,6 +3,7 @@ package bg.deck.santaseservice.service;
 import bg.deck.santaseservice.constant.ExceptionConstants;
 import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.enums.EmailConfirmationStatus;
+import bg.deck.santaseservice.enums.ForgotPasswordStatus;
 import bg.deck.santaseservice.exception.EmailAlreadyExistsException;
 import bg.deck.santaseservice.exception.EmailNotConfirmedException;
 import bg.deck.santaseservice.exception.InvalidCredentialsException;
@@ -31,6 +32,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 import static bg.deck.santaseservice.constant.Constants.REAL_IP;
@@ -177,6 +179,12 @@ public class AuthService {
                     return new EmailNotConfirmedException(email);
                 });
 
+        List<ForgotPassword> pendingForgotPasswordList = forgotPasswordRepository
+                .findAllByUserAndStatus(user, ForgotPasswordStatus.PENDING);
+
+        pendingForgotPasswordList.forEach(pendingForgotPassword -> pendingForgotPassword.setStatus(ForgotPasswordStatus.EXPIRED));
+        forgotPasswordRepository.saveAll(pendingForgotPasswordList);
+
         ForgotPassword forgotPassword = new ForgotPassword(user);
         forgotPasswordRepository.save(forgotPassword);
 
@@ -187,7 +195,8 @@ public class AuthService {
 
 
     public void changePassword(ChangePasswordRequest changePasswordRequest) {
-        ForgotPassword forgotPassword = forgotPasswordRepository.findByForgotPasswordToken(changePasswordRequest.getToken())
+        ForgotPassword forgotPassword = forgotPasswordRepository
+                .findByForgotPasswordTokenAndStatus(changePasswordRequest.getToken(), ForgotPasswordStatus.PENDING)
                 .orElseThrow(() -> new InvalidCredentialsException(changePasswordRequest.getToken()));
 
         User user = forgotPassword.getUser();
@@ -206,6 +215,9 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
         userRepository.save(user);
+
+        forgotPassword.setStatus(ForgotPasswordStatus.SUCCESS);
+        forgotPasswordRepository.save(forgotPassword);
 
         log.info(LogConstants.PASSWORD_CHANGE_SUCCESS, user.getUsername());
     }
