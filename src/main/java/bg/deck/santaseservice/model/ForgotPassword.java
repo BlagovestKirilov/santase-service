@@ -1,0 +1,41 @@
+package bg.deck.santaseservice.model;
+
+import bg.deck.santaseservice.enums.ForgotPasswordStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToOne;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.util.UUID;
+
+@Setter
+@Getter
+@Builder
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+public class ForgotPassword extends BaseEntity {
+    @OneToOne
+    private User user;
+
+    @Column(nullable = false)
+    private String forgotPasswordToken;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ForgotPasswordStatus status;
+
+    public ForgotPassword(User user) {
+        this.user = user;
+        this.forgotPasswordToken = UUID.randomUUID().toString();
+        this.status = ForgotPasswordStatus.PENDING;
+    }
+}

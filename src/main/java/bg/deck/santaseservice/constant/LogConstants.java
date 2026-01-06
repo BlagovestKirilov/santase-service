@@ -49,4 +49,7 @@ public class LogConstants {
     public static final String INVALID_CURRENT_PASSWORD = "Password change failed: invalid current password for user {}";
     public static final String SAME_PASSWORD = "Password change failed: new password equals old password for user {}";
     public static final String EMAIL_NOT_CONFIRMED = "Password change failed: email not confirmed for user {}";
+    public static final String FORGOT_PASSWORD_STARTED = "Forgot password process started for email {}";
+    public static final String FORGOT_PASSWORD_EMAIL_NOT_CONFIRMED = "Forgot password failed: email {} is not confirmed or does not exist.";
+    public static final String FORGOT_PASSWORD_EMAIL_SENT = "Forgot password email sent to {}";
 }

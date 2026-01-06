@@ -31,5 +31,5 @@ public class ExceptionConstants {
     public static final String FAILED_SENDING_EMAIL = "Failed to send confirmation email to %s";
     public static final String USER_NOT_FOUND = "User not found: %s";
     public static final String SAME_PASSWORD = "New password must be different.";
-    public static final String EMAIL_NOT_CONFIRMED = "Email address is not confirmed.";
+    public static final String EMAIL_NOT_CONFIRMED = "Email %s is not confirmed.";
 }
