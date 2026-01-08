@@ -18,6 +18,7 @@ spring:
       enabled: true
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: none
     properties:
@@ -25,7 +26,9 @@ spring:
         dialect: ${DB_DIALECT}
         jdbc:
           time_zone: Europe/Sofia
-
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
   mail:
     host: ${SANTASE_MAIL_HOST}
     port: ${SANTASE_MAIL_PORT}
@@ -60,15 +63,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    properties:
-      hibernate:
-        dialect: ${DB_DIALECT}
-        jdbc:
-          time_zone: Europe/Sofia
+
 logging:
   level:
     org.hibernate.SQL: INFO
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.orm.jdbc.bind: TRACE
 
 
 # ============================================================
@@ -94,12 +93,8 @@ spring:
       leak-detection-threshold: 15000
   jpa:
     hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: ${DB_DIALECT}
-        jdbc:
-          time_zone: Europe/Sofia
+      ddl-auto: validate
+
 logging:
   level:
     root: INFO

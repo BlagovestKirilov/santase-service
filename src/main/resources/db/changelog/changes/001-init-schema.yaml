@@ -1,0 +1,538 @@
+databaseChangeLog:
+- changeSet:
+    id: 1767813047618-1
+    author: Blagovest Kirilov
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: users_pkey
+            name: id
+            type: UUID
+        - column:
+            name: created_at
+            type: TIMESTAMP WITH TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: password
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: role
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: username
+            type: VARCHAR(255)
+        - column:
+            name: ip_address
+            type: VARCHAR(255)
+        - column:
+            name: santase_losses
+            type: INTEGER
+        - column:
+            name: santase_wins
+            type: INTEGER
+        - column:
+            name: email
+            type: VARCHAR(255)
+        - column:
+            name: is_email_confirmed
+            type: BOOLEAN
+        - column:
+            name: updated_at
+            type: TIMESTAMP WITH TIME ZONE
+        tableName: users
+- changeSet:
+    id: 1767813047618-2
+    author: Blagovest Kirilov
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: email_confirmation_pkey
+            name: id
+            type: UUID
+        - column:
+            name: created_at
+            type: TIMESTAMP WITH TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: confirmation_token
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: status
+            type: VARCHAR(255)
+        - column:
+            name: user_id
+            type: UUID
+        - column:
+            constraints:
+              nullable: false
+            name: updated_at
+            type: TIMESTAMP WITH TIME ZONE
+        tableName: email_confirmation
+- changeSet:
+    id: 1767813047618-3
+    author: Blagovest Kirilov
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: forgot_password_pkey
+            name: id
+            type: UUID
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP WITH TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: updated_at
+            type: TIMESTAMP WITH TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: forgot_password_token
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: status
+            type: VARCHAR(255)
+        - column:
+            name: user_id
+            type: UUID
+        tableName: forgot_password
+- changeSet:
+    id: 1767813047618-4
+    author: Blagovest Kirilov
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+            name: game_id
+            type: UUID
+        - column:
+            constraints:
+              nullable: false
+            name: card_id
+            type: UUID
+        - column:
+            name: rank
+            type: VARCHAR(255)
+        - column:
+            name: suit
+            type: VARCHAR(255)
+        - column:
+            name: is_playable
+            type: BOOLEAN
+        - column:
+            name: is_last_drawn
+            type: BOOLEAN
+        tableName: game_deck
+- changeSet:
+    id: 1767813047618-5
+    author: Blagovest Kirilov
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: game_state_pkey
+            name: id
+            type: UUID
+        - column:
+            name: created_at
+            type: TIMESTAMP WITH TIME ZONE
+        - column:
+            name: trump_card_id
+            type: UUID
+        - column:
+            name: trump_card_rank
+            type: VARCHAR(255)
+        - column:
+            name: trump_card_suit
+            type: VARCHAR(255)
+        - column:
+            name: closed_by_player_id
+            type: UUID
+        - column:
+            name: first_turn_player_id
+            type: UUID
+        - column:
+            name: in_turn_player_id
+            type: UUID
+        - column:
+            name: is_playable
+            type: BOOLEAN
+        - column:
+            name: is_last_drawn
+            type: BOOLEAN
+        - column:
+            name: updated_at
+            type: TIMESTAMP WITH TIME ZONE
+        tableName: game_state
+- changeSet:
+    id: 1767813047618-6
+    author: Blagovest Kirilov
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+            name: player_id
+            type: UUID
+        - column:
+            constraints:
+              nullable: false
+            name: card_id
+            type: UUID
+        - column:
+            name: rank
+            type: VARCHAR(255)
+        - column:
+            name: suit
+            type: VARCHAR(255)
+        - column:
+            name: is_playable
+            type: BOOLEAN
+        - column:
+            name: is_last_drawn
+            type: BOOLEAN
+        tableName: player_hand
+- changeSet:
+    id: 1767813047618-7
+    author: Blagovest Kirilov
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: player_pkey
+            name: id
+            type: UUID
+        - column:
+            name: created_at
+            type: TIMESTAMP WITH TIME ZONE
+        - column:
+            name: is_blanked
+            type: BOOLEAN
+        - column:
+            name: played_card_id
+            type: UUID
+        - column:
+            name: played_card_rank
+            type: VARCHAR(255)
+        - column:
+            name: played_card_suit
+            type: VARCHAR(255)
+        - column:
+            name: result
+            type: INTEGER
+        - column:
+            name: score
+            type: INTEGER
+        - column:
+            name: user_id
+            type: UUID
+        - column:
+            name: is_playable
+            type: BOOLEAN
+        - column:
+            name: is_last_drawn
+            type: BOOLEAN
+        - column:
+            name: updated_at
+            type: TIMESTAMP WITH TIME ZONE
+        tableName: player
+- changeSet:
+    id: 1767813047618-8
+    author: Blagovest Kirilov
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: game_pkey
+            name: id
+            type: UUID
+        - column:
+            name: created_at
+            type: TIMESTAMP WITH TIME ZONE
+        - column:
+            name: first_player_id
+            type: UUID
+        - column:
+            name: second_player_id
+            type: UUID
+        - column:
+            name: state_id
+            type: UUID
+        - column:
+            name: winner_id
+            type: UUID
+        - column:
+            name: finished_at
+            type: TIMESTAMP WITH TIME ZONE
+        - column:
+            name: updated_at
+            type: TIMESTAMP WITH TIME ZONE
+        tableName: game
+- changeSet:
+    id: 1767813047618-9
+    author: Blagovest Kirilov
+    changes:
+    - createIndex:
+        columns:
+        - column:
+            name: email
+        indexName: idx_email
+        tableName: users
+- changeSet:
+    id: 1767813047618-10
+    author: Blagovest Kirilov
+    changes:
+    - addUniqueConstraint:
+        columnNames: username
+        constraintName: ukr43af9ap4edm43mmtq01oddj6
+        tableName: users
+- changeSet:
+    id: 1767813047618-11
+    author: Blagovest Kirilov
+    changes:
+    - addUniqueConstraint:
+        columnNames: user_id
+        constraintName: uk7o636srqncmljatj8tegrj3qd
+        tableName: email_confirmation
+- changeSet:
+    id: 1767813047618-12
+    author: Blagovest Kirilov
+    changes:
+    - addUniqueConstraint:
+        columnNames: user_id
+        constraintName: ukss96nm4ed1jmllpxib14p1r7v
+        tableName: forgot_password
+- changeSet:
+    id: 1767813047618-13
+    author: Blagovest Kirilov
+    changes:
+    - addUniqueConstraint:
+        columnNames: user_id
+        constraintName: ukfpxwfe7n29rwsbyu5p1wl2mq1
+        tableName: player
+- changeSet:
+    id: 1767813047618-14
+    author: Blagovest Kirilov
+    changes:
+    - addUniqueConstraint:
+        columnNames: state_id
+        constraintName: uk9kbpdl4nitff14w8soy9qpghc
+        tableName: game
+- changeSet:
+    id: 1767813047618-15
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: player_id
+        baseTableName: player_hand
+        constraintName: fk2rt5vgq8ajqdqdfudtarwgkm7
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: player
+        validate: true
+- changeSet:
+    id: 1767813047618-16
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: closed_by_player_id
+        baseTableName: game_state
+        constraintName: fk4rnh3qb21qx8j4sqol7swd372
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: player
+        validate: true
+- changeSet:
+    id: 1767813047618-17
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: in_turn_player_id
+        baseTableName: game_state
+        constraintName: fkanq0ruubv05xred63rb8kowf3
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: player
+        validate: true
+- changeSet:
+    id: 1767813047618-18
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: winner_id
+        baseTableName: game
+        constraintName: fkdaoa02um96nkw564trbq0jhxg
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: player
+        validate: true
+- changeSet:
+    id: 1767813047618-19
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: state_id
+        baseTableName: game
+        constraintName: fke7o6hkpt47sm1iqgr840s4p9v
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: game_state
+        validate: true
+- changeSet:
+    id: 1767813047618-20
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: forgot_password
+        constraintName: fkjfa13lhndn1q66kheuyjk2i5l
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1767813047618-21
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: email_confirmation
+        constraintName: fkjgs74pu45i7a3e1cb5g7280yg
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1767813047618-22
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: first_turn_player_id
+        baseTableName: game_state
+        constraintName: fkjrdr3k7i98rsx2ewxdkn9dcjh
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: player
+        validate: true
+- changeSet:
+    id: 1767813047618-23
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: second_player_id
+        baseTableName: game
+        constraintName: fkmkygda0h081eohe6s23gd2dh7
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: player
+        validate: true
+- changeSet:
+    id: 1767813047618-24
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: game_id
+        baseTableName: game_deck
+        constraintName: fknfxoop857evaoqjrym5vyb1cw
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: game_state
+        validate: true
+- changeSet:
+    id: 1767813047618-25
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: player
+        constraintName: fkoycxb69gpaapuv23fn52y0g50
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1767813047618-26
+    author: Blagovest Kirilov
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: first_player_id
+        baseTableName: game
+        constraintName: fkshtsb9bwrqrmm6f0iufa55bln
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: player
+        validate: true
+

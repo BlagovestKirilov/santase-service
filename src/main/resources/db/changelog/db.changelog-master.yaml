@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: init-schema
+      author: Blagovest Kirilov
+      changes: []
+
+#  - include:
+#      file: db/changelog/changes/001-init-schema.yaml
