@@ -18,16 +18,20 @@
         <RollingFile name="RollingFile"
                      fileName="${LOG_PATH}/santase.service.log"
                      filePattern="${LOG_PATH}/santase.service-%d{yyyy-MM-dd}.log"
-                     immediateFlush="true"> <PatternLayout pattern="${LOG_PATTERN}"/>
+                     immediateFlush="true">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" modulate="true" />
             </Policies>
+
             <DefaultRolloverStrategy>
                 <Delete basePath="${LOG_PATH}" maxDepth="1">
                     <IfFileName glob="santase.service-*.log" />
-                    <IfLastModified age="30d" />
+                    <IfLastModified age="7d" />
                 </Delete>
             </DefaultRolloverStrategy>
+
         </RollingFile>
     </Appenders>
 
