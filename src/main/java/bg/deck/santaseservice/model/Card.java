@@ -11,12 +11,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.Objects;
 import java.util.UUID;
 
 @Getter
 @Setter
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -37,11 +39,6 @@ public class Card {
 
     public int getPoints() {
         return rank.getPoints();
-    }
-
-    @Override
-    public String toString() {
-        return rank + " of " + suit;
     }
 
     @Override
