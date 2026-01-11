@@ -13,4 +13,5 @@ public class ProfileResponse {
     private int santaseLosses;
     @JsonProperty("isEmailConfirmed")
     private boolean emailConfirmed;
+    private String rank;
 }

@@ -1,7 +1,7 @@
 package bg.deck.santaseservice.service;
 
 import bg.deck.santaseservice.constant.LogConstants;
-import bg.deck.santaseservice.enums.Rank;
+import bg.deck.santaseservice.enums.card.Rank;
 import bg.deck.santaseservice.exception.CardNotFoundException;
 import bg.deck.santaseservice.exception.NoCardForReplacingException;
 import bg.deck.santaseservice.exception.NotFirstInTurnException;
@@ -271,7 +271,7 @@ public class GameService {
         game.getFirstPlayer().setHand(new ArrayList<>());
         game.getSecondPlayer().setHand(new ArrayList<>());
 
-        game.setWinner(opponentPlayer);
+        gameUtilService.setGameWinner(game, opponentPlayer);
         log.info(
                 LogConstants.FINISH_GAME,
                 game.getId(),

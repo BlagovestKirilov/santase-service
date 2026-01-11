@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-rank-and-rankRating
+      author: Blagovest Kirilov
+      changes:
+        # 1. Add rank column
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: rank
+                  type: varchar(50)
+                  defaultValue: 'UNRANKED'
+                  constraints:
+                    nullable: false
+
+        # 2. Add rankRating column
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: rank_rating
+                  type: int
+                  defaultValueNumeric: 1500
+                  constraints:
+                    nullable: false
+
+        # 3. Initialize all existing users
+        - update:
+            tableName: users
+            columns:
+              - column:
+                  name: rank
+                  value: 'UNRANKED'
+              - column:
+                  name: rank_rating
+                  valueNumeric: 1500
+              - column:
+                  name: santase_wins
+                  valueNumeric: 0
+              - column:
+                  name: santase_losses
+                  valueNumeric: 0

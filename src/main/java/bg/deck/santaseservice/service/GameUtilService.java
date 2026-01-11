@@ -1,8 +1,8 @@
 package bg.deck.santaseservice.service;
 
 import bg.deck.santaseservice.constant.LogConstants;
-import bg.deck.santaseservice.enums.Rank;
-import bg.deck.santaseservice.enums.Suit;
+import bg.deck.santaseservice.enums.card.Rank;
+import bg.deck.santaseservice.enums.card.Suit;
 import bg.deck.santaseservice.exception.CardNotFoundException;
 import bg.deck.santaseservice.exception.CardNotPlayableException;
 import bg.deck.santaseservice.exception.DeckSizeException;
@@ -45,6 +45,7 @@ public class GameUtilService {
     private final UserRepository userRepository;
     private final WebSocketUtilService webSocketUtilService;
     private final WebSocketService webSocketService;
+    private final RankingService rankingService;
 
     @Transactional
     public Game startGame(Player firstPlayer, Player secondPlayer) {
@@ -285,9 +286,9 @@ public class GameUtilService {
 
         if ((firstPlayerResult >= 11 || secondPlayerResult >= 11) && difference >= 2) {
             if (firstPlayerResult > secondPlayerResult) {
-                game.setWinner(game.getFirstPlayer());
+                setGameWinner(game, game.getFirstPlayer());
             } else {
-                game.setWinner(game.getSecondPlayer());
+                setGameWinner(game, game.getSecondPlayer());
             }
             log.info(
                     LogConstants.FINISH_GAME,
@@ -406,5 +407,10 @@ public class GameUtilService {
         });
 
         return true;
+    }
+
+    public void setGameWinner(Game game, Player player) {
+        game.setWinner(player);
+        rankingService.updateRankingAfterGame(game);
     }
 }

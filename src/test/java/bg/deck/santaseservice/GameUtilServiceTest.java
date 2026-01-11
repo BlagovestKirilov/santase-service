@@ -1,7 +1,7 @@
 package bg.deck.santaseservice;
 
-import bg.deck.santaseservice.enums.Rank;
-import bg.deck.santaseservice.enums.Suit;
+import bg.deck.santaseservice.enums.card.Rank;
+import bg.deck.santaseservice.enums.card.Suit;
 import bg.deck.santaseservice.exception.CardNotPlayableException;
 import bg.deck.santaseservice.model.Card;
 import bg.deck.santaseservice.model.Game;

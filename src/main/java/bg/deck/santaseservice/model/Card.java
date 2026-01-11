@@ -1,7 +1,7 @@
 package bg.deck.santaseservice.model;
 
-import bg.deck.santaseservice.enums.Rank;
-import bg.deck.santaseservice.enums.Suit;
+import bg.deck.santaseservice.enums.card.Rank;
+import bg.deck.santaseservice.enums.card.Suit;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
