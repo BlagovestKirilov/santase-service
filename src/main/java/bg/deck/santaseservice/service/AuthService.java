@@ -89,7 +89,6 @@ public class AuthService {
 
         User user = userMapper.toEntity(registerRequest);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setIsEmailConfirmed(false);
         userRepository.save(user);
 
         Player player = Player.builder().user(user).build();

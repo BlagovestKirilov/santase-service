@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.model;
 
+import bg.deck.santaseservice.enums.Rank;
 import bg.deck.santaseservice.enums.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,6 +37,13 @@ public class User extends BaseEntity {
     private Integer santaseWins;
 
     private Integer santaseLosses;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Rank rank;
+
+    @Column(nullable = false)
+    private int rankRating;
 
     @Column(nullable = false, unique = true)
     private String email;
