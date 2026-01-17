@@ -92,6 +92,7 @@ public class WebSocketUtilService {
                 .isOnTurn(username.equals(state.getInTurnPlayer().getUsername()))
                 .isClosed(state.isClosed())
                 .winnerUsername(game.getWinner() != null ? game.getWinner().getUsername() : null)
+                .surrenderPlayerUsername(game.getSurrenderPlayer() != null ? game.getSurrenderPlayer().getUsername() : null)
                 .bonus(player.getBonus())
                 .opponentPlayerBonus(opponentPlayer.getBonus())
                 .build();
