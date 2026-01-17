@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-rename-surrender-player
+      author: Blagovest Kirilov
+      changes:
+        - renameColumn:
+            tableName: game
+            oldColumnName: left_player_id
+            newColumnName: surrender_player_id
+            columnDataType: UUID

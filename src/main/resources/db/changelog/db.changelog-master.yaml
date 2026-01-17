@@ -4,4 +4,4 @@ databaseChangeLog:
       author: Blagovest Kirilov
 
   - include:
-      file: db/changelog/changes/003-add-left-player.yaml
+      file: db/changelog/changes/004-rename-surrender-player.yaml

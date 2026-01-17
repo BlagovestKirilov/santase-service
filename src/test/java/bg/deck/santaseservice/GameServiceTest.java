@@ -250,7 +250,7 @@ class GameServiceTest {
             // because it's a real method on a real object.
 
             // 2. Execute
-            gameService.finishGame();
+            gameService.surrender();
 
             // 3. Assertions: Check if the real logic worked
             // The winner should be P2 because P1 surrendered

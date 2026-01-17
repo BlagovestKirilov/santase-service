@@ -34,7 +34,7 @@ public class Game extends BaseEntity {
     private Player winner;
 
     @ManyToOne
-    private Player leftPlayer;
+    private Player surrenderPlayer;
 
     private Instant finishedAt;
 
@@ -68,13 +68,13 @@ public class Game extends BaseEntity {
         }
     }
 
-    public void setWinner(Player winnerPlayer, boolean opponentLeft) {
+    public void setWinner(Player winnerPlayer, boolean opponentSurrendered) {
         this.winner = winnerPlayer;
         this.finishedAt = Instant.now();
 
         Player opponent = getOpponent(winnerPlayer);
-        if (opponentLeft) {
-            this.leftPlayer = opponent;
+        if (opponentSurrendered) {
+            this.surrenderPlayer = opponent;
         }
 
         winnerPlayer.getUser().incrementSantaseWins();

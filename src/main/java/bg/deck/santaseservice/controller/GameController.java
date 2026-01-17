@@ -59,9 +59,9 @@ public class GameController {
         return ResponseEntity.accepted().build();
     }
 
-    @PostMapping("/finish-game")
-    public ResponseEntity<Void> finishGame() {
-        gameService.finishGame();
+    @PostMapping("/surrender")
+    public ResponseEntity<Void> surrender() {
+        gameService.surrender();
         return ResponseEntity.accepted().build();
     }
 }
