@@ -32,6 +32,7 @@ public class GameStateResponse {
     private boolean isClosed;
     private String winnerUsername;
     private String trickWinnerUsername;
+    private String surrenderPlayerUsername;
     private int trickFirstPlayerScore;
     private int trickSecondPlayerScore;
     private Integer bonus;
