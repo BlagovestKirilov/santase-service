@@ -48,6 +48,8 @@ public class Player extends BaseEntity {
 
     private Boolean isBlanked;
 
+    private Integer inactivityCount;
+
     public String getUsername() {
         return user.getUsername();
     }

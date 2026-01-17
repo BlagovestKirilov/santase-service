@@ -36,7 +36,8 @@ public class GlobalExceptionHandler {
             NotSendEmailException.class,
             EmailNotConfirmedException.class,
             UserNotFoundException.class,
-            InvalidPasswordException.class
+            InvalidPasswordException.class,
+            PlayerInactivitySurrenderException.class
     })
     public ResponseEntity<ErrorResponse> handleSecurityAndBusinessExceptions(RuntimeException ex, HttpServletRequest request) {
         log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(REAL_IP), request.getRequestURI());

@@ -64,4 +64,10 @@ public class GameController {
         gameService.surrender();
         return ResponseEntity.accepted().build();
     }
+
+    @PostMapping("/inactivity")
+    public ResponseEntity<Void> inactivity() {
+        gameService.inactivity();
+        return ResponseEntity.accepted().build();
+    }
 }
