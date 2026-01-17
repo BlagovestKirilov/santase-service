@@ -286,9 +286,9 @@ public class GameUtilService {
 
         if ((firstPlayerResult >= 11 || secondPlayerResult >= 11) && difference >= 2) {
             if (firstPlayerResult > secondPlayerResult) {
-                setGameWinner(game, game.getFirstPlayer());
+                setGameWinner(game, game.getFirstPlayer(), false);
             } else {
-                setGameWinner(game, game.getSecondPlayer());
+                setGameWinner(game, game.getSecondPlayer(), false);
             }
             log.info(
                     LogConstants.FINISH_GAME,
@@ -409,8 +409,8 @@ public class GameUtilService {
         return true;
     }
 
-    public void setGameWinner(Game game, Player player) {
-        game.setWinner(player);
+    public void setGameWinner(Game game, Player winner, boolean opponentLeft) {
+        game.setWinner(winner, opponentLeft);
         rankingService.updateRankingAfterGame(game);
     }
 }

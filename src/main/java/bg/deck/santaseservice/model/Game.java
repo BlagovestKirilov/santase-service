@@ -33,6 +33,9 @@ public class Game extends BaseEntity {
     @ManyToOne
     private Player winner;
 
+    @ManyToOne
+    private Player leftPlayer;
+
     private Instant finishedAt;
 
     public Player getPlayerByUsername(String username) {
@@ -65,11 +68,16 @@ public class Game extends BaseEntity {
         }
     }
 
-    public void setWinner(Player winnerPlayer) {
+    public void setWinner(Player winnerPlayer, boolean opponentLeft) {
         this.winner = winnerPlayer;
         this.finishedAt = Instant.now();
 
+        Player opponent = getOpponent(winnerPlayer);
+        if (opponentLeft) {
+            this.leftPlayer = opponent;
+        }
+
         winnerPlayer.getUser().incrementSantaseWins();
-        getOpponent(winnerPlayer).getUser().incrementSantaseLosses();
+        opponent.getUser().incrementSantaseLosses();
     }
 }

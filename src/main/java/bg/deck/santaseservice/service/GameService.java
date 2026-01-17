@@ -271,7 +271,7 @@ public class GameService {
         game.getFirstPlayer().setHand(new ArrayList<>());
         game.getSecondPlayer().setHand(new ArrayList<>());
 
-        gameUtilService.setGameWinner(game, opponentPlayer);
+        gameUtilService.setGameWinner(game, opponentPlayer, true);
         log.info(
                 LogConstants.FINISH_GAME,
                 game.getId(),

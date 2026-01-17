@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-left-player
+      author: Blagovest Kirilov
+      changes:
+        - addColumn:
+            tableName: game
+            columns:
+              - column:
+                  name: left_player_id
+                  type: UUID
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: game
+            baseColumnNames: left_player_id
+            referencedTableName: player
+            referencedColumnNames: id
+            constraintName: fk_game_left_player
