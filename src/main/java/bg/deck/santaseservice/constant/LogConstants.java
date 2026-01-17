@@ -52,4 +52,6 @@ public class LogConstants {
     public static final String FORGOT_PASSWORD_STARTED = "Forgot password process started for email {}";
     public static final String FORGOT_PASSWORD_EMAIL_NOT_CONFIRMED = "Forgot password failed: email {} is not confirmed or does not exist.";
     public static final String FORGOT_PASSWORD_EMAIL_SENT = "Forgot password email sent to {}";
+    public static final String PLAYER_INACTIVITY_TIMEOUT = "Player '{}' inactivity timeout in gameId={}, inactivityCount={}";
+    public static final String PLAYER_FORCED_SURRENDER_BY_INACTIVITY = "Player '{}' forced to surrender due to inactivity in gameId={}";
 }

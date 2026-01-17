@@ -11,14 +11,11 @@ public class ExceptionConstants {
     public static final String INCORRECT_CREDENTIALS_MESSAGE = "Username or password is incorrect.";
     public static final String VALIDATION_ERROR_TITLE = "Validation Error.";
     public static final String INTERNAL_SERVER_ERROR_MESSAGE = "An unexpected error occurred.";
-
     public static final String LOG_FORMAT_SECURITY = "{} | IP: {} | Path: {}.";
     public static final String LOG_FORMAT_ERROR = "ERROR: {} | Path: {} | Details: {}.";
     public static final String LOG_FORMAT_UNHANDLED = "UNHANDLED EXCEPTION: IP: {} | Path: {} | {} at {}.";
-
     public static final String COMMA_DELIMITER = ", ";
     public static final String VALIDATION_DETAILS_FORMAT = "%s: %s";
-
     public static final String USER_NOT_PART_OF_GAME = "User: %s is not part of this game.";
     public static final String PLAYER_NOT_IN_TURN = "Player: %s is not in turn.";
     public static final String PLAYER_NOT_FIRST_IN_TURN = "Player: %s is not first in turn.";
@@ -32,4 +29,5 @@ public class ExceptionConstants {
     public static final String USER_NOT_FOUND = "User not found: %s";
     public static final String SAME_PASSWORD = "New password must be different.";
     public static final String EMAIL_NOT_CONFIRMED = "Email %s is not confirmed.";
+    public static final String PLAYER_SURRENDERED_DUE_TO_INACTIVITY = "Player surrendered due to repeated inactivity.";
 }

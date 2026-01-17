@@ -6,6 +6,7 @@ import bg.deck.santaseservice.exception.CardNotFoundException;
 import bg.deck.santaseservice.exception.NoCardForReplacingException;
 import bg.deck.santaseservice.exception.NotFirstInTurnException;
 import bg.deck.santaseservice.exception.NotInTurnException;
+import bg.deck.santaseservice.exception.PlayerInactivitySurrenderException;
 import bg.deck.santaseservice.exception.UserNotPartOfGameException;
 import bg.deck.santaseservice.model.Card;
 import bg.deck.santaseservice.model.Game;
@@ -284,5 +285,23 @@ public class GameService {
 
         gameUtilService.saveGame(game);
         webSocketUtilService.updateGameState(game);
+    }
+
+    public void inactivity() {
+        String username = gameUtilService.getUsername();
+        Game game = gameUtilService.findGameByUsername(username);
+        Player player = game.getPlayerByUsername(username);
+
+        int newInactivityCount = player.getInactivityCount() + 1;
+        player.setInactivityCount(newInactivityCount);
+
+        log.info(LogConstants.PLAYER_INACTIVITY_TIMEOUT, username, game.getId(), newInactivityCount);
+
+        gameUtilService.saveGame(game);
+
+        if (newInactivityCount == 3) {
+            log.warn(LogConstants.PLAYER_FORCED_SURRENDER_BY_INACTIVITY, username, game.getId());
+            throw new PlayerInactivitySurrenderException();
+        }
     }
 }

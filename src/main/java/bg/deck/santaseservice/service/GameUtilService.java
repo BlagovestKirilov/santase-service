@@ -52,6 +52,8 @@ public class GameUtilService {
         GameState gameState = GameState.builder().build();
         firstPlayer.setResult(0);
         secondPlayer.setResult(0);
+        firstPlayer.setInactivityCount(0);
+        secondPlayer.setInactivityCount(0);
 
         Game game = Game.builder()
                 .firstPlayer(firstPlayer)
