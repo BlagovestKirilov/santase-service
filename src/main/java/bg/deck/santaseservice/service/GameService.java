@@ -259,7 +259,7 @@ public class GameService {
     }
 
     @Transactional
-    public void finishGame() {
+    public void surrender() {
         String username = gameUtilService.getUsername();
         Game game = gameUtilService.findGameByUsername(username);
         Player opponentPlayer = game.getOpponentPlayerByUsername(username);
