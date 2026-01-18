@@ -70,4 +70,10 @@ public class GameController {
         gameService.inactivity();
         return ResponseEntity.accepted().build();
     }
+
+    @PostMapping("/extend-time")
+    public ResponseEntity<Void> extendTime() {
+        gameService.extendNextMoveTime();
+        return ResponseEntity.accepted().build();
+    }
 }

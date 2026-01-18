@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-inactivity-count
+      author: Blagovest Kirilov
+      changes:
+        - addColumn:
+            tableName: game_state
+            columns:
+              - column:
+                  name: next_move_time
+                  type: TIMESTAMP

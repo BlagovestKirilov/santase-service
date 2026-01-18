@@ -104,7 +104,7 @@ public class GameUtilService {
                 .orElseThrow(() -> new InvalidCredentialsException(username));
     }
 
-    public Game findGameForClosingOrRemoval(String username) {
+    public Game findGame(String username) {
         Game game = findGameByUsername(username);
 
         Player player = game.getPlayerByUsername(username);
@@ -115,7 +115,7 @@ public class GameUtilService {
             throw new NotFirstInTurnException(username);
         }
 
-        if (!state.getInTurnPlayer().equals(player)) {
+        if (!state.isInTurn(player)) {
             throw new NotInTurnException(username);
         }
 
@@ -411,8 +411,39 @@ public class GameUtilService {
         return true;
     }
 
-    public void setGameWinner(Game game, Player winner, boolean opponentLeft) {
-        game.setWinner(winner, opponentLeft);
+    public void setGameWinner(Game game, Player winner, boolean opponentSurrendered) {
+        game.setWinner(winner, opponentSurrendered);
         rankingService.updateRankingAfterGame(game);
+    }
+
+    @Transactional
+    public void surrenderByInactivity(UUID gameId) {
+        Game game = gameRepository.findById(gameId)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new NoActiveGameFoundException(gameId.toString()));
+        Player surrenderPlayer = game.getState().getInTurnPlayer();
+        Player opponentPlayer = game.getOpponent(surrenderPlayer);
+
+        log.info(LogConstants.FINISH_GAME_SURRENDER_INACTIVITY, surrenderPlayer.getUsername(), opponentPlayer.getUsername());
+
+        game.getFirstPlayer().setPlayedCard(null);
+        game.getSecondPlayer().setPlayedCard(null);
+        game.getFirstPlayer().setHand(new ArrayList<>());
+        game.getSecondPlayer().setHand(new ArrayList<>());
+
+        setGameWinner(game, opponentPlayer, true);
+        log.info(
+                LogConstants.FINISH_GAME,
+                game.getId(),
+                opponentPlayer.getUsername(),
+                game.getFirstPlayer().getUsername(),
+                game.getFirstPlayer().getResult(),
+                game.getSecondPlayer().getUsername(),
+                game.getSecondPlayer().getResult()
+        );
+
+        saveGame(game);
+        webSocketUtilService.updateGameState(game);
     }
 }

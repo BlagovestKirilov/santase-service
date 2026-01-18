@@ -31,6 +31,7 @@ public class GameService {
     private final WebSocketService webSocketService;
     private final WebSocketUtilService webSocketUtilService;
     private final GameUtilService gameUtilService;
+    private final GameInactivityService gameInactivityService;
 
     private final Queue<String> matchQueue = new ConcurrentLinkedQueue<>();
 
@@ -84,6 +85,7 @@ public class GameService {
 
             webSocketService.notifyGameSearch(List.of(firstPlayer.getUsername(), secondPlayer.getUsername()),
                     SearchGameResponse.started(newGame.getId()));
+            gameInactivityService.updateNextMoveTime(newGame);
         }
     }
 
@@ -96,7 +98,7 @@ public class GameService {
         Player player = game.getPlayerByUsername(username);
         GameState state = game.getState();
 
-        if (!state.getInTurnPlayer().equals(player)) {
+        if (!state.isInTurn(player)) {
             throw new NotInTurnException(username);
         }
 
@@ -124,6 +126,7 @@ public class GameService {
         gameUtilService.saveGame(game);
 
         webSocketUtilService.updateGameState(game);
+        gameInactivityService.updateNextMoveTime(game);
     }
 
     @Transactional
@@ -137,7 +140,7 @@ public class GameService {
 
         GameState state = game.getState();
 
-        if (!state.getInTurnPlayer().equals(player)) {
+        if (!state.isInTurn(player)) {
             throw new NotInTurnException(username);
         }
 
@@ -153,10 +156,12 @@ public class GameService {
         if (gameUtilService.checkTwentyForty(game, player, card)) {
             log.info(LogConstants.ANNOUNCE_SUCCESS, username, player.getBonus());
 
+            game.getState().extendNextMoveTime();
             webSocketUtilService.updateGameState(game);
 
             player.setBonus(null);
             gameUtilService.saveGame(game);
+            gameInactivityService.updateNextMoveTime(game);
         }
     }
 
@@ -165,24 +170,26 @@ public class GameService {
         String username = gameUtilService.getUsername();
         log.info(LogConstants.CLOSE_DECK_START, username);
 
-        Game game = gameUtilService.findGameForClosingOrRemoval(username);
+        Game game = gameUtilService.findGame(username);
         Player player = game.getPlayerByUsername(username);
 
         GameState state = game.getState();
         state.getDeck().clear();
         state.setClosedByPlayer(player);
+        state.extendNextMoveTime();
         gameUtilService.saveGameState(state);
 
         log.info(LogConstants.CLOSE_DECK_SUCCESS, username);
 
         webSocketUtilService.updateGameState(game);
+        gameInactivityService.updateNextMoveTime(game);
     }
 
     @Transactional
     public void replaceCard() {
         String username = gameUtilService.getUsername();
 
-        Game game = gameUtilService.findGameForClosingOrRemoval(username);
+        Game game = gameUtilService.findGame(username);
         GameState state = game.getState();
         Player player = game.getPlayerByUsername(username);
 
@@ -205,10 +212,12 @@ public class GameService {
 
         state.getDeck().removeLast();
         state.getDeck().addLast(nineOfTrumps);
+        state.extendNextMoveTime();
         gameUtilService.saveGameState(state);
         log.info(LogConstants.REPLACE_CARD_SUCCESS, username, currentTrump.getRank());
 
         webSocketUtilService.updateGameState(game);
+        gameInactivityService.updateNextMoveTime(game);
     }
 
     @Transactional
@@ -224,7 +233,7 @@ public class GameService {
             throw new NotFirstInTurnException(username);
         }
 
-        if (!state.getInTurnPlayer().equals(player)) {
+        if (!state.isInTurn(player)) {
             throw new NotInTurnException(username);
         }
 
@@ -257,6 +266,7 @@ public class GameService {
         gameUtilService.saveGame(game);
 
         webSocketUtilService.updateGameState(game);
+        gameInactivityService.updateNextMoveTime(game);
     }
 
     @Transactional
@@ -285,8 +295,10 @@ public class GameService {
 
         gameUtilService.saveGame(game);
         webSocketUtilService.updateGameState(game);
+        gameInactivityService.updateNextMoveTime(game);
     }
 
+    @Transactional
     public void inactivity() {
         String username = gameUtilService.getUsername();
         Game game = gameUtilService.findGameByUsername(username);
@@ -303,5 +315,25 @@ public class GameService {
             log.warn(LogConstants.PLAYER_FORCED_SURRENDER_BY_INACTIVITY, username, game.getId());
             throw new PlayerInactivitySurrenderException();
         }
+        gameInactivityService.updateNextMoveTime(game);
+    }
+
+    public void extendNextMoveTime() {
+        String username = gameUtilService.getUsername();
+        Game game = gameUtilService.findGameByUsername(username);
+        Player player = game.getPlayerByUsername(username);
+
+        if (player.getInactivityCount() == 3) {
+            log.warn(LogConstants.PLAYER_FORCED_SURRENDER_BY_INACTIVITY, username, game.getId());
+            throw new PlayerInactivitySurrenderException();
+        }
+
+        GameState gameState = game.getState();
+        gameState.extendNextMoveTime();
+
+        log.info(LogConstants.EXTEND_NEXT_MOVE_TIME, username, game.getId());
+
+        gameUtilService.saveGame(game);
+        gameInactivityService.updateNextMoveTime(game);
     }
 }

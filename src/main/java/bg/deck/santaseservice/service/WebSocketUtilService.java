@@ -9,6 +9,8 @@ import bg.deck.santaseservice.util.CardMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -89,12 +91,15 @@ public class WebSocketUtilService {
                 .secondPlayerUsername(game.getSecondPlayer().getUsername())
                 .secondPlayerResult(game.getSecondPlayer().getResult())
                 .remainingCardsCount(state.getDeck().size())
-                .isOnTurn(username.equals(state.getInTurnPlayer().getUsername()))
+                .isOnTurn(state.isInTurn(player))
                 .isClosed(state.isClosed())
                 .winnerUsername(game.getWinner() != null ? game.getWinner().getUsername() : null)
                 .surrenderPlayerUsername(game.getSurrenderPlayer() != null ? game.getSurrenderPlayer().getUsername() : null)
                 .bonus(player.getBonus())
                 .opponentPlayerBonus(opponentPlayer.getBonus())
+                .inactivityCount(player.getInactivityCount())
+                .nextMoveTimeInSeconds(state.isInTurn(player) ?
+                        Math.toIntExact(Duration.between(Instant.now(), state.getNextMoveTime()).getSeconds()) : null)
                 .build();
     }
 }
