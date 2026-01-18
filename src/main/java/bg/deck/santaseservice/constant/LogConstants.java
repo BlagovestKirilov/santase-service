@@ -32,6 +32,7 @@ public class LogConstants {
     public static final String FINISH_DEAL_START = "User {} is attempting to claim 66 points and finish the deal.";
     public static final String FINISH_DEAL_SUCCESS = "Deal finished. Winner: {} | Points awarded: {}.";
     public static final String FINISH_GAME_SURRENDER = "User {} has surrendered. Opponent {} wins the game.";
+    public static final String FINISH_GAME_SURRENDER_INACTIVITY = "User {} has surrendered due to inactivity. Opponent {} wins the game.";
     public static final String FINISH_GAME = "Game finished gameId={} winner={} result={}({}) vs {}({}).";
     public static final String EMAIL_SENT_LOG = "Confirmation email sent successfully to email={}";
     public static final String EMAIL_CONFIRMATION_ATTEMPT = "Attempting email confirmation with token={}";
@@ -54,4 +55,5 @@ public class LogConstants {
     public static final String FORGOT_PASSWORD_EMAIL_SENT = "Forgot password email sent to {}";
     public static final String PLAYER_INACTIVITY_TIMEOUT = "Player '{}' inactivity timeout in gameId={}, inactivityCount={}";
     public static final String PLAYER_FORCED_SURRENDER_BY_INACTIVITY = "Player '{}' forced to surrender due to inactivity in gameId={}";
+    public static final String EXTEND_NEXT_MOVE_TIME = "Extended next move time for player '{}' in gameId={}";
 }

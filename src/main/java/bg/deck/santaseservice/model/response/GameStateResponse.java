@@ -37,4 +37,6 @@ public class GameStateResponse {
     private int trickSecondPlayerScore;
     private Integer bonus;
     private Integer opponentPlayerBonus;
+    private int inactivityCount;
+    private Integer nextMoveTimeInSeconds;
 }

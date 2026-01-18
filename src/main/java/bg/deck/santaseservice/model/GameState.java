@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.List;
 
 @Builder
@@ -43,7 +44,22 @@ public class GameState extends BaseEntity {
     @ManyToOne
     private Player closedByPlayer;
 
+    private Instant nextMoveTime;
+
     public boolean isClosed() {
         return this.closedByPlayer != null;
+    }
+
+    public void setInTurnPlayer(Player inTurnPlayer) {
+        this.inTurnPlayer = inTurnPlayer;
+        this.extendNextMoveTime();
+    }
+
+    public void extendNextMoveTime() {
+        this.nextMoveTime = Instant.now().plusSeconds(33);
+    }
+
+    public boolean isInTurn(Player player) {
+        return player.equals(this.inTurnPlayer);
     }
 }

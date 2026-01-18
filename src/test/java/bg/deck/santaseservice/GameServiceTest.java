@@ -202,7 +202,7 @@ class GameServiceTest {
 
             // 2. Stub the PUBLIC methods
             when(gameUtilService.getUsername()).thenReturn(p1Name);
-            when(gameUtilService.findGameForClosingOrRemoval(p1Name)).thenReturn(game);
+            when(gameUtilService.findGame(p1Name)).thenReturn(game);
 
             // 3. Execute
             gameService.replaceCard();
