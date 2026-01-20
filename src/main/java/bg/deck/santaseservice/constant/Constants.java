@@ -28,7 +28,7 @@ public class Constants {
     public static final String EMAIL_CONFIRMATION_TEMPLATE = "/templates/email-confirmation.html";
     public static final String USER = "USER";
     public static final String PROD = "prod";
-    public static final String REAL_IP = "X-Real-IP";
+    public static final String CF_CONNECTING_IP = "CF-Connecting-IP";
     public static final String FORGOT_PASSWORD_SUBJECT = "Възстановяване на парола за DECK.BG";
     public static final String DECK_BG_FORGOT_PASSWORD = "https://deck.bg/reset-password?token=";
     public static final String FORGOT_PASSWORD_TEMPLATE = "/templates/forgot-password.html";

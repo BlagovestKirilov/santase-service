@@ -27,7 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
-import static bg.deck.santaseservice.constant.Constants.REAL_IP;
+import static bg.deck.santaseservice.constant.Constants.CF_CONNECTING_IP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -82,7 +82,7 @@ class AuthServiceTest {
                     .thenReturn("access-token");
             when(jwtService.generateRefreshToken(testUser))
                     .thenReturn("refresh-token");
-            when(httpServletRequest.getHeader(REAL_IP))
+            when(httpServletRequest.getHeader(CF_CONNECTING_IP))
                     .thenReturn("127.0.0.1");
 
             // when

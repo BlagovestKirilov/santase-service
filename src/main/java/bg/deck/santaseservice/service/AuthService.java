@@ -35,7 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-import static bg.deck.santaseservice.constant.Constants.REAL_IP;
+import static bg.deck.santaseservice.constant.Constants.CF_CONNECTING_IP;
 import static bg.deck.santaseservice.constant.LogConstants.SUCCESSFUL_LOGIN_LOG;
 import static bg.deck.santaseservice.constant.LogConstants.SUCCESSFUL_REGISTER_LOG;
 import static bg.deck.santaseservice.constant.LogConstants.TRY_LOGIN_LOG;
@@ -65,7 +65,7 @@ public class AuthService {
 
         log.info(SUCCESSFUL_LOGIN_LOG, loginRequest.getUsername());
 
-        user.setIpAddress(request.getHeader(REAL_IP));
+        user.setIpAddress(request.getHeader(CF_CONNECTING_IP));
         userRepository.save(user);
 
         return AuthResponse.builder()
