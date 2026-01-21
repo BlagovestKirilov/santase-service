@@ -34,8 +34,8 @@ public class LogConstants {
     public static final String FINISH_GAME_SURRENDER = "User {} has surrendered. Opponent {} wins the game.";
     public static final String FINISH_GAME_SURRENDER_INACTIVITY = "User {} has surrendered due to inactivity. Opponent {} wins the game.";
     public static final String FINISH_GAME = "Game finished gameId={} winner={} result={}({}) vs {}({}).";
-    public static final String EMAIL_SENT_LOG = "Confirmation email sent successfully to email={}";
-    public static final String EMAIL_CONFIRMATION_ATTEMPT = "Attempting email confirmation with token={}";
+    public static final String EMAIL_SENT_LOG = "Confirmation email sent successfully to email {}";
+    public static final String EMAIL_CONFIRMATION_ATTEMPT = "Attempting email confirmation with token {}";
     public static final String EMAIL_CONFIRMATION_TOKEN_NOT_FOUND = "Email confirmation failed. Token not found: {}";
     public static final String EMAIL_ALREADY_CONFIRMED = "Email already confirmed. Token={}, username={}";
     public static final String EMAIL_CONFIRMED_SUCCESSFULLY = "Email confirmed successfully. Token={}, username={}";
