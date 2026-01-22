@@ -89,6 +89,18 @@ public class GameService {
         }
     }
 
+    public void cancelSearchGame(String username) {
+        log.info(LogConstants.GAME_SEARCH_CANCEL_START, username);
+
+        boolean removed = matchQueue.remove(username);
+
+        if (removed) {
+            log.info(LogConstants.GAME_SEARCH_CANCEL_SUCCESS, username);
+        } else {
+            log.info(LogConstants.GAME_SEARCH_CANCEL_NOT_IN_QUEUE, username);
+        }
+    }
+
     @Transactional
     public void playCard(CardRequest cardRequest) {
         String username = gameUtilService.getUsername();
