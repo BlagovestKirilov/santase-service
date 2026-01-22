@@ -58,5 +58,8 @@ public class LogConstants {
     public static final String EXTEND_NEXT_MOVE_TIME = "Extended next move time for player '{}' in gameId={}";
     public static final String GAME_SEARCH_CANCEL_START = "User {} is attempting to cancel game search.";
     public static final String GAME_SEARCH_CANCEL_SUCCESS = "User {} successfully canceled game search.";
-    public static final String GAME_SEARCH_CANCEL_NOT_IN_QUEUE = "User {} attempted to cancel game search but was not in the queue.";
+    public static final String GAME_SEARCH_CANCEL_NOT_IN_QUEUE = "User {} disconnected but was not in the queue.";
+    public static final String WS_DISCONNECT_NO_AUTH = "WebSocket disconnected without authenticated user. sessionId={}";
+    public static final String WS_DISCONNECT_DETECTED = "WebSocket disconnect detected. user={}, sessionId={}";
+    public static final String GAME_SEARCH_CANCEL_ERROR = "Error while cancelling game search. user={}";
 }

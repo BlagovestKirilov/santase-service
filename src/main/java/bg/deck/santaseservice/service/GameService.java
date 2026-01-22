@@ -89,8 +89,7 @@ public class GameService {
         }
     }
 
-    public void cancelSearchGame() {
-        String username = gameUtilService.getUsername();
+    public void cancelSearchGame(String username) {
         log.info(LogConstants.GAME_SEARCH_CANCEL_START, username);
 
         boolean removed = matchQueue.remove(username);
