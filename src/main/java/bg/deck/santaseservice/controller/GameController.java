@@ -23,6 +23,12 @@ public class GameController {
         return ResponseEntity.accepted().build();
     }
 
+    @PostMapping("/cancel-search")
+    public ResponseEntity<Void> cancelSearchGame() {
+        gameService.cancelSearchGame();
+        return ResponseEntity.accepted().build();
+    }
+
     @GetMapping("/state")
     public ResponseEntity<Void> state() {
         gameService.getGameState();
