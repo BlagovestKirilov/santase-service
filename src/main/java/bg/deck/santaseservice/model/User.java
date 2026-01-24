@@ -16,10 +16,7 @@ import lombok.Setter;
 @Getter
 @RequiredArgsConstructor
 @Entity
-@Table(name = "users", indexes = {
-        @Index(name = "idx_username", columnList = "username"),
-        @Index(name = "idx_email", columnList = "email")
-})
+@Table(name = "users")
 public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true)
