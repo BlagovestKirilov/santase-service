@@ -85,17 +85,13 @@ public class GameUtilService {
     }
 
     public boolean checkIfUserExistsAndIsAvailable(String username) {
-        if (userRepository.existsByUsername(username)) {
-            Optional<UUID> gameId = userRepository.findActiveGameIdByUsername(username);
+        Optional<UUID> gameId = userRepository.findActiveGameIdByUsername(username);
 
-            if (gameId.isPresent()) {
-                webSocketService.notifyGameSearch(username, SearchGameResponse.started(gameId.get()));
-                return false;
-            } else {
-                return true;
-            }
+        if (gameId.isPresent()) {
+            webSocketService.notifyGameSearch(username, SearchGameResponse.started(gameId.get()));
+            return false;
         } else {
-            throw new InvalidCredentialsException(username);
+            return true;
         }
     }
 
