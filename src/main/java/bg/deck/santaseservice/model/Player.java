@@ -50,8 +50,14 @@ public class Player extends BaseEntity {
 
     private Integer inactivityCount;
 
+    @OneToOne
+    private DeletedUser deletedUser;
+
     public String getUsername() {
-        return user.getUsername();
+        if (user != null) {
+            return user.getUsername();
+        }
+        return deletedUser != null ? deletedUser.getUsername() : null;
     }
 
     public void drawCard(Card lastDrawnCard) {

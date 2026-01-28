@@ -29,6 +29,9 @@ public class EmailConfirmation extends BaseEntity {
     @Column(nullable = false)
     private EmailConfirmationStatus status;
 
+    @OneToOne
+    private DeletedUser deletedUser;
+
     public EmailConfirmation(User user) {
         this.user = user;
         this.confirmationToken = UUID.randomUUID().toString();
