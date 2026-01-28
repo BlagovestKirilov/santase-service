@@ -7,18 +7,23 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.Instant;
 
 @Setter
 @Getter
-@RequiredArgsConstructor
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "users")
-public class User extends BaseEntity {
-
-    @Column(nullable = false, unique = true)
+@Table(name = "deleted_users")
+public class DeletedUser extends BaseEntity {
+    @Column(nullable = false)
     private String username;
 
     @Column(nullable = false)
@@ -41,17 +46,12 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Integer rankRating;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)
     private Boolean isEmailConfirmed;
 
-    public void incrementSantaseWins() {
-        this.santaseWins++;
-    }
-
-    public void incrementSantaseLosses() {
-        this.santaseLosses++;
-    }
+    @Column(nullable = false)
+    private Instant deletedAt;
 }

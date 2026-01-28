@@ -62,4 +62,6 @@ public class LogConstants {
     public static final String WS_DISCONNECT_NO_AUTH = "WebSocket disconnected without authenticated user. sessionId={}";
     public static final String WS_DISCONNECT_DETECTED = "WebSocket disconnect detected. user={}, sessionId={}";
     public static final String GAME_SEARCH_CANCEL_ERROR = "Error while cancelling game search. user={}";
+    public static final String USER_DELETION_STARTED = "User deletion started for username={}";
+    public static final String USER_DELETION_SUCCESS = "User successfully deleted. username={}";
 }

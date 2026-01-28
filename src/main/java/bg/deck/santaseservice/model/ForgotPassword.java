@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,6 +33,9 @@ public class ForgotPassword extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ForgotPasswordStatus status;
+
+    @OneToOne
+    private DeletedUser deletedUser;
 
     public ForgotPassword(User user) {
         this.user = user;

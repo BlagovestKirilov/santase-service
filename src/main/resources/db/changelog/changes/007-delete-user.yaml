@@ -1,0 +1,146 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-create-deleted-users-table
+      author: Blagovest Kirilov
+      changes:
+        - createTable:
+            tableName: deleted_users
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: deleted_users_pkey
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ip_address
+                  type: VARCHAR(255)
+              - column:
+                  name: santase_wins
+                  type: INTEGER
+              - column:
+                  name: santase_losses
+                  type: INTEGER
+              - column:
+                  name: rank
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rank_rating
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_email_confirmed
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 007-add-deleted-user-id-to-player
+      author: Blagovest Kirilov
+      changes:
+        - addColumn:
+            tableName: player
+            columns:
+              - column:
+                  name: deleted_user_id
+                  type: UUID
+        - addForeignKeyConstraint:
+            baseTableName: player
+            baseColumnNames: deleted_user_id
+            constraintName: fk_player_deleted_user
+            referencedTableName: deleted_users
+            referencedColumnNames: id
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+
+  - changeSet:
+      id: 007-add-deleted-user-id-to-email-confirmation
+      author: Blagovest Kirilov
+      changes:
+        - addColumn:
+            tableName: email_confirmation
+            columns:
+              - column:
+                  name: deleted_user_id
+                  type: UUID
+        - addForeignKeyConstraint:
+            baseTableName: email_confirmation
+            baseColumnNames: deleted_user_id
+            constraintName: fk_email_confirmation_deleted_user
+            referencedTableName: deleted_users
+            referencedColumnNames: id
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+
+  - changeSet:
+      id: 007-add-deleted-user-id-to-forgot-password
+      author: Blagovest Kirilov
+      changes:
+        - addColumn:
+            tableName: forgot_password
+            columns:
+              - column:
+                  name: deleted_user_id
+                  type: UUID
+        - addForeignKeyConstraint:
+            baseTableName: forgot_password
+            baseColumnNames: deleted_user_id
+            constraintName: fk_forgot_password_deleted_user
+            referencedTableName: deleted_users
+            referencedColumnNames: id
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+
+  - changeSet:
+      id: 007-drop-unique-constraint-on-user-id
+      author: Blagovest Kirilov
+      comment: Allow player, email_confirmation to have null user_id after user deletion
+      changes:
+        - dropUniqueConstraint:
+            tableName: player
+            constraintName: ukfpxwfe7n29rwsbyu5p1wl2mq1
+        - dropUniqueConstraint:
+            tableName: email_confirmation
+            constraintName: uk7o636srqncmljatj8tegrj3qd
+        - dropUniqueConstraint:
+            tableName: forgot_password
+            constraintName: ukss96nm4ed1jmllpxib14p1r7v

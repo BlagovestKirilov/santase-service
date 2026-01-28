@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -33,6 +34,7 @@ public class UserService {
     private final EmailService emailService;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final UserUtilService userUtilService;
 
     public ProfileResponse getProfile() {
         String username = gameUtilService.getUsername();
@@ -104,5 +106,22 @@ public class UserService {
         userRepository.save(user);
 
         log.info(LogConstants.PASSWORD_CHANGE_SUCCESS, username);
+    }
+
+    @Transactional
+    public void deleteUser() {
+        String username = gameUtilService.getUsername();
+
+        log.info(LogConstants.USER_DELETION_STARTED, username);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    log.warn(LogConstants.USER_NOT_FOUND, username);
+                    return new UserNotFoundException(username);
+                });
+
+        userUtilService.deleteUser(user);
+
+        log.info(LogConstants.USER_DELETION_SUCCESS, username);
     }
 }
