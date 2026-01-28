@@ -3,5 +3,5 @@ databaseChangeLog:
       id: init-schema
       author: Blagovest Kirilov
 
-  - include:
-      file: db/changelog/changes/007-delete-user.yaml
+#  - include:
+#      file: db/changelog/changes/007-delete-user.yaml
