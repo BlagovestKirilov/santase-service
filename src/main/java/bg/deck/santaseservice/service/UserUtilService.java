@@ -8,11 +8,11 @@ import bg.deck.santaseservice.repository.EmailConfirmationRepository;
 import bg.deck.santaseservice.repository.ForgotPasswordRepository;
 import bg.deck.santaseservice.repository.PlayerRepository;
 import bg.deck.santaseservice.repository.UserRepository;
+import bg.deck.santaseservice.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 
 @Log4j2
@@ -24,22 +24,10 @@ public class UserUtilService {
     private final PlayerRepository playerRepository;
     private final ForgotPasswordRepository forgotPasswordRepository;
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     public void deleteUser(User user) {
-        DeletedUser deletedUser = DeletedUser.builder()
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .role(user.getRole())
-                .ipAddress(user.getIpAddress())
-                .santaseWins(user.getSantaseWins())
-                .santaseLosses(user.getSantaseLosses())
-                .rank(user.getRank())
-                .rankRating(user.getRankRating())
-                .email(user.getEmail())
-                .isEmailConfirmed(user.getIsEmailConfirmed())
-                .deletedAt(Instant.now())
-                .build();
-
+        DeletedUser deletedUser = userMapper.toDeletedUser(user);
         deletedUserRepository.save(deletedUser);
 
         playerRepository.findByUserUsername(user.getUsername())
@@ -57,10 +45,10 @@ public class UserUtilService {
                 });
 
         List<ForgotPassword> forgotPasswords = forgotPasswordRepository.findAllByUser(user);
-        for (ForgotPassword forgotPassword : forgotPasswords) {
+        forgotPasswords.forEach(forgotPassword -> {
             forgotPassword.setDeletedUser(deletedUser);
             forgotPassword.setUser(null);
-        }
+        });
         forgotPasswordRepository.saveAll(forgotPasswords);
 
         userRepository.delete(user);
