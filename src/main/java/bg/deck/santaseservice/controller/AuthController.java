@@ -1,6 +1,5 @@
 package bg.deck.santaseservice.controller;
 
-import bg.deck.santaseservice.annotation.ValidUUID;
 import bg.deck.santaseservice.model.request.ChangeForgottenPasswordRequest;
 import bg.deck.santaseservice.model.request.ForgotPasswordEmailRequest;
 import bg.deck.santaseservice.model.request.LoginRequest;
@@ -13,7 +12,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,11 +20,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.UUID;
 
 import static bg.deck.santaseservice.constant.Constants.DECK_BG_INVALID_LINK;
 import static bg.deck.santaseservice.constant.Constants.DECK_BG_SUCCESS_CONFIRMATION;
 
-@Validated
 @RequiredArgsConstructor
 @RequestMapping("/auth")
 @RestController
@@ -50,7 +48,7 @@ public class AuthController {
     }
 
     @GetMapping("/confirm-email")
-    public ResponseEntity<Void> confirmEmail(@ValidUUID @RequestParam("token") String confirmationToken) {
+    public ResponseEntity<Void> confirmEmail(@RequestParam("token") UUID confirmationToken) {
 
         boolean confirmed = authService.confirmEmail(confirmationToken);
 
@@ -62,7 +60,7 @@ public class AuthController {
     }
 
     @GetMapping("/forgot-password/verify")
-    public ResponseEntity<Void> verifyForgotPasswordToken(@ValidUUID @RequestParam("token") String forgotPasswordToken) {
+    public ResponseEntity<Void> verifyForgotPasswordToken(@RequestParam("token") UUID forgotPasswordToken) {
         authService.verifyForgotPasswordToken(forgotPasswordToken);
         return ResponseEntity.ok().build();
     }

@@ -30,4 +30,7 @@ public class ExceptionConstants {
     public static final String SAME_PASSWORD = "New password must be different.";
     public static final String EMAIL_NOT_CONFIRMED = "Email %s is not confirmed.";
     public static final String PLAYER_SURRENDERED_DUE_TO_INACTIVITY = "Player surrendered due to repeated inactivity.";
+    public static final String TYPE_MISMATCH_TITLE = "Invalid parameter";
+    public static final String PARAMETER_TYPE_MISMATCH = "Parameter '%s' must be of type %s";
+    public static final String UNKNOWN = "unknown";
 }

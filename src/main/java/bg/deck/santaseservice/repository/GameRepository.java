@@ -10,11 +10,11 @@ import java.util.UUID;
 
 public interface GameRepository extends JpaRepository<Game, UUID> {
     @Query("""
-                 SELECT g FROM Game g
-                 WHERE (g.firstPlayer.user.username = :username
-                    OR g.secondPlayer.user.username = :username)
-                 AND g.winner IS NULL
-                 ORDER BY g.createdAt DESC
+                 SELECT game FROM Game game
+                 WHERE (game.firstPlayer.user.username = :username
+                    OR game.secondPlayer.user.username = :username)
+                 AND game.winner IS NULL
+                 ORDER BY game.createdAt DESC
             """)
     List<Game> findActiveGamesByUsername(@Param("username") String username);
 }

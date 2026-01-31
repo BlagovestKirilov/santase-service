@@ -73,7 +73,7 @@ public class UserService {
             return false;
         }
 
-        emailConfirmation.setConfirmationToken(UUID.randomUUID().toString());
+        emailConfirmation.setConfirmationToken(UUID.randomUUID());
         emailConfirmationRepository.save(emailConfirmation);
 
         emailService.sendConfirmationEmail(emailConfirmation);
@@ -154,8 +154,8 @@ public class UserService {
     }
 
     @Transactional
-    public boolean confirmDeletion(String userDeletionToken) {
-        log.info(LogConstants.USER_DELETION_CONFIRM_ATTEMPT, userDeletionToken != null ? userDeletionToken.length() : 0);
+    public boolean confirmDeletion(UUID userDeletionToken) {
+        log.info(LogConstants.USER_DELETION_CONFIRM_ATTEMPT, userDeletionToken);
 
         Optional<UserDeletion> optionalUserDeletion = userDeletionRepository
                 .findByUserDeletionTokenAndStatus(userDeletionToken, UserDeletionStatus.PENDING);

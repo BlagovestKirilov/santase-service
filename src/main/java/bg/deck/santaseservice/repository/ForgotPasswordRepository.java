@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ForgotPasswordRepository extends JpaRepository<ForgotPassword, UUID> {
-    Optional<ForgotPassword> findByForgotPasswordTokenAndStatus(String token, ForgotPasswordStatus status);
+    Optional<ForgotPassword> findByForgotPasswordTokenAndStatus(UUID token, ForgotPasswordStatus status);
 
     List<ForgotPassword> findAllByUserAndStatus(User user, ForgotPasswordStatus status);
 

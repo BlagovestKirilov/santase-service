@@ -1,13 +1,15 @@
 package bg.deck.santaseservice.model.request;
 
-import bg.deck.santaseservice.annotation.ValidUUID;
 import bg.deck.santaseservice.constant.ValidationConstants;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -18,6 +20,6 @@ public class ChangeForgottenPasswordRequest {
     @Pattern(regexp = ValidationConstants.PASSWORD_PATTERN, message = ValidationConstants.PASSWORD_PATTERN_MSG)
     private String newPassword;
 
-    @ValidUUID
-    private String token;
+    @NotNull(message = ValidationConstants.TOKEN_NULL)
+    private UUID token;
 }

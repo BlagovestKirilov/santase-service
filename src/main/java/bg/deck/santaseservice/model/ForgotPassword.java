@@ -28,7 +28,7 @@ public class ForgotPassword extends BaseEntity {
     private User user;
 
     @Column(nullable = false)
-    private String forgotPasswordToken;
+    private UUID forgotPasswordToken;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -39,7 +39,7 @@ public class ForgotPassword extends BaseEntity {
 
     public ForgotPassword(User user) {
         this.user = user;
-        this.forgotPasswordToken = UUID.randomUUID().toString();
+        this.forgotPasswordToken = UUID.randomUUID();
         this.status = ForgotPasswordStatus.PENDING;
     }
 }

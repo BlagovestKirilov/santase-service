@@ -24,7 +24,7 @@ public class UserDeletion extends BaseEntity {
     private User user;
 
     @Column(nullable = false)
-    private String userDeletionToken;
+    private UUID userDeletionToken;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -35,7 +35,7 @@ public class UserDeletion extends BaseEntity {
 
     public UserDeletion(User user) {
         this.user = user;
-        this.userDeletionToken = UUID.randomUUID().toString();
+        this.userDeletionToken = UUID.randomUUID();
         this.status = UserDeletionStatus.PENDING;
     }
 }
