@@ -14,8 +14,8 @@ import bg.deck.santaseservice.model.EmailConfirmation;
 import bg.deck.santaseservice.model.ForgotPassword;
 import bg.deck.santaseservice.model.Player;
 import bg.deck.santaseservice.model.User;
-import bg.deck.santaseservice.model.request.ChangePasswordRequest;
-import bg.deck.santaseservice.model.request.ForgotPasswordRequest;
+import bg.deck.santaseservice.model.request.ChangeForgottenPasswordRequest;
+import bg.deck.santaseservice.model.request.ForgotPasswordEmailRequest;
 import bg.deck.santaseservice.model.request.LoginRequest;
 import bg.deck.santaseservice.model.request.RegisterRequest;
 import bg.deck.santaseservice.model.response.AuthResponse;
@@ -166,9 +166,9 @@ public class AuthService {
         return true;
     }
 
-    public void forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
+    public void forgotPassword(ForgotPasswordEmailRequest forgotPasswordEmailRequest) {
+        String email = forgotPasswordEmailRequest.getEmail();
 
-        String email = forgotPasswordRequest.getEmail();
         log.info(LogConstants.FORGOT_PASSWORD_STARTED, email);
 
         User user = userRepository.findByEmail(email)
@@ -192,10 +192,10 @@ public class AuthService {
         log.info(LogConstants.FORGOT_PASSWORD_EMAIL_SENT, email);
     }
 
-    public void changePassword(ChangePasswordRequest changePasswordRequest) {
+    public void changeForgottenPassword(ChangeForgottenPasswordRequest changeForgottenPasswordRequest) {
         ForgotPassword forgotPassword = forgotPasswordRepository
-                .findByForgotPasswordTokenAndStatus(changePasswordRequest.getToken(), ForgotPasswordStatus.PENDING)
-                .orElseThrow(() -> new InvalidCredentialsException(changePasswordRequest.getToken()));
+                .findByForgotPasswordTokenAndStatus(changeForgottenPasswordRequest.getToken(), ForgotPasswordStatus.PENDING)
+                .orElseThrow(() -> new InvalidCredentialsException(changeForgottenPasswordRequest.getToken()));
 
         User user = forgotPassword.getUser();
 
@@ -206,12 +206,12 @@ public class AuthService {
             throw new EmailNotConfirmedException(user.getEmail());
         }
 
-        if (passwordEncoder.matches(changePasswordRequest.getNewPassword(), user.getPassword())) {
+        if (passwordEncoder.matches(changeForgottenPasswordRequest.getNewPassword(), user.getPassword())) {
             log.warn(LogConstants.SAME_PASSWORD, user.getUsername());
             throw new InvalidPasswordException(ExceptionConstants.SAME_PASSWORD);
         }
 
-        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        user.setPassword(passwordEncoder.encode(changeForgottenPasswordRequest.getNewPassword()));
         userRepository.save(user);
 
         forgotPassword.setStatus(ForgotPasswordStatus.SUCCESS);

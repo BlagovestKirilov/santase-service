@@ -1,8 +1,8 @@
 package bg.deck.santaseservice.controller;
 
 import bg.deck.santaseservice.annotation.ValidUUID;
-import bg.deck.santaseservice.model.request.ChangePasswordRequest;
-import bg.deck.santaseservice.model.request.ForgotPasswordRequest;
+import bg.deck.santaseservice.model.request.ChangeForgottenPasswordRequest;
+import bg.deck.santaseservice.model.request.ForgotPasswordEmailRequest;
 import bg.deck.santaseservice.model.request.LoginRequest;
 import bg.deck.santaseservice.model.request.RefreshRequest;
 import bg.deck.santaseservice.model.request.RegisterRequest;
@@ -68,14 +68,14 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
-        authService.forgotPassword(forgotPasswordRequest);
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordEmailRequest forgotPasswordEmailRequest) {
+        authService.forgotPassword(forgotPasswordEmailRequest);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
-        authService.changePassword(changePasswordRequest);
+    public ResponseEntity<Void> changeForgottenPassword(@Valid @RequestBody ChangeForgottenPasswordRequest changeForgottenPasswordRequest) {
+        authService.changeForgottenPassword(changeForgottenPasswordRequest);
         return ResponseEntity.ok().build();
     }
 }
