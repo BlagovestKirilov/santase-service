@@ -1,12 +1,12 @@
 package bg.deck.santaseservice.model;
 
 import bg.deck.santaseservice.enums.ForgotPasswordStatus;
+import bg.deck.santaseservice.model.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,7 +34,7 @@ public class ForgotPassword extends BaseEntity {
     @Column(nullable = false)
     private ForgotPasswordStatus status;
 
-    @OneToOne
+    @ManyToOne
     private DeletedUser deletedUser;
 
     public ForgotPassword(User user) {

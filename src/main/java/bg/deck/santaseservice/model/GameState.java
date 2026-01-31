@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.model;
 
+import bg.deck.santaseservice.model.base.BaseEntity;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;

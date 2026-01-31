@@ -192,7 +192,6 @@ public class AuthService {
         log.info(LogConstants.FORGOT_PASSWORD_EMAIL_SENT, email);
     }
 
-
     public void changePassword(ChangePasswordRequest changePasswordRequest) {
         ForgotPassword forgotPassword = forgotPasswordRepository
                 .findByForgotPasswordTokenAndStatus(changePasswordRequest.getToken(), ForgotPasswordStatus.PENDING)

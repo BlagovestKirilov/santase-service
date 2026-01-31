@@ -1,6 +1,7 @@
 package bg.deck.santaseservice.model;
 
 import bg.deck.santaseservice.exception.UserNotPartOfGameException;
+import bg.deck.santaseservice.model.base.BaseEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;

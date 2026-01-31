@@ -1,12 +1,12 @@
 package bg.deck.santaseservice.model;
 
-import bg.deck.santaseservice.enums.EmailConfirmationStatus;
+import bg.deck.santaseservice.enums.UserDeletionStatus;
 import bg.deck.santaseservice.model.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,23 +19,23 @@ import java.util.UUID;
 @ToString
 @NoArgsConstructor
 @Entity
-public class EmailConfirmation extends BaseEntity {
-    @OneToOne
+public class UserDeletion extends BaseEntity {
+    @ManyToOne
     private User user;
 
     @Column(nullable = false)
-    private String confirmationToken;
+    private String userDeletionToken;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EmailConfirmationStatus status;
+    private UserDeletionStatus status;
 
-    @OneToOne
+    @ManyToOne
     private DeletedUser deletedUser;
 
-    public EmailConfirmation(User user) {
+    public UserDeletion(User user) {
         this.user = user;
-        this.confirmationToken = UUID.randomUUID().toString();
-        this.status = EmailConfirmationStatus.PENDING;
+        this.userDeletionToken = UUID.randomUUID().toString();
+        this.status = UserDeletionStatus.PENDING;
     }
 }

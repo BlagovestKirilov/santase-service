@@ -3,6 +3,7 @@ package bg.deck.santaseservice.exception;
 import bg.deck.santaseservice.constant.ExceptionConstants;
 import bg.deck.santaseservice.model.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -101,6 +102,29 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 ExceptionConstants.INTERNAL_SERVER_ERROR_MESSAGE,
                 ex.getClass().getSimpleName(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException ex,
+            HttpServletRequest request
+    ) {
+        String validationDetails = ex.getConstraintViolations()
+                .stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .collect(Collectors.joining(", "));
+
+        log.error(ExceptionConstants.LOG_FORMAT_ERROR,
+                ExceptionConstants.VALIDATION_ERROR_TITLE,
+                request.getRequestURI(),
+                validationDetails);
+
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                ExceptionConstants.VALIDATION_ERROR_TITLE,
+                validationDetails,
                 request.getRequestURI()
         );
     }
