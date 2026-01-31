@@ -135,7 +135,7 @@ public class AuthService {
         log.info(LogConstants.EMAIL_CONFIRMATION_ATTEMPT, confirmationToken);
 
         Optional<EmailConfirmation> optionalEmailConfirmation =
-                emailConfirmationRepository.findByConfirmationToken(confirmationToken);
+                emailConfirmationRepository.findByConfirmationTokenAndStatus(confirmationToken, EmailConfirmationStatus.PENDING);
 
         if (optionalEmailConfirmation.isEmpty()) {
             log.warn(LogConstants.EMAIL_CONFIRMATION_TOKEN_NOT_FOUND, confirmationToken);
@@ -143,6 +143,11 @@ public class AuthService {
         }
 
         EmailConfirmation emailConfirmation = optionalEmailConfirmation.get();
+
+        if (emailConfirmation.getUser() == null) {
+            log.warn(LogConstants.EMAIL_CONFIRMATION_TOKEN_NOT_FOUND, confirmationToken);
+            return false;
+        }
 
         if (EmailConfirmationStatus.CONFIRMED.equals(emailConfirmation.getStatus())) {
             log.info(

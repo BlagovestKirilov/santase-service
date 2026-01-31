@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 010-add-email-confirmation-expired-status
+      author: Blagovest Kirilov
+      comment: Allow EXPIRED value in email_confirmation.status (check constraint)
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE email_confirmation DROP CONSTRAINT IF EXISTS email_confirmation_status_check;
+              ALTER TABLE email_confirmation ADD CONSTRAINT email_confirmation_status_check CHECK (status IN ('PENDING', 'CONFIRMED', 'EXPIRED'));
+            splitStatements: true

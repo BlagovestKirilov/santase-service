@@ -4,7 +4,6 @@ import bg.deck.santaseservice.constant.ExceptionConstants;
 import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.enums.EmailConfirmationStatus;
 import bg.deck.santaseservice.enums.UserDeletionStatus;
-import bg.deck.santaseservice.exception.EmailConfirmationNotFoundException;
 import bg.deck.santaseservice.exception.EmailNotConfirmedException;
 import bg.deck.santaseservice.exception.InvalidCredentialsException;
 import bg.deck.santaseservice.exception.InvalidPasswordException;
@@ -59,21 +58,24 @@ public class UserService {
 
         log.info(LogConstants.EMAIL_CONFIRM_ATTEMPT, username);
 
-        EmailConfirmation emailConfirmation =
-                emailConfirmationRepository.findByUserUsername(username)
-                        .orElseThrow(() -> {
-                            log.warn(LogConstants.EMAIL_CONFIRMATION_NOT_FOUND, username);
-                            return new EmailConfirmationNotFoundException(username);
-                        });
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    log.warn(LogConstants.USER_NOT_FOUND, username);
+                    return new UserNotFoundException(username);
+                });
 
-        if (Boolean.TRUE.equals(emailConfirmation.getUser().getIsEmailConfirmed())
-                || EmailConfirmationStatus.CONFIRMED.equals(emailConfirmation.getStatus())) {
-
+        if (Boolean.TRUE.equals(user.getIsEmailConfirmed())) {
             log.info(LogConstants.EMAIL_CONFIRMATION_ALREADY_CONFIRMED, username);
             return false;
         }
 
-        emailConfirmation.setConfirmationToken(UUID.randomUUID());
+        List<EmailConfirmation> pendingEmailConfirmations = emailConfirmationRepository
+                .findAllByUserAndStatus(user, EmailConfirmationStatus.PENDING);
+
+        pendingEmailConfirmations.forEach(ec -> ec.setStatus(EmailConfirmationStatus.EXPIRED));
+        emailConfirmationRepository.saveAll(pendingEmailConfirmations);
+
+        EmailConfirmation emailConfirmation = new EmailConfirmation(user);
         emailConfirmationRepository.save(emailConfirmation);
 
         emailService.sendConfirmationEmail(emailConfirmation);

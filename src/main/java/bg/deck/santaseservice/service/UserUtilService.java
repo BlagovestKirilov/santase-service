@@ -1,6 +1,7 @@
 package bg.deck.santaseservice.service;
 
 import bg.deck.santaseservice.model.DeletedUser;
+import bg.deck.santaseservice.model.EmailConfirmation;
 import bg.deck.santaseservice.model.ForgotPassword;
 import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.UserDeletion;
@@ -40,12 +41,12 @@ public class UserUtilService {
                     playerRepository.save(player);
                 });
 
-        emailConfirmationRepository.findByUserUsername(user.getUsername())
-                .ifPresent(emailConfirmation -> {
-                    emailConfirmation.setDeletedUser(deletedUser);
-                    emailConfirmation.setUser(null);
-                    emailConfirmationRepository.save(emailConfirmation);
-                });
+        List<EmailConfirmation> emailConfirmations = emailConfirmationRepository.findAllByUser(user);
+        emailConfirmations.forEach(emailConfirmation -> {
+            emailConfirmation.setDeletedUser(deletedUser);
+            emailConfirmation.setUser(null);
+        });
+        emailConfirmationRepository.saveAll(emailConfirmations);
 
         List<ForgotPassword> forgotPasswords = forgotPasswordRepository.findAllByUser(user);
         forgotPasswords.forEach(forgotPassword -> {
