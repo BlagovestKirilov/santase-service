@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static bg.deck.santaseservice.constant.Constants.CF_CONNECTING_IP;
 import static bg.deck.santaseservice.constant.LogConstants.SUCCESSFUL_LOGIN_LOG;
@@ -130,7 +131,7 @@ public class AuthService {
         throw new InvalidTokenException();
     }
 
-    public boolean confirmEmail(String confirmationToken) {
+    public boolean confirmEmail(UUID confirmationToken) {
         log.info(LogConstants.EMAIL_CONFIRMATION_ATTEMPT, confirmationToken);
 
         Optional<EmailConfirmation> optionalEmailConfirmation =
@@ -195,7 +196,7 @@ public class AuthService {
     public void changeForgottenPassword(ChangeForgottenPasswordRequest changeForgottenPasswordRequest) {
         ForgotPassword forgotPassword = forgotPasswordRepository
                 .findByForgotPasswordTokenAndStatus(changeForgottenPasswordRequest.getToken(), ForgotPasswordStatus.PENDING)
-                .orElseThrow(() -> new InvalidCredentialsException(changeForgottenPasswordRequest.getToken()));
+                .orElseThrow(InvalidTokenException::new);
 
         User user = forgotPassword.getUser();
 
@@ -220,9 +221,9 @@ public class AuthService {
         log.info(LogConstants.PASSWORD_CHANGE_SUCCESS, user.getUsername());
     }
 
-    public void verifyForgotPasswordToken(String token) {
+    public void verifyForgotPasswordToken(UUID token) {
         forgotPasswordRepository
                 .findByForgotPasswordTokenAndStatus(token, ForgotPasswordStatus.PENDING)
-                .orElseThrow(() -> new InvalidCredentialsException(token));
+                .orElseThrow(InvalidTokenException::new);
     }
 }

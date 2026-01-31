@@ -7,9 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface UserDeletionRepository extends JpaRepository<UserDeletion, Integer> {
-    Optional<UserDeletion> findByUserDeletionTokenAndStatus(String token, UserDeletionStatus status);
+    Optional<UserDeletion> findByUserDeletionTokenAndStatus(UUID token, UserDeletionStatus status);
 
     List<UserDeletion> findAllByUserAndStatus(User user, UserDeletionStatus status);
 

@@ -24,7 +24,7 @@ public class EmailConfirmation extends BaseEntity {
     private User user;
 
     @Column(nullable = false)
-    private String confirmationToken;
+    private UUID confirmationToken;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -35,7 +35,7 @@ public class EmailConfirmation extends BaseEntity {
 
     public EmailConfirmation(User user) {
         this.user = user;
-        this.confirmationToken = UUID.randomUUID().toString();
+        this.confirmationToken = UUID.randomUUID();
         this.status = EmailConfirmationStatus.PENDING;
     }
 }

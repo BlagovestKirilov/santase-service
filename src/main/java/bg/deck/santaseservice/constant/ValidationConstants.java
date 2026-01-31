@@ -26,5 +26,5 @@ public class ValidationConstants {
     public static final String EMAIL_EMPTY = "Email cannot be empty";
     public static final String EMAIL_INVALID = "Email format is invalid";
 
-    public static final String INVALID_TOKEN = "Invalid token";
+    public static final String TOKEN_NULL = "Token must not be null";
 }

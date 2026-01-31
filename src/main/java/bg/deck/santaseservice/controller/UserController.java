@@ -1,6 +1,5 @@
 package bg.deck.santaseservice.controller;
 
-import bg.deck.santaseservice.annotation.ValidUUID;
 import bg.deck.santaseservice.constant.Constants;
 import bg.deck.santaseservice.model.request.ChangePasswordRequest;
 import bg.deck.santaseservice.model.request.UserDeletionRequest;
@@ -10,7 +9,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.UUID;
 
-@Validated
 @RequiredArgsConstructor
 @RequestMapping("/user")
 @RestController
@@ -51,7 +49,7 @@ public class UserController {
     }
 
     @GetMapping("/confirm-deletion")
-    public ResponseEntity<Void> verifyForgotPasswordToken(@ValidUUID @RequestParam("token") String userDeletionToken) {
+    public ResponseEntity<Void> verifyForgotPasswordToken(@RequestParam("token") UUID userDeletionToken) {
         boolean isDeleted = userService.confirmDeletion(userDeletionToken);
 
         String redirectUrl = isDeleted ? Constants.DECK_BG_SUCCESS_DELETION : Constants.DECK_BG_INVALID_LINK;

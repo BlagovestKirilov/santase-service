@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-alter-email-confirmation-token-to-uuid
+      author: Blagovest Kirilov
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE email_confirmation
+                  ALTER COLUMN confirmation_token
+                      SET DATA TYPE uuid
+                      USING confirmation_token::uuid;
+
+  - changeSet:
+      id: 008-alter-forgot-password-token-to-uuid
+      author: Blagovest Kirilov
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE forgot_password
+                  ALTER COLUMN forgot_password_token
+                      SET DATA TYPE uuid
+                      USING forgot_password_token::uuid;
+
+  - changeSet:
+      id: 008-alter-user-deletion-token-to-uuid
+      author: Blagovest Kirilov
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE user_deletion
+                  ALTER COLUMN user_deletion_token
+                      SET DATA TYPE uuid
+                      USING user_deletion_token::uuid;
