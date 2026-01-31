@@ -34,6 +34,6 @@ public class Constants {
     public static final String DECK_BG_FORGOT_PASSWORD = "https://deck.bg/reset-password?token=";
     public static final String FORGOT_PASSWORD_TEMPLATE = "/templates/forgot-password.html";
     public static final String DELETION_SUBJECT = "Потвърждение на изтриване на акаунт в DECK.BG";
-    public static final String DECK_BG_DELETE_ACCOUNT = "https://deck.bg/user/confirm-deletion?token=";
+    public static final String DECK_BG_DELETE_ACCOUNT = "https://deck.bg/api/user/confirm-deletion?token=";
     public static final String DELETION_TEMPLATE = "/templates/user-deletion.html";
 }
