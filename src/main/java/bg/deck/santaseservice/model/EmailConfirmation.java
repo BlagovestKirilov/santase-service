@@ -6,7 +6,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,11 +18,13 @@ import java.util.UUID;
 
 @Setter
 @Getter
+@Builder
 @ToString
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class EmailConfirmation extends BaseEntity {
-    @OneToOne
+    @ManyToOne
     private User user;
 
     @Column(nullable = false)
@@ -30,7 +34,7 @@ public class EmailConfirmation extends BaseEntity {
     @Column(nullable = false)
     private EmailConfirmationStatus status;
 
-    @OneToOne
+    @ManyToOne
     private DeletedUser deletedUser;
 
     public EmailConfirmation(User user) {

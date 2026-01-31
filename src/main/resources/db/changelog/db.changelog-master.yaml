@@ -4,4 +4,4 @@ databaseChangeLog:
       author: Blagovest Kirilov
 
   - include:
-      file: db/changelog/changes/008-alter-token-columns-to-uuid.yaml
+      file: db/changelog/changes/009-add-email-confirmation-expired-status.yaml
