@@ -21,8 +21,9 @@ public class ValidationConstants {
     public static final String PASSWORD_PATTERN_MSG = "Password can contain only letters, digits, and special symbols";
 
     public static final String REFRESH_TOKEN_EMPTY = "refreshToken cannot be empty";
-    public static final String CARD_ID_NULL = "cardId must not be null";
 
     public static final String EMAIL_EMPTY = "Email cannot be empty";
     public static final String EMAIL_INVALID = "Email format is invalid";
+
+    public static final String INVALID_TOKEN = "Invalid token";
 }

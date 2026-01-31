@@ -39,11 +39,11 @@ public class LogConstants {
     public static final String EMAIL_CONFIRMATION_TOKEN_NOT_FOUND = "Email confirmation failed. Token not found: {}";
     public static final String EMAIL_ALREADY_CONFIRMED = "Email already confirmed. Token={}, username={}";
     public static final String EMAIL_CONFIRMED_SUCCESSFULLY = "Email confirmed successfully. Token={}, username={}";
-    public static final String EMAIL_RESEND_ATTEMPT = "Attempting to resend email confirmation for username={}";
-    public static final String EMAIL_RESEND_CONFIRMATION_NOT_FOUND = "Email confirmation record not found for username={}";
-    public static final String EMAIL_RESEND_ALREADY_CONFIRMED = "Email resend skipped. Email already confirmed for username={}";
-    public static final String EMAIL_RESEND_SUCCESS = "Email confirmation resent successfully for username={}";
-    public static final String EMAIL_SEND_FAILED = "Failed to send confirmation email to email={}";
+    public static final String EMAIL_CONFIRM_ATTEMPT = "Attempting to send email confirmation for username={}";
+    public static final String EMAIL_CONFIRMATION_NOT_FOUND = "Email confirmation record not found for username={}";
+    public static final String EMAIL_CONFIRMATION_ALREADY_CONFIRMED = "Email sending skipped. Email already confirmed for username={}";
+    public static final String EMAIL_SEND_SUCCESS = "Email sent successfully for username={}";
+    public static final String EMAIL_SEND_FAILED = "Failed to send email to email={}";
     public static final String PASSWORD_CHANGE_STARTED = "Password change attempt started for user {}";
     public static final String PASSWORD_CHANGE_SUCCESS = "Password successfully changed for user {}";
     public static final String USER_NOT_FOUND = "Password change failed: user {} not found";
@@ -64,4 +64,11 @@ public class LogConstants {
     public static final String GAME_SEARCH_CANCEL_ERROR = "Error while cancelling game search. user={}";
     public static final String USER_DELETION_STARTED = "User deletion started for username={}";
     public static final String USER_DELETION_SUCCESS = "User successfully deleted. username={}";
+    public static final String USER_DELETION_EMAIL_REQUESTED = "User {} requested account deletion email.";
+    public static final String USER_DELETION_RECORD_CREATED = "UserDeletion record created for username={}, id={}";
+    public static final String USER_DELETION_EMAIL_SENT = "Account deletion confirmation email sent to {}";
+    public static final String USER_DELETION_CONFIRM_ATTEMPT = "Confirm deletion attempted with token (length={})";
+    public static final String USER_DELETION_TOKEN_INVALID = "Deletion confirmation failed: token not found or not pending.";
+    public static final String USER_DELETION_CONFIRMED = "Deletion confirmed for username={}, proceeding with delete.";
+    public static final String INVALID_PASSWORD = "Invalid password for user {}";
 }

@@ -1,4 +1,4 @@
-package bg.deck.santaseservice.model;
+package bg.deck.santaseservice.model.base;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @Getter
 @MappedSuperclass
-public class BaseEntity {
+public abstract class BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

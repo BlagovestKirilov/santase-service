@@ -1,7 +1,6 @@
 package bg.deck.santaseservice.model.request;
 
-import bg.deck.santaseservice.constant.ValidationConstants;
-import jakarta.validation.constraints.NotNull;
+import bg.deck.santaseservice.annotation.ValidUUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +15,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CardRequest {
-    @NotNull(message = ValidationConstants.CARD_ID_NULL)
+    @ValidUUID
     private UUID cardId;
 }

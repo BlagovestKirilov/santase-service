@@ -3,10 +3,12 @@ package bg.deck.santaseservice.service;
 import bg.deck.santaseservice.model.DeletedUser;
 import bg.deck.santaseservice.model.ForgotPassword;
 import bg.deck.santaseservice.model.User;
+import bg.deck.santaseservice.model.UserDeletion;
 import bg.deck.santaseservice.repository.DeletedUserRepository;
 import bg.deck.santaseservice.repository.EmailConfirmationRepository;
 import bg.deck.santaseservice.repository.ForgotPasswordRepository;
 import bg.deck.santaseservice.repository.PlayerRepository;
+import bg.deck.santaseservice.repository.UserDeletionRepository;
 import bg.deck.santaseservice.repository.UserRepository;
 import bg.deck.santaseservice.util.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class UserUtilService {
     private final DeletedUserRepository deletedUserRepository;
     private final PlayerRepository playerRepository;
     private final ForgotPasswordRepository forgotPasswordRepository;
+    private final UserDeletionRepository userDeletionRepository;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
@@ -50,6 +53,13 @@ public class UserUtilService {
             forgotPassword.setUser(null);
         });
         forgotPasswordRepository.saveAll(forgotPasswords);
+
+        List<UserDeletion> userDeletions = userDeletionRepository.findAllByUser(user);
+        userDeletions.forEach(userDeletion -> {
+            userDeletion.setDeletedUser(deletedUser);
+            userDeletion.setUser(null);
+        });
+        userDeletionRepository.saveAll(userDeletions);
 
         userRepository.delete(user);
     }

@@ -2,6 +2,7 @@ package bg.deck.santaseservice.controller;
 
 import bg.deck.santaseservice.model.request.CardRequest;
 import bg.deck.santaseservice.service.GameService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,13 +31,13 @@ public class GameController {
     }
 
     @PostMapping("/play-card")
-    public ResponseEntity<Void> playCard(@RequestBody CardRequest cardRequest) {
+    public ResponseEntity<Void> playCard(@Valid @RequestBody CardRequest cardRequest) {
         gameService.playCard(cardRequest);
         return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/announce")
-    public ResponseEntity<Void> announceCombination(@RequestBody CardRequest cardRequest) {
+    public ResponseEntity<Void> announceCombination(@Valid @RequestBody CardRequest cardRequest) {
         gameService.announceCombination(cardRequest);
         return ResponseEntity.accepted().build();
     }
