@@ -1,29 +1,10 @@
 services:
-  nginx:
-    image: nginx:1.28.1-alpine
-    environment:
-      - TZ=Europe/Sofia
-    container_name: nginx_proxy
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./cloudflare-certs:/etc/ssl/cloudflare:ro
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - santase_network
-
   frontend:
     image: bkirilov/santase_frontend:latest
     container_name: santase_frontend
     restart: always
     environment:
       - TZ=Europe/Sofia
-    # No ports exposed! The main nginx proxy handles external traffic.
     networks:
       - santase_network
 

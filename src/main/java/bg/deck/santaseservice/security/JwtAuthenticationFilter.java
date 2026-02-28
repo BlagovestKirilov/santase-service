@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static bg.deck.santaseservice.constant.Constants.BEARER;
-import static bg.deck.santaseservice.constant.Constants.TOKEN_PARAM;
+import static bg.deck.santaseservice.constant.Constants.TOKEN;
 import static bg.deck.santaseservice.constant.Constants.WEB_SOCKET_ENDPOINT;
 import static bg.deck.santaseservice.constant.ExceptionConstants.INVALID_TOKEN;
 
@@ -38,7 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         if (request.getRequestURI().startsWith(WEB_SOCKET_ENDPOINT)) {
-            authHeader = BEARER.concat(request.getParameter(TOKEN_PARAM));
+            authHeader = BEARER.concat(request.getParameter(TOKEN));
         }
 
         if (authHeader == null || !authHeader.startsWith(BEARER)) {
