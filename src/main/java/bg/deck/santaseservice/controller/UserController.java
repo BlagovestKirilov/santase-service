@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.URI;
 import java.util.UUID;
 
+import static bg.deck.santaseservice.constant.Constants.TOKEN;
+
 @RequiredArgsConstructor
 @RequestMapping("/user")
 @RestController
@@ -49,7 +51,7 @@ public class UserController {
     }
 
     @GetMapping("/confirm-deletion")
-    public ResponseEntity<Void> verifyForgotPasswordToken(@RequestParam("token") UUID userDeletionToken) {
+    public ResponseEntity<Void> verifyForgotPasswordToken(@RequestParam(TOKEN) UUID userDeletionToken) {
         boolean isDeleted = userService.confirmDeletion(userDeletionToken);
 
         String redirectUrl = isDeleted ? Constants.DECK_BG_SUCCESS_DELETION : Constants.DECK_BG_INVALID_LINK;

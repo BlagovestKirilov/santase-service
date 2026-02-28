@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import static bg.deck.santaseservice.constant.Constants.DECK_BG_INVALID_LINK;
 import static bg.deck.santaseservice.constant.Constants.DECK_BG_SUCCESS_CONFIRMATION;
+import static bg.deck.santaseservice.constant.Constants.TOKEN;
 
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -48,7 +49,7 @@ public class AuthController {
     }
 
     @GetMapping("/confirm-email")
-    public ResponseEntity<Void> confirmEmail(@RequestParam("token") UUID confirmationToken) {
+    public ResponseEntity<Void> confirmEmail(@RequestParam(TOKEN) UUID confirmationToken) {
 
         boolean confirmed = authService.confirmEmail(confirmationToken);
 
@@ -60,7 +61,7 @@ public class AuthController {
     }
 
     @GetMapping("/forgot-password/verify")
-    public ResponseEntity<Void> verifyForgotPasswordToken(@RequestParam("token") UUID forgotPasswordToken) {
+    public ResponseEntity<Void> verifyForgotPasswordToken(@RequestParam(TOKEN) UUID forgotPasswordToken) {
         authService.verifyForgotPasswordToken(forgotPasswordToken);
         return ResponseEntity.ok().build();
     }

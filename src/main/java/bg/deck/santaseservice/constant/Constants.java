@@ -12,7 +12,7 @@ public class Constants {
     public static final String USERNAME = "username";
     public static final String BEARER = "Bearer ";
     public static final String WEB_SOCKET_ENDPOINT = "/ws-game";
-    public static final String TOKEN_PARAM = "token";
+    public static final String TOKEN = "token";
     public static final String TOPIC = "/topic";
     public static final String APP = "/app";
     public static final String LOCALHOST = "http://localhost:3000";

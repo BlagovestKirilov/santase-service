@@ -92,7 +92,12 @@ spring:
       leak-detection-threshold: 15000
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: ${DB_DIALECT}
+        jdbc:
+          time_zone: Europe/Sofia
 
 logging:
   level:
