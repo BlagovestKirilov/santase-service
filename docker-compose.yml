@@ -1,3 +1,8 @@
+# Deployed to /home/ubuntu/santase. Amarok lives in /home/ubuntu/app and both
+# projects declare services called "frontend" and "backend", so they must never
+# share a directory: whichever deployed last would own the compose file there.
+name: santase
+
 services:
   frontend:
     image: bkirilov/santase_frontend:latest
@@ -14,7 +19,7 @@ services:
     restart: always
     env_file: .env
     volumes:
-      - /home/ubuntu/app/backend_logs:/app/logs
+      - /home/ubuntu/santase/backend_logs:/app/logs
     environment:
       - TZ=Europe/Sofia
       - JAVA_OPTS=-Duser.timezone=Europe/Sofia
@@ -23,4 +28,7 @@ services:
 
 networks:
   santase_network:
-    driver: bridge
+    # Created originally as project "app"; nginx_proxy is attached to it, so it
+    # is adopted as-is rather than recreated under the new project name.
+    external: true
+    name: app_santase_network
