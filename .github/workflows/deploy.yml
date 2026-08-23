@@ -84,5 +84,10 @@ jobs:
             # February build for six months.
             docker compose up -d
 
+            echo "Reloading nginx_proxy so it re-resolves container IPs..."
+            # nginx caches upstream IPs from config load; a recreated container
+            # gets a new address and the proxy would 502 until reloaded.
+            docker exec nginx_proxy nginx -s reload || echo "WARNING: nginx_proxy reload failed - check the proxy"
+
             echo "Cleaning up unused Docker data..."
             docker image prune -f
