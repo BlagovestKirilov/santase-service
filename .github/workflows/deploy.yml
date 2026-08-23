@@ -41,7 +41,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           source: "docker-compose.yml"
-          target: "/home/ubuntu/app"
+          target: "/home/ubuntu/santase"
 
       - name: Deploy on EC2 (Ubuntu 22)
         uses: appleboy/ssh-action@v1.2.1
@@ -52,7 +52,7 @@ jobs:
           script: |
             set -e
             # 1. Move to the application directory
-            cd /home/ubuntu/app
+            cd /home/ubuntu/santase
 
             echo "Logging into Docker Hub..."
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
@@ -77,6 +77,12 @@ jobs:
             echo "Pulling latest images..."
             # This ensures you get the image you just pushed to Docker Hub
             docker compose pull
+
+            echo "Recreating containers..."
+            # Without this the pull above is inert: the old container keeps
+            # running the previous image. This is why the backend stayed on a
+            # February build for six months.
+            docker compose up -d
 
             echo "Cleaning up unused Docker data..."
             docker image prune -f
