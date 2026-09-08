@@ -118,12 +118,6 @@ public class GameUtilService {
         return playerRepository.save(Player.builder().user(user).build());
     }
 
-    public Player findPlayerByUsername(String username) {
-        return playerRepository.findAllByUserUsername(username).stream()
-                .reduce((first, second) -> second)
-                .orElseThrow(() -> new InvalidCredentialsException(username));
-    }
-
     public Game findGame(String username) {
         Game game = findGameByUsername(username);
 
