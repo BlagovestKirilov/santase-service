@@ -1,0 +1,88 @@
+databaseChangeLog:
+  # A player row is now one seat in one game rather than one row per user, so
+  # player.user_id must not be unique.
+  #
+  # Changeset 007 dropped this constraint by its Hibernate-generated name, but
+  # that name is not stable across environments and the constraint was still
+  # present in production — every new game failed with a duplicate key error on
+  # insert, for Santase as well as табла.
+  #
+  # So this drops any single-column UNIQUE constraint (or unique index) on
+  # player(user_id) whatever it happens to be called, and does nothing when
+  # there is none. Safe to run repeatedly and on a database that never had it.
+  - changeSet:
+      id: 014-drop-player-user-unique
+      author: Blagovest Kirilov
+      comment: player.user_id must allow many rows per user (one seat per game)
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              DO $$
+              DECLARE
+                  target record;
+              BEGIN
+                  -- UNIQUE constraints on exactly (user_id)
+                  FOR target IN
+                      SELECT con.conname AS name
+                      FROM pg_constraint con
+                      JOIN pg_class rel ON rel.oid = con.conrelid
+                      JOIN pg_namespace ns ON ns.oid = rel.relnamespace
+                      WHERE rel.relname = 'player'
+                        AND ns.nspname = current_schema()
+                        AND con.contype = 'u'
+                        AND (
+                            SELECT array_agg(att.attname::text)
+                            FROM unnest(con.conkey) AS k(attnum)
+                            JOIN pg_attribute att
+                              ON att.attrelid = con.conrelid AND att.attnum = k.attnum
+                        ) = ARRAY['user_id']
+                  LOOP
+                      EXECUTE format('ALTER TABLE player DROP CONSTRAINT %I', target.name);
+                      RAISE NOTICE 'Dropped unique constraint % on player(user_id)', target.name;
+                  END LOOP;
+
+                  -- Unique indexes on (user_id) not backing a constraint
+                  FOR target IN
+                      SELECT cls.relname AS name
+                      FROM pg_index idx
+                      JOIN pg_class cls ON cls.oid = idx.indexrelid
+                      JOIN pg_class tbl ON tbl.oid = idx.indrelid
+                      JOIN pg_namespace ns ON ns.oid = tbl.relnamespace
+                      WHERE tbl.relname = 'player'
+                        AND ns.nspname = current_schema()
+                        AND idx.indisunique
+                        AND NOT idx.indisprimary
+                        AND idx.indnatts = 1
+                        AND (
+                            SELECT att.attname::text
+                            FROM pg_attribute att
+                            WHERE att.attrelid = tbl.oid
+                              AND att.attnum = idx.indkey[0]
+                        ) = 'user_id'
+                        AND NOT EXISTS (
+                            SELECT 1 FROM pg_constraint con WHERE con.conindid = idx.indexrelid
+                        )
+                  LOOP
+                      EXECUTE format('DROP INDEX %I', target.name);
+                      RAISE NOTICE 'Dropped unique index % on player(user_id)', target.name;
+                  END LOOP;
+              END $$;
+
+  # The lookup path the unique constraint used to provide, now non-unique.
+  - changeSet:
+      id: 014-ensure-player-user-index
+      author: Blagovest Kirilov
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                indexName: idx_player_user_id
+      changes:
+        - createIndex:
+            tableName: player
+            indexName: idx_player_user_id
+            columns:
+              - column:
+                  name: user_id

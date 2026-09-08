@@ -101,9 +101,6 @@ public class AuthService {
         user.addStats(UserGameStats.fresh(user, GameType.TABLA));
         userRepository.save(user);
 
-        Player player = Player.builder().user(user).build();
-        playerRepository.save(player);
-
         EmailConfirmation emailConfirmation = new EmailConfirmation(user);
         emailConfirmationRepository.save(emailConfirmation);
 
