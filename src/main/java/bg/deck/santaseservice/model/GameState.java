@@ -59,7 +59,7 @@ public class GameState extends BaseEntity implements TurnClock {
 
     @Override
     public void extendNextMoveTime() {
-        this.nextMoveTime = Instant.now().plusSeconds(TurnClock.TURN_SECONDS);
+        this.nextMoveTime = Instant.now().plusSeconds(turnSeconds());
     }
 
     @Override

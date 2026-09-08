@@ -1,5 +1,6 @@
 package bg.deck.santaseservice.tabla;
 
+import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.exception.PlayerInactivitySurrenderException;
 import bg.deck.santaseservice.exception.TablaException;
@@ -168,12 +169,13 @@ public class TablaService {
         state.setPendingHopList(pending);
 
         // Deliberately no clock extension: a player could otherwise stall forever
-        // by moving and undoing. One 33s budget covers the whole turn.
+        // by moving and undoing. One turn budget covers the whole turn.
+        //
+        // The turn is NOT ended here even when the last die has been played.
+        // Auto-confirming meant the final hop could never be undone; the player
+        // now sees the finished position and commits it with confirm(). Stalling
+        // is not a risk because the turn clock keeps running throughout.
         tablaUtilService.pushToBoth(game);
-
-        if (state.usedDiceCount() >= state.getMaxDiceUsable()) {
-            confirmInternal(game, state, side);
-        }
     }
 
     @Transactional
@@ -272,10 +274,17 @@ public class TablaService {
         int count = (player.getInactivityCount() == null ? 0 : player.getInactivityCount()) + 1;
         player.setInactivityCount(count);
 
+        log.info(LogConstants.PLAYER_INACTIVITY_TIMEOUT, username, game.getId(), count);
+
         if (count >= MAX_INACTIVITY) {
+            log.warn(LogConstants.PLAYER_FORCED_SURRENDER_BY_INACTIVITY, username, game.getId());
             throw new PlayerInactivitySurrenderException();
         }
 
+        // Re-arm against the persisted deadline. The deadline itself is NOT
+        // pushed out here: the player is now inside the warning window and only
+        // pressing Continue (extendTime) buys them a fresh turn.
+        gameInactivityService.updateNextMoveTime(game);
         tablaUtilService.pushToBoth(game);
     }
 
