@@ -1,9 +1,13 @@
 package bg.deck.santaseservice.model;
 
+import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.exception.UserNotPartOfGameException;
 import bg.deck.santaseservice.model.base.BaseEntity;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
@@ -28,8 +32,28 @@ public class Game extends BaseEntity {
     @ManyToOne
     private Player secondPlayer;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "game_type", nullable = false, length = 20)
+    @Builder.Default
+    private GameType gameType = GameType.SANTASE;
+
     @OneToOne(cascade = CascadeType.ALL)
     private GameState state;
+
+    /**
+     * Table state for табла. Exactly one of {@code state} / {@code tablaState} is
+     * set, chosen by {@link #gameType}. Two nullable links rather than a JOINED
+     * hierarchy: an inheritance split would force a discriminator onto the live
+     * game_state table and touch every line of the working Santase service.
+     */
+    @OneToOne(cascade = CascadeType.ALL)
+    private TablaGameState tablaState;
+
+    /** Committed dice seed; revealed only once the game is finished. */
+    private byte[] serverSeed;
+
+    @Column(length = 64)
+    private String serverSeedHash;
 
     @ManyToOne
     private Player winner;
@@ -69,6 +93,11 @@ public class Game extends BaseEntity {
         }
     }
 
+    /** Whichever state object drives the turn timer for this game type. */
+    public TurnClock getTurnClock() {
+        return state != null ? state : tablaState;
+    }
+
     public void setWinner(Player winnerPlayer, boolean opponentSurrendered) {
         this.winner = winnerPlayer;
         this.finishedAt = Instant.now();
@@ -78,7 +107,8 @@ public class Game extends BaseEntity {
             this.surrenderPlayer = opponent;
         }
 
-        winnerPlayer.getUser().incrementSantaseWins();
-        opponent.getUser().incrementSantaseLosses();
+        // Stats are per game type, so a Santase win never touches a табла record.
+        winnerPlayer.getUser().statsFor(gameType).incrementWins();
+        opponent.getUser().statsFor(gameType).incrementLosses();
     }
 }

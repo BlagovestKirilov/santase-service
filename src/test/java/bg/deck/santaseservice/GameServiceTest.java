@@ -103,8 +103,9 @@ class GameServiceTest {
             reset(webSocketUtilService);
             when(gameUtilService.getUsername()).thenReturn(p2Name);
             when(gameUtilService.checkIfUserExistsAndIsAvailable(p2Name)).thenReturn(true);
-            when(gameUtilService.findPlayerByUsername(p2Name)).thenReturn(p2);
-            when(gameUtilService.findPlayerByUsername(p1Name)).thenReturn(p1);
+            // A fresh seat is now created per game rather than reusing a per-user row.
+            when(gameUtilService.newPlayerFor(p2Name)).thenReturn(p2);
+            when(gameUtilService.newPlayerFor(p1Name)).thenReturn(p1);
             when(gameUtilService.startGame(p2, p1)).thenReturn(game);
 
             gameService.searchGame();

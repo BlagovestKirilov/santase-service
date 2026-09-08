@@ -1,0 +1,129 @@
+databaseChangeLog:
+  # Moves per-game stats off the users table so two games cannot share one Elo
+  # rating. EXPAND PHASE ONLY: users.santase_wins / santase_losses / rank /
+  # rank_rating are deliberately left in place so this release can be rolled
+  # back without losing data. A later changeset drops them.
+  - changeSet:
+      id: 011-create-user-game-stats
+      author: Blagovest Kirilov
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: user_game_stats
+      changes:
+        - createTable:
+            tableName: user_game_stats
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_user_game_stats_user
+                    references: users(id)
+              - column:
+                  name: game_type
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: wins
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: losses
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rating
+                  type: int
+                  defaultValueNumeric: 1500
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rank
+                  type: varchar(20)
+                  defaultValue: 'UNRANKED'
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: user_game_stats
+            columnNames: user_id, game_type
+            constraintName: uk_user_game_stats
+
+  # Carry every existing player's Santase record across unchanged.
+  - changeSet:
+      id: 011-backfill-santase-stats
+      author: Blagovest Kirilov
+      comment: One SANTASE row per existing user, preserving wins/losses/rank/rating
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: '0'
+            sql: SELECT COUNT(*) FROM user_game_stats WHERE game_type = 'SANTASE'
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              INSERT INTO user_game_stats (id, created_at, updated_at, user_id, game_type, wins, losses, rating, rank)
+              SELECT gen_random_uuid(), now(), now(), u.id, 'SANTASE',
+                     COALESCE(u.santase_wins, 0), COALESCE(u.santase_losses, 0),
+                     COALESCE(u.rank_rating, 1500), COALESCE(u.rank, 'UNRANKED')
+              FROM users u;
+
+  # Everyone starts табла unranked.
+  - changeSet:
+      id: 011-backfill-tabla-stats
+      author: Blagovest Kirilov
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: '0'
+            sql: SELECT COUNT(*) FROM user_game_stats WHERE game_type = 'TABLA'
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              INSERT INTO user_game_stats (id, created_at, updated_at, user_id, game_type, wins, losses, rating, rank)
+              SELECT gen_random_uuid(), now(), now(), u.id, 'TABLA', 0, 0, 1500, 'UNRANKED'
+              FROM users u;
+
+  # Java stops populating these once stats move to the new table. Hibernate's
+  # ddl-auto=validate only checks that MAPPED columns exist, so it would NOT
+  # catch an un-relaxed NOT NULL here: registration would pass startup and then
+  # fail on the first new user.
+  - changeSet:
+      id: 011-relax-legacy-user-stat-columns
+      author: Blagovest Kirilov
+      comment: Legacy columns kept for rollback safety, but no longer written to
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE users ALTER COLUMN rank DROP NOT NULL;
+              ALTER TABLE users ALTER COLUMN rank_rating DROP NOT NULL;
+              ALTER TABLE users ALTER COLUMN santase_wins DROP NOT NULL;
+              ALTER TABLE users ALTER COLUMN santase_losses DROP NOT NULL;
+            splitStatements: true

@@ -1,0 +1,86 @@
+databaseChangeLog:
+  # Tags every game row with the game it belongs to, so a табла search can
+  # proceed while a Santase game is still live. Every existing row is Santase.
+  #
+  # Each changeSet is guarded by a precondition with onFail: MARK_RAN, so
+  # re-running against a database where the change already exists records it as
+  # run instead of failing the deploy.
+  - changeSet:
+      id: 010-add-game-type-column
+      author: Blagovest Kirilov
+      comment: Add game.game_type, defaulting existing rows to SANTASE
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: game
+                columnName: game_type
+      changes:
+        - addColumn:
+            tableName: game
+            columns:
+              - column:
+                  name: game_type
+                  type: varchar(20)
+                  defaultValue: 'SANTASE'
+
+  - changeSet:
+      id: 010-backfill-game-type
+      author: Blagovest Kirilov
+      comment: Existing games all predate табла
+      changes:
+        - update:
+            tableName: game
+            columns:
+              - column:
+                  name: game_type
+                  value: 'SANTASE'
+            where: game_type IS NULL
+
+  - changeSet:
+      id: 010-game-type-not-null
+      author: Blagovest Kirilov
+      comment: Safe only after the backfill above
+      changes:
+        - addNotNullConstraint:
+            tableName: game
+            columnName: game_type
+            columnDataType: varchar(20)
+
+  # Feeds the "does this user already have an active game of this type?" query.
+  - changeSet:
+      id: 010-index-game-type-winner
+      author: Blagovest Kirilov
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                indexName: idx_game_type_winner
+      changes:
+        - createIndex:
+            tableName: game
+            indexName: idx_game_type_winner
+            columns:
+              - column:
+                  name: game_type
+              - column:
+                  name: winner_id
+
+  # The unique constraint on player.user_id was dropped in 007, so a user can
+  # already own several player rows. This index replaces the lookup path that
+  # constraint used to provide.
+  - changeSet:
+      id: 010-index-player-user
+      author: Blagovest Kirilov
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                indexName: idx_player_user_id
+      changes:
+        - createIndex:
+            tableName: player
+            indexName: idx_player_user_id
+            columns:
+              - column:
+                  name: user_id

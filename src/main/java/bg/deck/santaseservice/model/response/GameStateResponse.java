@@ -16,6 +16,7 @@ import java.util.List;
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GameStateResponse {
+    private String gameId;
     private List<CardDTO> deck;
     private CardDTO trumpCard;
     private CardDTO playedCard;
