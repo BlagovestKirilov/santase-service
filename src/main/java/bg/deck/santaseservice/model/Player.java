@@ -8,6 +8,7 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
@@ -27,7 +28,12 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 public class Player extends BaseEntity {
-    @OneToOne
+    /**
+     * A player row is one seat in one game, not one row per user: result, score,
+     * hand and playedCard are per-game mutable state. The unique constraint on
+     * user_id was already dropped in changeset 007.
+     */
+    @ManyToOne
     private User user;
 
     private Integer result;

@@ -4,7 +4,7 @@ import bg.deck.santaseservice.constant.RankingConstants;
 import bg.deck.santaseservice.enums.Rank;
 import bg.deck.santaseservice.model.Game;
 import bg.deck.santaseservice.model.Player;
-import bg.deck.santaseservice.model.User;
+import bg.deck.santaseservice.model.UserGameStats;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -17,23 +17,21 @@ public class RankingService {
         Player winner = game.getWinner();
         Player loser = game.getOpponent(winner);
 
-        User winnerUser = winner.getUser();
-        User loserUser = loser.getUser();
+        // Rating is per game type: Santase results never move a табла rating.
+        UserGameStats winnerStats = winner.getUser().statsFor(game.getGameType());
+        UserGameStats loserStats = loser.getUser().statsFor(game.getGameType());
 
-        int winnerGames = totalGames(winnerUser);
-        int loserGames = totalGames(loserUser);
+        int winnerDelta = calculateEloDelta(winnerStats.getRating(),
+                loserStats.getRating(), true, winnerStats.totalGames());
 
-        int winnerDelta = calculateEloDelta(winnerUser.getRankRating(),
-                loserUser.getRankRating(), true, winnerGames);
+        int loserDelta = calculateEloDelta(loserStats.getRating(),
+                winnerStats.getRating(), false, loserStats.totalGames());
 
-        int loserDelta = calculateEloDelta(loserUser.getRankRating(),
-                winnerUser.getRankRating(), false, loserGames);
+        winnerStats.setRating(winnerStats.getRating() + winnerDelta);
+        loserStats.setRating(loserStats.getRating() + loserDelta);
 
-        winnerUser.setRankRating(winnerUser.getRankRating() + winnerDelta);
-        loserUser.setRankRating(loserUser.getRankRating() + loserDelta);
-
-        winnerUser.setRank(resolveRank(winnerUser));
-        loserUser.setRank(resolveRank(loserUser));
+        winnerStats.setRank(resolveRank(winnerStats));
+        loserStats.setRank(resolveRank(loserStats));
     }
 
     private int calculateEloDelta(int playerRating, int opponentRating, boolean win, int gamesPlayed) {
@@ -47,10 +45,10 @@ public class RankingService {
         return (int) Math.round(kFactor * (result - expected));
     }
 
-    private Rank resolveRank(User user) {
+    private Rank resolveRank(UserGameStats stats) {
 
-        int gamesPlayed = totalGames(user);
-        int rating = user.getRankRating();
+        int gamesPlayed = stats.totalGames();
+        int rating = stats.getRating();
 
         if (gamesPlayed < RankingConstants.PLACEMENT_GAMES) {
             return Rank.UNRANKED;
@@ -63,9 +61,5 @@ public class RankingService {
         if (rating < RankingConstants.DIAMOND_THRESHOLD) return Rank.DIAMOND;
 
         return Rank.LEGEND;
-    }
-
-    private int totalGames(User user) {
-        return user.getSantaseWins() + user.getSantaseLosses();
     }
 }

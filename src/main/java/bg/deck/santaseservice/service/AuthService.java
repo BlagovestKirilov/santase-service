@@ -13,7 +13,9 @@ import bg.deck.santaseservice.exception.UserAlreadyExistsException;
 import bg.deck.santaseservice.model.EmailConfirmation;
 import bg.deck.santaseservice.model.ForgotPassword;
 import bg.deck.santaseservice.model.Player;
+import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.model.User;
+import bg.deck.santaseservice.model.UserGameStats;
 import bg.deck.santaseservice.model.request.ChangeForgottenPasswordRequest;
 import bg.deck.santaseservice.model.request.ForgotPasswordEmailRequest;
 import bg.deck.santaseservice.model.request.LoginRequest;
@@ -90,6 +92,13 @@ public class AuthService {
 
         User user = userMapper.toEntity(registerRequest);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(user);
+
+        // Both stats rows are created up front: lazy creation on first game would
+        // need INSERT ... ON CONFLICT handling under concurrency, and one extra
+        // row per user is cheaper than that.
+        user.addStats(UserGameStats.fresh(user, GameType.SANTASE));
+        user.addStats(UserGameStats.fresh(user, GameType.TABLA));
         userRepository.save(user);
 
         Player player = Player.builder().user(user).build();

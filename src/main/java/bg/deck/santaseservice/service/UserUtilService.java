@@ -3,6 +3,7 @@ package bg.deck.santaseservice.service;
 import bg.deck.santaseservice.model.DeletedUser;
 import bg.deck.santaseservice.model.EmailConfirmation;
 import bg.deck.santaseservice.model.ForgotPassword;
+import bg.deck.santaseservice.model.Player;
 import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.UserDeletion;
 import bg.deck.santaseservice.repository.DeletedUserRepository;
@@ -34,12 +35,14 @@ public class UserUtilService {
         DeletedUser deletedUser = userMapper.toDeletedUser(user);
         deletedUserRepository.save(deletedUser);
 
-        playerRepository.findByUserUsername(user.getUsername())
-                .ifPresent(player -> {
-                    player.setDeletedUser(deletedUser);
-                    player.setUser(null);
-                    playerRepository.save(player);
-                });
+        // A user owns one player row per game played, so every one of them has to
+        // be re-pointed at the tombstone, not just the first.
+        List<Player> seats = playerRepository.findAllByUserUsername(user.getUsername());
+        seats.forEach(player -> {
+            player.setDeletedUser(deletedUser);
+            player.setUser(null);
+        });
+        playerRepository.saveAll(seats);
 
         List<EmailConfirmation> emailConfirmations = emailConfirmationRepository.findAllByUser(user);
         emailConfirmations.forEach(emailConfirmation -> {

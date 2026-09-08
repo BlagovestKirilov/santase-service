@@ -1,0 +1,108 @@
+databaseChangeLog:
+  # Live state for a табла game. The board is a single varchar rather than an
+  # element-collection table: Hibernate rewrites an entire element collection on
+  # any mutation, and the board changes on every checker hop.
+  - changeSet:
+      id: 012-create-tabla-game-state
+      author: Blagovest Kirilov
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tabla_game_state
+      changes:
+        - createTable:
+            tableName: tabla_game_state
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_turn_player_id
+                  type: uuid
+                  constraints:
+                    foreignKeyName: fk_tabla_state_first_turn_player
+                    references: player(id)
+              - column:
+                  name: in_turn_player_id
+                  type: uuid
+                  constraints:
+                    foreignKeyName: fk_tabla_state_in_turn_player
+                    references: player(id)
+              - column:
+                  name: next_move_time
+                  type: timestamptz
+              - column:
+                  name: board
+                  type: varchar(160)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: turn_start_board
+                  type: varchar(160)
+              - column:
+                  name: die1
+                  type: int
+              - column:
+                  name: die2
+                  type: int
+              - column:
+                  name: remaining_dice
+                  type: varchar(32)
+              - column:
+                  name: pending_hops
+                  type: varchar(256)
+              - column:
+                  name: max_dice_usable
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: turn_index
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 012-add-game-tabla-state-link
+      author: Blagovest Kirilov
+      comment: Second nullable state link on game; Santase games leave it null
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: game
+                columnName: tabla_state_id
+      changes:
+        - addColumn:
+            tableName: game
+            columns:
+              - column:
+                  name: tabla_state_id
+                  type: uuid
+                  constraints:
+                    unique: true
+                    uniqueConstraintName: uk_game_tabla_state
+                    foreignKeyName: fk_game_tabla_state
+                    references: tabla_game_state(id)

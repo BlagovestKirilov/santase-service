@@ -1,9 +1,19 @@
 package bg.deck.santaseservice.service;
 
+import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.model.Game;
+import bg.deck.santaseservice.model.TurnClock;
+import bg.deck.santaseservice.repository.GameRepository;
+import bg.deck.santaseservice.tabla.TablaUtilService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,6 +22,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Fires the inactivity surrender when a player runs out of time.
+ *
+ * <p>Works for both games: it reads the deadline through {@link TurnClock} and
+ * dispatches the timeout to the service owning that game type.
+ */
+@Log4j2
 @RequiredArgsConstructor
 @Service
 public class GameInactivityService {
@@ -19,6 +36,8 @@ public class GameInactivityService {
     private final ScheduledExecutorService scheduler;
     private final ExecutorService virtualThreadExecutor;
     private final GameUtilService gameUtilService;
+    private final TablaUtilService tablaUtilService;
+    private final GameRepository gameRepository;
 
     private final Map<UUID, ScheduledFuture<?>> tasks = new ConcurrentHashMap<>();
 
@@ -27,23 +46,57 @@ public class GameInactivityService {
             cancel(game.getId());
             return;
         }
-        ScheduledFuture<?> old = tasks.remove(game.getId());
 
+        ScheduledFuture<?> old = tasks.remove(game.getId());
         if (old != null) {
             old.cancel(false);
         }
 
-        ScheduledFuture<?> future = scheduler.schedule(() ->
-                        virtualThreadExecutor.submit(() -> gameUtilService.surrenderByInactivity(game.getId()))
-                , 33, TimeUnit.SECONDS);
+        // Schedule to the persisted deadline rather than a hardcoded 33s. That
+        // literal used to live in two places and stayed in sync only because
+        // every mutation path happened to touch both.
+        TurnClock clock = game.getTurnClock();
+        long seconds = clock == null || clock.getNextMoveTime() == null
+                ? TurnClock.TURN_SECONDS
+                : Math.max(0, Duration.between(Instant.now(), clock.getNextMoveTime()).getSeconds());
 
-        tasks.put(game.getId(), future);
+        UUID gameId = game.getId();
+        GameType type = game.getGameType();
+
+        ScheduledFuture<?> future = scheduler.schedule(
+                () -> virtualThreadExecutor.submit(() -> surrender(gameId, type)),
+                seconds, TimeUnit.SECONDS);
+
+        tasks.put(gameId, future);
+    }
+
+    private void surrender(UUID gameId, GameType gameType) {
+        if (gameType == GameType.TABLA) {
+            tablaUtilService.surrenderByInactivity(gameId);
+        } else {
+            gameUtilService.surrenderByInactivity(gameId);
+        }
     }
 
     public void cancel(UUID gameId) {
         ScheduledFuture<?> f = tasks.remove(gameId);
         if (f != null) {
             f.cancel(false);
+        }
+    }
+
+    /**
+     * Re-arms every live game after a restart.
+     *
+     * <p>The task map lives only in this JVM, so without this a redeploy left
+     * every in-progress game hanging until somebody manually surrendered.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void rescheduleActiveGames() {
+        List<Game> active = gameRepository.findAllActive();
+        active.forEach(this::updateNextMoveTime);
+        if (!active.isEmpty()) {
+            log.info("Re-armed inactivity timers for {} live game(s) after startup", active.size());
         }
     }
 }

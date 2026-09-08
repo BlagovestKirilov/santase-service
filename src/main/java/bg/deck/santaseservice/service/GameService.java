@@ -73,8 +73,9 @@ public class GameService {
             log.info(LogConstants.GAME_SEARCH_ADDED_TO_QUEUE, username);
             webSocketService.notifyGameSearch(username, SearchGameResponse.waiting());
         } else {
-            Player firstPlayer = gameUtilService.findPlayerByUsername(username);
-            Player secondPlayer = gameUtilService.findPlayerByUsername(waitingPlayerUsername);
+            // A fresh seat per game: player rows carry per-game mutable state.
+            Player firstPlayer = gameUtilService.newPlayerFor(username);
+            Player secondPlayer = gameUtilService.newPlayerFor(waitingPlayerUsername);
 
             Game newGame = gameUtilService.startGame(firstPlayer, secondPlayer);
 
@@ -285,6 +286,11 @@ public class GameService {
     public void surrender() {
         String username = gameUtilService.getUsername();
         Game game = gameUtilService.findGameByUsername(username);
+
+        if (game.getWinner() != null) {
+            return;
+        }
+
         Player opponentPlayer = game.getOpponentPlayerByUsername(username);
 
         log.info(LogConstants.FINISH_GAME_SURRENDER, username, opponentPlayer.getUsername());

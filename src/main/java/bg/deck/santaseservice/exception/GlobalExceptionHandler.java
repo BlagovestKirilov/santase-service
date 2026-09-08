@@ -39,7 +39,8 @@ public class GlobalExceptionHandler {
             EmailNotConfirmedException.class,
             UserNotFoundException.class,
             InvalidPasswordException.class,
-            PlayerInactivitySurrenderException.class
+            PlayerInactivitySurrenderException.class,
+            TablaException.class
     })
     public ResponseEntity<ErrorResponse> handleSecurityAndBusinessExceptions(RuntimeException ex, HttpServletRequest request) {
         log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(CF_CONNECTING_IP), request.getRequestURI());
@@ -49,6 +50,18 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 request.getRequestURI()
         );
+    }
+
+    /**
+     * Two moves racing on the same turn. The client simply re-reads state, since
+     * the server pushes the truth over STOMP anyway. Without this the catch-all
+     * would turn an ordinary double-tap into a 500.
+     */
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(
+            org.springframework.orm.ObjectOptimisticLockingFailureException ex, HttpServletRequest request) {
+        log.warn("Concurrent modification on {}", request.getRequestURI());
+        return buildResponse(HttpStatus.CONFLICT, "Ходът вече беше отигран.", request.getRequestURI());
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)

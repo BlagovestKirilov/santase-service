@@ -1,6 +1,7 @@
 package bg.deck.santaseservice.service;
 
 import bg.deck.santaseservice.constant.LogConstants;
+import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.enums.card.Rank;
 import bg.deck.santaseservice.enums.card.Suit;
 import bg.deck.santaseservice.exception.CardNotFoundException;
@@ -14,6 +15,7 @@ import bg.deck.santaseservice.model.Card;
 import bg.deck.santaseservice.model.Game;
 import bg.deck.santaseservice.model.GameState;
 import bg.deck.santaseservice.model.Player;
+import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.response.SearchGameResponse;
 import bg.deck.santaseservice.repository.GameRepository;
 import bg.deck.santaseservice.repository.GameStateRepository;
@@ -56,6 +58,7 @@ public class GameUtilService {
         secondPlayer.setInactivityCount(0);
 
         Game game = Game.builder()
+                .gameType(GameType.SANTASE)
                 .firstPlayer(firstPlayer)
                 .secondPlayer(secondPlayer)
                 .state(gameState)
@@ -66,7 +69,11 @@ public class GameUtilService {
     }
 
     public Game findGameByUsername(String username) {
-        return gameRepository.findActiveGamesByUsername(username)
+        return findGameByUsername(username, GameType.SANTASE);
+    }
+
+    public Game findGameByUsername(String username, GameType gameType) {
+        return gameRepository.findActiveGamesByUsernameAndType(username, gameType)
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new NoActiveGameFoundException(username));
@@ -85,18 +92,35 @@ public class GameUtilService {
     }
 
     public boolean checkIfUserExistsAndIsAvailable(String username) {
-        Optional<UUID> gameId = userRepository.findActiveGameIdByUsername(username);
+        return checkIfUserExistsAndIsAvailable(username, GameType.SANTASE);
+    }
+
+    /**
+     * True when the user is free to start a game of this type. Scoped by type so
+     * a live Santase game no longer blocks a табла search.
+     */
+    public boolean checkIfUserExistsAndIsAvailable(String username, GameType gameType) {
+        Optional<UUID> gameId = userRepository.findActiveGameIdByUsernameAndType(username, gameType);
 
         if (gameId.isPresent()) {
-            webSocketService.notifyGameSearch(username, SearchGameResponse.started(gameId.get()));
+            webSocketService.notifyGameSearch(username, gameType, SearchGameResponse.started(gameId.get()));
             return false;
         } else {
             return true;
         }
     }
 
+    /** Creates a fresh seat for a new game. */
+    @Transactional
+    public Player newPlayerFor(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException(username));
+        return playerRepository.save(Player.builder().user(user).build());
+    }
+
     public Player findPlayerByUsername(String username) {
-        return playerRepository.findByUserUsername(username)
+        return playerRepository.findAllByUserUsername(username).stream()
+                .reduce((first, second) -> second)
                 .orElseThrow(() -> new InvalidCredentialsException(username));
     }
 
@@ -418,6 +442,13 @@ public class GameUtilService {
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new NoActiveGameFoundException(gameId.toString()));
+        if (game.getWinner() != null) {
+            // The game finished normally between the timer firing and this
+            // transaction starting. Without this guard setGameWinner would run a
+            // second time and double-count the win and the Elo change.
+            return;
+        }
+
         Player surrenderPlayer = game.getState().getInTurnPlayer();
         Player opponentPlayer = game.getOpponent(surrenderPlayer);
 

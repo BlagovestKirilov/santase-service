@@ -1,0 +1,26 @@
+databaseChangeLog:
+  # Provably-fair dice. The SHA-256 of the seed is published in the first state
+  # push; the seed itself is revealed only once the game is over, so a player can
+  # replay every roll and verify it against the hash committed before move one.
+  #
+  # The player cannot predict a roll (they lack the seed) and the server cannot
+  # retroactively choose one (the hash is committed up front).
+  - changeSet:
+      id: 013-add-dice-commitment
+      author: Blagovest Kirilov
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: game
+                columnName: server_seed_hash
+      changes:
+        - addColumn:
+            tableName: game
+            columns:
+              - column:
+                  name: server_seed
+                  type: bytea
+              - column:
+                  name: server_seed_hash
+                  type: varchar(64)

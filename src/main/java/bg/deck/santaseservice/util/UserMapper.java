@@ -29,10 +29,6 @@ public interface UserMapper {
         user.setRankRating(RankingConstants.INITIAL_THRESHOLD);
     }
 
-    @Mapping(source = "rank", target = "rank")
-    @Mapping(source = "isEmailConfirmed", target = "emailConfirmed")
-    ProfileResponse toProfileResponse(User user);
-
     DeletedUser toDeletedUser(User user);
 
     @AfterMapping
