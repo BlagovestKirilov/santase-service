@@ -11,8 +11,24 @@ import java.time.Instant;
  */
 public interface TurnClock {
 
-    /** Seconds a player has to act before the inactivity timer fires. */
+    /**
+     * Santase's budget for one turn: 20s to act, then a 10s "still there?"
+     * warning, plus 3s of slack so the client always reaches the warning before
+     * this deadline does.
+     */
     int TURN_SECONDS = 33;
+
+    /**
+     * Табла's budget: 45s to act plus the same 10s warning and 3s of slack. A
+     * turn here is several taps (roll, move each die, confirm), not one card, so
+     * Santase's 20s is too short.
+     */
+    int TABLA_TURN_SECONDS = 58;
+
+    /** The budget this game gives a player for one turn. */
+    default int turnSeconds() {
+        return TURN_SECONDS;
+    }
 
     Player getInTurnPlayer();
 

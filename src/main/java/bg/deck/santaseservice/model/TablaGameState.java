@@ -149,8 +149,13 @@ public class TablaGameState extends BaseEntity implements TurnClock {
     }
 
     @Override
+    public int turnSeconds() {
+        return TurnClock.TABLA_TURN_SECONDS;
+    }
+
+    @Override
     public void extendNextMoveTime() {
-        this.nextMoveTime = Instant.now().plusSeconds(TurnClock.TURN_SECONDS);
+        this.nextMoveTime = Instant.now().plusSeconds(turnSeconds());
     }
 
     @Override
