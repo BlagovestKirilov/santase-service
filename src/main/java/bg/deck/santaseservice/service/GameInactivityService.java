@@ -57,7 +57,7 @@ public class GameInactivityService {
         // every mutation path happened to touch both.
         TurnClock clock = game.getTurnClock();
         long seconds = clock == null || clock.getNextMoveTime() == null
-                ? TurnClock.TURN_SECONDS
+                ? (clock == null ? TurnClock.TURN_SECONDS : clock.turnSeconds())
                 : Math.max(0, Duration.between(Instant.now(), clock.getNextMoveTime()).getSeconds());
 
         UUID gameId = game.getId();
