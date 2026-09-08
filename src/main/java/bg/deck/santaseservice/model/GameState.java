@@ -24,7 +24,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class GameState extends BaseEntity {
+public class GameState extends BaseEntity implements TurnClock {
 
     @ElementCollection
     @CollectionTable(name = "game_deck", joinColumns = @JoinColumn(name = "game_id"))
@@ -51,15 +51,18 @@ public class GameState extends BaseEntity {
         return this.closedByPlayer != null;
     }
 
+    @Override
     public void setInTurnPlayer(Player inTurnPlayer) {
         this.inTurnPlayer = inTurnPlayer;
         this.extendNextMoveTime();
     }
 
+    @Override
     public void extendNextMoveTime() {
-        this.nextMoveTime = Instant.now().plusSeconds(33);
+        this.nextMoveTime = Instant.now().plusSeconds(TurnClock.TURN_SECONDS);
     }
 
+    @Override
     public boolean isInTurn(Player player) {
         return player.equals(this.inTurnPlayer);
     }

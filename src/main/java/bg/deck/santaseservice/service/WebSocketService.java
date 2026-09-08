@@ -1,6 +1,6 @@
 package bg.deck.santaseservice.service;
 
-import bg.deck.santaseservice.model.response.GameStateResponse;
+import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.model.response.SearchGameResponse;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static bg.deck.santaseservice.constant.Constants.NOTIFY_GAME_DESTINATION;
 import static bg.deck.santaseservice.constant.Constants.NOTIFY_GAME_SEARCH_DESTINATION;
+import static bg.deck.santaseservice.constant.Constants.NOTIFY_SEARCH_BY_GAME_DESTINATION;
 
 @RequiredArgsConstructor
 @Service
@@ -24,8 +25,12 @@ public class WebSocketService {
     private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private static final long MIN_DELAY_MS = 50;
 
+    /**
+     * The game topic is keyed by game id, so both games share it safely and no
+     * client-side change is needed for the destination.
+     */
     @Async
-    public void notifyGameUpdate(String gameId, String username, GameStateResponse gameState) {
+    public void notifyGameUpdate(String gameId, String username, Object gameState) {
         String destination = String.format(NOTIFY_GAME_DESTINATION, gameId, username);
         enqueueMessage(username, () -> messagingTemplate.convertAndSend(destination, gameState));
     }
@@ -34,6 +39,26 @@ public class WebSocketService {
     public void notifyGameSearch(String username, SearchGameResponse searchGameResponse) {
         String destination = String.format(NOTIFY_GAME_SEARCH_DESTINATION, username);
         enqueueMessage(username, () -> messagingTemplate.convertAndSend(destination, searchGameResponse));
+    }
+
+    /**
+     * Publishes to the game-scoped search topic and, for one release, to the
+     * legacy un-scoped one as well so a client running the old build during a
+     * rolling deploy still receives its match.
+     */
+    @Async
+    public void notifyGameSearch(String username, GameType gameType, SearchGameResponse response) {
+        String scoped = String.format(NOTIFY_SEARCH_BY_GAME_DESTINATION,
+                gameType.name().toLowerCase(), username);
+        String legacy = String.format(NOTIFY_GAME_SEARCH_DESTINATION, username);
+        enqueueMessage(username, () -> {
+            messagingTemplate.convertAndSend(scoped, response);
+            messagingTemplate.convertAndSend(legacy, response);
+        });
+    }
+
+    public void notifyGameSearch(List<String> usernames, GameType gameType, SearchGameResponse response) {
+        usernames.forEach(username -> notifyGameSearch(username, gameType, response));
     }
 
     public void notifyGameSearch(List<String> usernames, SearchGameResponse searchGameResponse) {
@@ -71,7 +96,7 @@ public class WebSocketService {
         } else {
             CompletableFuture
                     .delayedExecutor(delay, TimeUnit.MILLISECONDS, virtualExecutor)
-                    .execute(task);
+                    .execute(wrappedTask);
         }
     }
 

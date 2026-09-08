@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/game/**").hasRole(USER)
+                        .requestMatchers("/tabla/**").hasRole(USER)
                         .requestMatchers("/user/confirm-deletion").permitAll()
                         .requestMatchers("/user/**").hasRole(USER)
                         .requestMatchers("/ws-game/**").hasRole(USER)

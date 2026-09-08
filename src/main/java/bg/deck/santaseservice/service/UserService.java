@@ -13,12 +13,19 @@ import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.UserDeletion;
 import bg.deck.santaseservice.model.request.ChangePasswordRequest;
 import bg.deck.santaseservice.model.request.UserDeletionRequest;
+import bg.deck.santaseservice.constant.RankingConstants;
+import bg.deck.santaseservice.enums.GameType;
+import bg.deck.santaseservice.model.UserGameStats;
+import bg.deck.santaseservice.model.response.GameStatsDTO;
 import bg.deck.santaseservice.model.response.ProfileResponse;
 import bg.deck.santaseservice.repository.EmailConfirmationRepository;
 import bg.deck.santaseservice.repository.UserDeletionRepository;
 import bg.deck.santaseservice.repository.UserRepository;
 import bg.deck.santaseservice.util.UserMapper;
 import lombok.RequiredArgsConstructor;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,7 +57,25 @@ public class UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException(username));
 
-        return userMapper.toProfileResponse(user);
+        ProfileResponse response = new ProfileResponse();
+        response.setEmailConfirmed(Boolean.TRUE.equals(user.getIsEmailConfirmed()));
+
+        Map<String, GameStatsDTO> stats = new LinkedHashMap<>();
+        for (GameType type : GameType.values()) {
+            UserGameStats s = user.statsFor(type);
+            int remaining = Math.max(0, RankingConstants.PLACEMENT_GAMES - s.totalGames());
+            stats.put(type.name(), new GameStatsDTO(
+                    s.getWins(), s.getLosses(), s.getRating(), s.getRank().name(), remaining));
+        }
+        response.setStats(stats);
+
+        // Legacy shape for the client that is deployed right now.
+        UserGameStats santase = user.statsFor(GameType.SANTASE);
+        response.setSantaseWins(santase.getWins());
+        response.setSantaseLosses(santase.getLosses());
+        response.setRank(santase.getRank().name());
+
+        return response;
     }
 
     public boolean confirmEmail() {

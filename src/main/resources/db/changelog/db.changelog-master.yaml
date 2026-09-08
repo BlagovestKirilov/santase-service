@@ -5,3 +5,26 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/changes/009-add-email-confirmation-expired-status.yaml
+
+  # NOTE: changes/001..008 exist on disk but are intentionally NOT included here.
+  # Production's schema was built by an earlier master that did include them, and
+  # its DATABASECHANGELOG already holds rows for them. Re-adding the includes
+  # risks Liquibase re-running CREATE TABLE users against a live database if the
+  # recorded `filename` values do not match what this file produces. Everything
+  # below is purely additive and has never run anywhere, so it applies cleanly.
+  #
+  # Known consequence: a brand-new empty database cannot be built from this
+  # changelog alone. Restoring 001..008 means first reading production's
+  # DATABASECHANGELOG and pinning logicalFilePath on each include to match it.
+
+  - include:
+      file: db/changelog/changes/010-add-game-type.yaml
+
+  - include:
+      file: db/changelog/changes/011-user-game-stats.yaml
+
+  - include:
+      file: db/changelog/changes/012-tabla-game-state.yaml
+
+  - include:
+      file: db/changelog/changes/013-tabla-dice-commitment.yaml

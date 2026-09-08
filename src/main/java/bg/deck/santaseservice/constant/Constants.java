@@ -8,6 +8,12 @@ public class Constants {
     public static final String QUEEN = "QUEEN";
     public static final String NOTIFY_GAME_DESTINATION = "/topic/game/%s/%s";
     public static final String NOTIFY_GAME_SEARCH_DESTINATION = "/topic/game/%s";
+    /**
+     * Search topic namespaced by game, so a user queued for табла is not woken by
+     * a Santase match. The legacy destination above is published to as well for
+     * one release, so a client mid-deploy does not miss its match.
+     */
+    public static final String NOTIFY_SEARCH_BY_GAME_DESTINATION = "/topic/search/%s/%s";
     public static final String ROLE = "role";
     public static final String USERNAME = "username";
     public static final String BEARER = "Bearer ";
