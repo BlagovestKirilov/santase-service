@@ -5,6 +5,7 @@ import bg.deck.santaseservice.exception.NoActiveGameFoundException;
 import bg.deck.santaseservice.model.Game;
 import bg.deck.santaseservice.model.Player;
 import bg.deck.santaseservice.model.TablaGameState;
+import bg.deck.santaseservice.model.response.ComboHopDTO;
 import bg.deck.santaseservice.model.response.HopDTO;
 import bg.deck.santaseservice.model.response.TablaStateResponse;
 import bg.deck.santaseservice.repository.GameRepository;
@@ -49,9 +50,11 @@ public class TablaUtilService {
        ------------------------------------------------------------------ */
 
     /**
-     * Starts a game with the opening roll already applied: each side rolls one
-     * die, the higher moves first and plays both. That means the very first push
-     * already carries dice, which is also better UX than an extra "roll" step.
+     * Starts a game with the opening roll used only to decide who begins.
+     *
+     * The opening roll used to double as the starter's first dice, so the game
+     * opened with dice already on the table and no way to throw them. Every turn
+     * now starts the same way — press Хвърли — including the first.
      */
     @Transactional
     public Game startGame(Player firstPlayer, Player secondPlayer) {
@@ -77,11 +80,17 @@ public class TablaUtilService {
 
         game = gameRepository.save(game);
 
-        applyOpeningRoll(game);
+        decideStarter(game);
         return gameRepository.save(game);
     }
 
-    private void applyOpeningRoll(Game game) {
+    /**
+     * Consumes the opening roll to pick who begins, and nothing else.
+     *
+     * The roll index is still advanced past it so the starter's own throw draws
+     * fresh, unseen dice from the committed seed.
+     */
+    private void decideStarter(Game game) {
         TablaGameState state = game.getTablaState();
         int index = diceService.openingRollIndexUsed(game.getServerSeed(), game.getId(), 0);
         Dice dice = diceService.roll(game.getServerSeed(), game.getId(), index);
@@ -90,15 +99,8 @@ public class TablaUtilService {
         Player starter = dice.d1() > dice.d2() ? game.getFirstPlayer() : game.getSecondPlayer();
 
         state.setFirstTurnPlayer(starter);
-        state.setDie1(dice.d1());
-        state.setDie2(dice.d2());
-        state.setRemainingDiceValues(dice.values());
         state.setTurnIndex(index + 1);
-        state.snapshotTurnStart();
         state.setInTurnPlayer(starter);
-
-        BoardState board = state.boardState();
-        state.setMaxDiceUsable(BackgammonRules.maxUsed(board, sideOf(game, starter), dice.values()));
     }
 
     public Game findActiveGame(String username) {
@@ -177,6 +179,11 @@ public class TablaUtilService {
                         .stream().map(HopDTO::from).toList()
                 : List.of();
 
+        List<ComboHopDTO> combos = onTurn && game.getWinner() == null
+                ? BackgammonRules.legalComboHops(board, side, remaining, used, state.getMaxDiceUsable())
+                        .stream().map(ComboHopDTO::from).toList()
+                : List.of();
+
         List<HopDTO> pending = state.pendingHopList().stream().map(HopDTO::from).toList();
 
         GameResultKind kind = game.getWinner() == null
@@ -206,6 +213,7 @@ public class TablaUtilService {
                         && state.getMaxDiceUsable() > 0)
                 .noMovesAvailable(onTurn && state.isRolled() && state.getMaxDiceUsable() == 0)
                 .legalHops(legal)
+                .comboHops(combos)
                 .pendingHops(pending)
                 .winnerUsername(game.getWinner() != null ? game.getWinner().getUsername() : null)
                 .surrenderPlayerUsername(game.getSurrenderPlayer() != null
