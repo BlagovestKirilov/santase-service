@@ -1,6 +1,5 @@
 package bg.deck.santaseservice.model.base;
 
-import bg.deck.santaseservice.enums.Rank;
 import bg.deck.santaseservice.enums.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
@@ -22,25 +21,13 @@ public abstract class BaseUser extends BaseEntity {
 
     private String ipAddress;
 
-    private Integer santaseWins;
-
-    private Integer santaseLosses;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Rank rank;
-
-    @Column(nullable = false)
-    private Integer rankRating;
+    /*
+     * A player's record — wins, losses, Elo and rank — lives in
+     * {@link bg.deck.santaseservice.model.UserGameStats}, one row per game.
+     * The single santaseWins/santaseLosses/rank/rankRating set that used to sit
+     * here could only ever describe one game; changeset 015 drops the columns.
+     */
 
     @Column(nullable = false)
     private Boolean isEmailConfirmed;
-
-    public void incrementSantaseWins() {
-        this.santaseWins++;
-    }
-
-    public void incrementSantaseLosses() {
-        this.santaseLosses++;
-    }
 }

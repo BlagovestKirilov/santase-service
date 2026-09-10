@@ -1,0 +1,82 @@
+databaseChangeLog:
+  # CONTRACT PHASE of the move to per-game stats (changeset 011).
+  #
+  # 011 created user_game_stats, backfilled it from users.santase_wins /
+  # santase_losses / rank / rank_rating, and deliberately left those columns in
+  # place so the release could be rolled back. Nothing has written them since,
+  # and the entity fields are gone as of this release, so they are dropped here.
+  #
+  # IRREVERSIBLE: dropping a column destroys its data. The guard below is what
+  # makes that safe — it refuses to drop anything unless every user already has
+  # the stats rows the data was copied into. If the backfill never ran, the
+  # deploy fails loudly instead of quietly destroying every player's record.
+  #
+  # Idempotent and name-agnostic: it introspects information_schema rather than
+  # trusting Liquibase's history, because changes/001..008 are not included in
+  # the master changelog and their recorded state cannot be assumed.
+  - changeSet:
+      id: 015-drop-legacy-user-stat-columns
+      author: Blagovest Kirilov
+      comment: Per-game stats are authoritative; the single-game columns are dropped
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              DO $$
+              DECLARE
+                  target_table text;
+                  target_column text;
+                  orphans bigint;
+              BEGIN
+                  -- Guard 1: the replacement table must exist.
+                  IF NOT EXISTS (
+                      SELECT 1 FROM information_schema.tables
+                      WHERE table_schema = current_schema()
+                        AND table_name = 'user_game_stats'
+                  ) THEN
+                      RAISE EXCEPTION
+                          'user_game_stats is missing — refusing to drop the legacy stat columns';
+                  END IF;
+
+                  -- Guard 2: every user must already have the row their old
+                  -- numbers were copied into. Anything else means the backfill
+                  -- did not run and the data is only in the columns.
+                  SELECT count(*) INTO orphans
+                  FROM users u
+                  WHERE NOT EXISTS (
+                      SELECT 1 FROM user_game_stats s
+                      WHERE s.user_id = u.id AND s.game_type = 'SANTASE'
+                  );
+
+                  IF orphans > 0 THEN
+                      RAISE EXCEPTION
+                          '% user(s) have no SANTASE stats row — backfill first, then drop', orphans;
+                  END IF;
+
+                  -- deleted_users carries the same inherited columns; both go.
+                  FOREACH target_table IN ARRAY ARRAY['users', 'deleted_users'] LOOP
+                      IF NOT EXISTS (
+                          SELECT 1 FROM information_schema.tables
+                          WHERE table_schema = current_schema()
+                            AND table_name = target_table
+                      ) THEN
+                          CONTINUE;
+                      END IF;
+
+                      FOREACH target_column IN ARRAY
+                          ARRAY['santase_wins', 'santase_losses', 'rank', 'rank_rating']
+                      LOOP
+                          IF EXISTS (
+                              SELECT 1 FROM information_schema.columns
+                              WHERE table_schema = current_schema()
+                                AND table_name = target_table
+                                AND column_name = target_column
+                          ) THEN
+                              EXECUTE format('ALTER TABLE %I DROP COLUMN %I',
+                                             target_table, target_column);
+                              RAISE NOTICE 'Dropped %.%', target_table, target_column;
+                          END IF;
+                      END LOOP;
+                  END LOOP;
+              END $$;
