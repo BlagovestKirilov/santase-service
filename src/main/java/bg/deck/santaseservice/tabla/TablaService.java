@@ -125,13 +125,11 @@ public class TablaService {
         state.extendNextMoveTime();
         gameInactivityService.updateNextMoveTime(game);
 
-        if (state.getMaxDiceUsable() == 0) {
-            // Completely blocked: nothing to play, so the turn passes immediately.
-            tablaUtilService.pushToBoth(game);
-            endTurn(game);
-            return;
-        }
-
+        // A completely blocked roll used to pass the turn in the same request,
+        // which wiped the dice before either player could see what was thrown.
+        // The turn now stays open with noMovesAvailable set; the player passes it
+        // with confirm() — usedDiceCount and maxDiceUsable are both 0, so the
+        // completeness check accepts it.
         tablaUtilService.pushToBoth(game);
     }
 

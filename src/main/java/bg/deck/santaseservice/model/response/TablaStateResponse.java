@@ -55,6 +55,8 @@ public class TablaStateResponse {
     private boolean noMovesAvailable;
 
     private List<HopDTO> legalHops;
+    /** Destinations reachable by playing both dice with one checker. */
+    private List<ComboHopDTO> comboHops;
     private List<HopDTO> pendingHops;
 
     private String winnerUsername;

@@ -3,8 +3,10 @@ package bg.deck.santaseservice.tabla.engine;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The rules of Обикновена табла (standard backgammon / portes), with no
@@ -213,6 +215,51 @@ public final class BackgammonRules {
             boolean higherPlayable = out.stream().anyMatch(h -> h.die() == higher);
             if (higherPlayable) {
                 out.removeIf(h -> h.die() != higher);
+            }
+        }
+
+        return out;
+    }
+
+    /**
+     * Both dice played by one checker, as single destinations.
+     *
+     * <p>Built strictly on top of {@link #legalTurnHops}: the first hop must be
+     * legal, and the second must be legal <em>from the position the first
+     * leaves</em>. So every must-use and higher-die restriction already applies,
+     * and a combo can never step over a blocked midpoint or skip the bar.
+     *
+     * <p>Returns nothing when two dice cannot both be played, or when only one
+     * die is left. Duplicate destinations reachable by playing the dice in
+     * either order are reported once — they end in the same place, and the
+     * client only needs one entry per square.
+     */
+    public static List<ComboHop> legalComboHops(BoardState board, Side side, int[] remainingDice,
+                                                int usedSoFar, int maxDiceUsable) {
+        if (remainingDice.length < 2 || usedSoFar + 2 > maxDiceUsable) {
+            return List.of();
+        }
+
+        List<ComboHop> out = new ArrayList<>(8);
+        Set<Long> seen = new HashSet<>();
+
+        for (Hop first : legalTurnHops(board, side, remainingDice, usedSoFar, maxDiceUsable)) {
+            // A checker that has just borne off has nowhere left to go.
+            if (first.to() == MoverView.OFF) {
+                continue;
+            }
+
+            BoardState after = apply(board, side, first);
+            int[] left = Dice.without(remainingDice, first.die());
+
+            for (Hop second : legalTurnHops(after, side, left, usedSoFar + 1, maxDiceUsable)) {
+                if (second.from() != first.to()) {
+                    continue;               // a different checker, not this one
+                }
+                if (seen.add((long) first.from() * 64 + second.to())) {
+                    out.add(new ComboHop(first.from(), first.to(), second.to(),
+                            first.die(), second.die()));
+                }
             }
         }
 

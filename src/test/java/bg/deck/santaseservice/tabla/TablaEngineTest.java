@@ -2,6 +2,7 @@ package bg.deck.santaseservice.tabla;
 
 import bg.deck.santaseservice.tabla.engine.BackgammonRules;
 import bg.deck.santaseservice.tabla.engine.BoardState;
+import bg.deck.santaseservice.tabla.engine.ComboHop;
 import bg.deck.santaseservice.tabla.engine.Dice;
 import bg.deck.santaseservice.tabla.engine.GameResultKind;
 import bg.deck.santaseservice.tabla.engine.Hop;
@@ -265,6 +266,76 @@ class TablaEngineTest {
                     4, -2, 5, -2);
             assertEquals(0, maxUsed(b, Side.WHITE, 6, 5));
             assertTrue(turnHops(b, Side.WHITE, new int[]{6, 5}, 0, 0).isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("Both dice at once")
+    class Combos {
+
+        private List<ComboHop> combos(BoardState b, Side s, int[] dice) {
+            return BackgammonRules.legalComboHops(b, s, dice, 0, maxUsed(b, s, dice));
+        }
+
+        @Test
+        @DisplayName("one checker playing both dice is offered as a single destination")
+        void offersTheFarSquare() {
+            BoardState b = board(0, 0, 0, 0, 10, 1);
+            List<ComboHop> out = combos(b, Side.WHITE, new int[]{3, 2});
+
+            assertEquals(1, out.size(), "10-3-2 and 10-2-3 both land on 5; one entry is enough");
+            assertEquals(10, out.getFirst().from());
+            assertEquals(5, out.getFirst().to());
+        }
+
+        @Test
+        @DisplayName("a combo never steps over a blocked midpoint")
+        void refusesBlockedMidpoint() {
+            // From 10 both routes to 5 are shut: 7 and 8 are held by the opponent.
+            // The second checker on 20 keeps the turn playable so maxUsed stays 2.
+            BoardState b = board(0, 0, 0, 0, 10, 1, 20, 1, 7, -2, 8, -2);
+            assertEquals(2, maxUsed(b, Side.WHITE, 3, 2));
+
+            List<ComboHop> out = combos(b, Side.WHITE, new int[]{3, 2});
+
+            assertTrue(out.stream().noneMatch(c -> c.from() == 10),
+                    "5 is empty, but neither route to it is legal");
+            assertTrue(out.stream().anyMatch(c -> c.from() == 20 && c.to() == 15),
+                    "the unobstructed checker still gets its combo");
+        }
+
+        @Test
+        @DisplayName("nothing is offered when only one die can be played")
+        void noneWhenOnlyOneDiePlayable() {
+            // One checker on 24. The 5 is dead (19 is held), and after 24-6-18
+            // the 5 is still dead (13 is held), so exactly one die can be played.
+            BoardState b = board(0, 0, 0, 0, 24, 1, 19, -2, 13, -2);
+            assertEquals(1, maxUsed(b, Side.WHITE, 6, 5));
+
+            assertTrue(combos(b, Side.WHITE, new int[]{6, 5}).isEmpty());
+        }
+
+        @Test
+        @DisplayName("every combo is two hops that are each legal in turn")
+        void combosAgreeWithSingleHops() {
+            BoardState b = BoardState.initial();
+            int[] dice = {3, 1};
+            int m = maxUsed(b, Side.WHITE, dice);
+
+            for (ComboHop combo : combos(b, Side.WHITE, dice)) {
+                Hop first = turnHops(b, Side.WHITE, dice, 0, m).stream()
+                        .filter(h -> h.from() == combo.from() && h.die() == combo.firstDie())
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("first hop of the combo is not legal"));
+                assertEquals(combo.via(), first.to());
+
+                BoardState after = BackgammonRules.apply(b, Side.WHITE, first);
+                assertTrue(turnHops(after, Side.WHITE, Dice.without(dice, combo.firstDie()), 1, m)
+                                .stream()
+                                .anyMatch(h -> h.from() == combo.via() && h.to() == combo.to()
+                                        && h.die() == combo.secondDie()),
+                        "second hop of the combo is not legal from the position the first leaves");
+            }
         }
     }
 
