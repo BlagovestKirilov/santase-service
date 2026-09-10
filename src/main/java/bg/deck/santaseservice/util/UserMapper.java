@@ -1,7 +1,5 @@
 package bg.deck.santaseservice.util;
 
-import bg.deck.santaseservice.constant.RankingConstants;
-import bg.deck.santaseservice.enums.Rank;
 import bg.deck.santaseservice.model.DeletedUser;
 import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.request.RegisterRequest;
@@ -22,11 +20,9 @@ public interface UserMapper {
     @AfterMapping
     default void setDefaults(@MappingTarget User user) {
         user.setRole(ROLE_USER);
-        user.setSantaseWins(0);
-        user.setSantaseLosses(0);
         user.setIsEmailConfirmed(false);
-        user.setRank(Rank.UNRANKED);
-        user.setRankRating(RankingConstants.INITIAL_THRESHOLD);
+        // The stats rows carry rank and rating now, and are created per game
+        // when the account is registered.
     }
 
     DeletedUser toDeletedUser(User user);
