@@ -65,7 +65,7 @@ public class UserService {
             UserGameStats s = user.statsFor(type);
             int remaining = Math.max(0, RankingConstants.PLACEMENT_GAMES - s.totalGames());
             stats.put(type.name(), new GameStatsDTO(
-                    s.getWins(), s.getLosses(), s.getRating(), s.getRank().name(), remaining));
+                    s.getWins(), s.getLosses(), s.getRank().name(), remaining));
         }
         response.setStats(stats);
 
