@@ -1,25 +1,18 @@
 package bg.deck.santaseservice.controller;
 
-import bg.deck.santaseservice.constant.Constants;
 import bg.deck.santaseservice.model.request.ChangePasswordRequest;
+import bg.deck.santaseservice.model.request.ConfirmDeletionRequest;
 import bg.deck.santaseservice.model.request.UserDeletionRequest;
 import bg.deck.santaseservice.model.response.ProfileResponse;
 import bg.deck.santaseservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.net.URI;
-import java.util.UUID;
-
-import static bg.deck.santaseservice.constant.Constants.TOKEN;
 
 @RequiredArgsConstructor
 @RequestMapping("/user")
@@ -50,14 +43,20 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/confirm-deletion")
-    public ResponseEntity<Void> verifyForgotPasswordToken(@RequestParam(TOKEN) UUID userDeletionToken) {
-        boolean isDeleted = userService.confirmDeletion(userDeletionToken);
-
-        String redirectUrl = isDeleted ? Constants.DECK_BG_SUCCESS_DELETION : Constants.DECK_BG_INVALID_LINK;
-
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(redirectUrl))
-                .build();
+    /**
+     * Confirms an account deletion. Unauthenticated — the token from the email
+     * is the authorization.
+     *
+     * <p>A POST, and the token travels in the body. As a GET this deleted the
+     * account for anything that merely fetched the URL, which is what mail
+     * scanners and link prefetchers do to every link in a message. The page on
+     * the site now asks the person first and reports the outcome itself, so
+     * there is no redirect to hand back.
+     */
+    @PostMapping("/confirm-deletion")
+    public ResponseEntity<Void> confirmDeletion(@Valid @RequestBody ConfirmDeletionRequest confirmDeletionRequest) {
+        return userService.confirmDeletion(confirmDeletionRequest.getToken())
+                ? ResponseEntity.ok().build()
+                : ResponseEntity.badRequest().build();
     }
 }
