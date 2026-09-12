@@ -25,7 +25,6 @@ public class Constants {
     public static final String DECK_BG = "https://deck.bg";
     public static final String DECK_BG_CONFIRM_EMAIL = "https://deck.bg/api/auth/confirm-email?token=";
     public static final String DECK_BG_SUCCESS_CONFIRMATION = "https://deck.bg/confirmation-success";
-    public static final String DECK_BG_SUCCESS_DELETION = "https://deck.bg/deletion-success";
     public static final String DECK_BG_INVALID_LINK = "https://deck.bg/invalid";
     public static final String DECK_BG_EMAIL = "no.reply.deck.bg@gmail.com";
     public static final String DECK_BG_PERSONAL = "DECK.BG";
@@ -40,6 +39,13 @@ public class Constants {
     public static final String DECK_BG_FORGOT_PASSWORD = "https://deck.bg/reset-password?token=";
     public static final String FORGOT_PASSWORD_TEMPLATE = "/templates/forgot-password.html";
     public static final String DELETION_SUBJECT = "Потвърждение на изтриване на акаунт в DECK.BG";
-    public static final String DECK_BG_DELETE_ACCOUNT = "https://deck.bg/api/user/confirm-deletion?token=";
+    /**
+     * The deletion link goes to a page on the site, which asks the person to
+     * confirm and then POSTs the token. It used to point straight at the API
+     * endpoint, which deleted the account on GET — so any mail scanner or
+     * link prefetcher that opened the message (Outlook Safe Links, antivirus,
+     * some mobile mail clients) destroyed the account with nobody clicking.
+     */
+    public static final String DECK_BG_DELETE_ACCOUNT = "https://deck.bg/confirm-deletion?token=";
     public static final String DELETION_TEMPLATE = "/templates/user-deletion.html";
 }
