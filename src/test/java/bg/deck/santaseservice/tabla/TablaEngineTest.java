@@ -336,7 +336,7 @@ class TablaEngineTest {
             // Both orders reach 5: via 8 quietly, via 7 over the blot. The
             // route that takes the checker is the one offered.
             assertTrue(combos(b, Side.WHITE, new int[]{3, 2}).stream()
-                            .anyMatch(c -> c.from() == 10 && c.via() == 7 && c.to() == 5),
+                            .anyMatch(c -> c.from() == 10 && c.vias().equals(List.of(7)) && c.to() == 5),
                     "the two-dice move is routed through the blot, not around it");
 
             Hop first = turnHops(b, Side.WHITE, new int[]{3, 2}, 0, 2).stream()
@@ -378,17 +378,17 @@ class TablaEngineTest {
                     .findFirst()
                     .orElseThrow(() -> new AssertionError("12 to 6 with both dice is not offered"));
 
-            assertEquals(10, combo.via(),
+            assertEquals(List.of(10), combo.vias(),
                     "12-8-6 also reaches 6 but takes only one; the order through 10 takes both");
 
             // Play it out the way the server does, one hop at a time.
             Hop first = turnHops(b, Side.WHITE, new int[]{2, 4}, 0, 2).stream()
-                    .filter(h -> h.from() == 12 && h.die() == combo.firstDie())
+                    .filter(h -> h.from() == 12 && h.die() == combo.dice().getFirst())
                     .findFirst().orElseThrow();
             BoardState mid = BackgammonRules.apply(b, Side.WHITE, first);
 
-            Hop second = turnHops(mid, Side.WHITE, new int[]{combo.secondDie()}, 1, 2).stream()
-                    .filter(h -> h.from() == combo.via() && h.die() == combo.secondDie())
+            Hop second = turnHops(mid, Side.WHITE, new int[]{combo.dice().get(1)}, 1, 2).stream()
+                    .filter(h -> h.from() == combo.vias().getFirst() && h.die() == combo.dice().get(1))
                     .findFirst().orElseThrow();
             BoardState end = BackgammonRules.apply(mid, Side.WHITE, second);
 
@@ -422,6 +422,43 @@ class TablaEngineTest {
             assertSamePosition(start, replay(start, Side.WHITE, List.of()));
             assertEquals(0, replay(start, Side.WHITE, List.of()).blackBar(),
                     "the checkers that were taken are back off the bar");
+        }
+
+        @Test
+        @DisplayName("doubles let one checker spend three or all four dice")
+        void doublesRunFurther() {
+            // A lone checker on 20 with double 3s. It can go 17, 14, 11 or 8,
+            // and every one of those beyond the first is a run the player can
+            // take in a single tap.
+            BoardState b = board(0, 0, 0, 0, 20, 1);
+            int[] dice = {3, 3, 3, 3};
+            assertEquals(4, maxUsed(b, Side.WHITE, dice));
+
+            List<ComboHop> out = combos(b, Side.WHITE, dice);
+
+            assertTrue(out.stream().anyMatch(c -> c.to() == 14 && c.dice().size() == 2),
+                    "two dice reach 14");
+            assertTrue(out.stream().anyMatch(c -> c.to() == 11 && c.dice().size() == 3),
+                    "three dice reach 11");
+
+            ComboHop all = out.stream().filter(c -> c.to() == 8).findFirst()
+                    .orElseThrow(() -> new AssertionError("all four dice are not offered"));
+            assertEquals(4, all.dice().size());
+            assertEquals(List.of(17, 14, 11), all.vias(), "it stops on every point on the way");
+            assertEquals(List.of(20, 17, 14, 11, 8), all.path());
+        }
+
+        @Test
+        @DisplayName("a run stops where the checker can go no further")
+        void runStopsAtABlock() {
+            // Double 3s again, but 14 is held by the opponent. The checker can
+            // reach 17 with one die and nothing beyond it, so no run exists.
+            // A second checker on 9 keeps the turn playable.
+            BoardState b = board(0, 0, 0, 0, 20, 1, 9, 1, 14, -2, 11, -2);
+
+            assertTrue(combos(b, Side.WHITE, new int[]{3, 3, 3, 3}).stream()
+                            .noneMatch(c -> c.from() == 20),
+                    "the checker on 20 is shut in after one die");
         }
 
         @Test
@@ -460,16 +497,16 @@ class TablaEngineTest {
 
             for (ComboHop combo : combos(b, Side.WHITE, dice)) {
                 Hop first = turnHops(b, Side.WHITE, dice, 0, m).stream()
-                        .filter(h -> h.from() == combo.from() && h.die() == combo.firstDie())
+                        .filter(h -> h.from() == combo.from() && h.die() == combo.dice().getFirst())
                         .findFirst()
                         .orElseThrow(() -> new AssertionError("first hop of the combo is not legal"));
-                assertEquals(combo.via(), first.to());
+                assertEquals(combo.vias().getFirst(), first.to());
 
                 BoardState after = BackgammonRules.apply(b, Side.WHITE, first);
-                assertTrue(turnHops(after, Side.WHITE, Dice.without(dice, combo.firstDie()), 1, m)
+                assertTrue(turnHops(after, Side.WHITE, Dice.without(dice, combo.dice().getFirst()), 1, m)
                                 .stream()
-                                .anyMatch(h -> h.from() == combo.via() && h.to() == combo.to()
-                                        && h.die() == combo.secondDie()),
+                                .anyMatch(h -> h.from() == combo.vias().getFirst() && h.to() == combo.to()
+                                        && h.die() == combo.dice().get(1)),
                         "second hop of the combo is not legal from the position the first leaves");
             }
         }

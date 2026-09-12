@@ -222,15 +222,17 @@ public final class BackgammonRules {
     }
 
     /**
-     * Both dice played by one checker, as single destinations.
+     * Several dice played by one checker, as single destinations.
      *
      * <p>Built strictly on top of {@link #legalTurnHops}: the first hop must be
      * legal, and the second must be legal <em>from the position the first
      * leaves</em>. So every must-use and higher-die restriction already applies,
      * and a combo can never step over a blocked midpoint or skip the bar.
      *
-     * <p>Returns nothing when two dice cannot both be played, or when only one
-     * die is left.
+     * <p>Runs are two dice or more. Doubles give four, so a checker may spend
+     * three or all four in one tap; each extra die is another destination
+     * further along the same line. Returns nothing when two dice cannot both be
+     * played, or when only one die is left.
      *
      * <p>A square reachable by playing the dice in either order is reported
      * once, since the client offers one entry per destination. The two routes
@@ -249,7 +251,7 @@ public final class BackgammonRules {
 
         List<ComboHop> out = new ArrayList<>(8);
         // Where each (from, to) pair landed in the list, and how many checkers
-        // the route stored for it takes.
+        // the run stored for it takes.
         Map<Long, Integer> at = new HashMap<>();
         Map<Long, Integer> taken = new HashMap<>();
 
@@ -258,36 +260,73 @@ public final class BackgammonRules {
             if (first.to() == MoverView.OFF) {
                 continue;
             }
-
-            BoardState after = apply(board, side, first);
-            int[] left = Dice.without(remainingDice, first.die());
-
-            for (Hop second : legalTurnHops(after, side, left, usedSoFar + 1, maxDiceUsable)) {
-                if (second.from() != first.to()) {
-                    continue;               // a different checker, not this one
-                }
-
-                long key = (long) first.from() * 64 + second.to();
-                // Both hops can land on a blot: one on the way, one at the end.
-                int takes = (first.hit() ? 1 : 0) + (second.hit() ? 1 : 0);
-                ComboHop combo = new ComboHop(first.from(), first.to(), second.to(),
-                        first.die(), second.die());
-
-                Integer seen = at.get(key);
-                if (seen == null) {
-                    at.put(key, out.size());
-                    taken.put(key, takes);
-                    out.add(combo);
-                } else if (takes > taken.get(key)) {
-                    // Same square, but this order takes more of the opponent's
-                    // checkers than the order already stored.
-                    out.set(seen, combo);
-                    taken.put(key, takes);
-                }
-            }
+            extend(apply(board, side, first), side, Dice.without(remainingDice, first.die()),
+                    usedSoFar + 1, maxDiceUsable, List.of(first), out, at, taken);
         }
 
         return out;
+    }
+
+    /**
+     * Carries one checker on for as many dice as it can still spend.
+     *
+     * <p>{@code board} is the position after {@code path} has been played, so
+     * every further hop is judged against what the run has already done — a
+     * blot it took on the way is gone, and a point it left is empty.
+     *
+     * <p>Depth beyond two only arises on doubles, where all four dice are equal
+     * and a checker therefore has exactly one continuation at each step, so the
+     * search stays small.
+     */
+    private static void extend(BoardState board, Side side, int[] remaining, int used,
+                               int maxDiceUsable, List<Hop> path, List<ComboHop> out,
+                               Map<Long, Integer> at, Map<Long, Integer> taken) {
+        if (remaining.length == 0 || used >= maxDiceUsable) {
+            return;
+        }
+
+        int lastTo = path.getLast().to();
+
+        for (Hop next : legalTurnHops(board, side, remaining, used, maxDiceUsable)) {
+            if (next.from() != lastTo) {
+                continue;               // a different checker, not this one
+            }
+
+            List<Hop> run = new ArrayList<>(path);
+            run.add(next);
+            record(run, out, at, taken);
+
+            if (next.to() != MoverView.OFF) {
+                extend(apply(board, side, next), side, Dice.without(remaining, next.die()),
+                        used + 1, maxDiceUsable, run, out, at, taken);
+            }
+        }
+    }
+
+    /** Keeps one run per destination — the one that takes the most checkers. */
+    private static void record(List<Hop> run, List<ComboHop> out,
+                               Map<Long, Integer> at, Map<Long, Integer> taken) {
+        int from = run.getFirst().from();
+        int to = run.getLast().to();
+        long key = (long) from * 64 + to;
+
+        int takes = (int) run.stream().filter(Hop::hit).count();
+
+        List<Integer> vias = run.subList(0, run.size() - 1).stream().map(Hop::to).toList();
+        List<Integer> dice = run.stream().map(Hop::die).toList();
+        ComboHop combo = new ComboHop(from, to, vias, dice);
+
+        Integer seen = at.get(key);
+        if (seen == null) {
+            at.put(key, out.size());
+            taken.put(key, takes);
+            out.add(combo);
+        } else if (takes > taken.get(key)) {
+            // Same square, but this order takes more of the opponent's checkers
+            // than the order already stored.
+            out.set(seen, combo);
+            taken.put(key, takes);
+        }
     }
 
     /** Whether a specific hop is a legal choice right now. */
