@@ -289,6 +289,22 @@ class TablaEngineTest {
         }
 
         @Test
+        @DisplayName("a checker six away bears off with both dice")
+        void bearsOffWithBothDice() {
+            // The board's last checker sits on 6 with a 2 and a 4. No single die
+            // takes it out; 6-2 to 4, then the 4 exactly, does. The client used
+            // to consult only single-die hops for the tray, so this checker had
+            // no way out on screen even though the engine allowed it.
+            BoardState b = board(0, 0, 14, 0, 6, 1);
+            assertEquals(2, maxUsed(b, Side.WHITE, 2, 4));
+
+            List<ComboHop> out = combos(b, Side.WHITE, new int[]{2, 4});
+
+            assertTrue(out.stream().anyMatch(c -> c.from() == 6 && c.to() == MoverView.OFF),
+                    "bearing off with both dice must be offered");
+        }
+
+        @Test
         @DisplayName("a combo never steps over a blocked midpoint")
         void refusesBlockedMidpoint() {
             // From 10 both routes to 5 are shut: 7 and 8 are held by the opponent.
