@@ -21,9 +21,8 @@ import static bg.deck.santaseservice.constant.Constants.LOCALHOST;
  * makes every call cross-origin.
  *
  * <p>This bean exists only under the {@code dev} profile, and so does the chain
- * that injects it ({@code DevSecurityConfig}). Production runs
- * {@code ProdSecurityConfig}, which disables CORS outright — exactly the
- * configuration it had before.
+ * that takes it ({@code SecurityConfig.devSecurityFilterChain}). Production
+ * disables CORS outright — exactly the configuration it had before.
  *
  * <p>The allowed origin is the same {@link bg.deck.santaseservice.constant.Constants#LOCALHOST}
  * the WebSocket handshake already permits in dev, so the two cannot disagree.
