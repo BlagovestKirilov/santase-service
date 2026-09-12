@@ -230,9 +230,16 @@ public final class BackgammonRules {
      * and a combo can never step over a blocked midpoint or skip the bar.
      *
      * <p>Returns nothing when two dice cannot both be played, or when only one
-     * die is left. Duplicate destinations reachable by playing the dice in
-     * either order are reported once — they end in the same place, and the
-     * client only needs one entry per square.
+     * die is left.
+     *
+     * <p>A square reachable by playing the dice in either order is reported
+     * once, since the client offers one entry per destination. The two routes
+     * are <em>not</em> interchangeable, though: one may pass over a blot and
+     * take it while the other does not, and a route can take two — one on the
+     * midpoint and one at the end. The order that takes the most is the one
+     * kept. Taking a checker is the whole reason to prefer an order, and
+     * silently choosing the quiet route would cost the player the hit without
+     * ever telling them there was one to take.
      */
     public static List<ComboHop> legalComboHops(BoardState board, Side side, int[] remainingDice,
                                                 int usedSoFar, int maxDiceUsable) {
@@ -241,7 +248,10 @@ public final class BackgammonRules {
         }
 
         List<ComboHop> out = new ArrayList<>(8);
-        Set<Long> seen = new HashSet<>();
+        // Where each (from, to) pair landed in the list, and how many checkers
+        // the route stored for it takes.
+        Map<Long, Integer> at = new HashMap<>();
+        Map<Long, Integer> taken = new HashMap<>();
 
         for (Hop first : legalTurnHops(board, side, remainingDice, usedSoFar, maxDiceUsable)) {
             // A checker that has just borne off has nowhere left to go.
@@ -256,9 +266,23 @@ public final class BackgammonRules {
                 if (second.from() != first.to()) {
                     continue;               // a different checker, not this one
                 }
-                if (seen.add((long) first.from() * 64 + second.to())) {
-                    out.add(new ComboHop(first.from(), first.to(), second.to(),
-                            first.die(), second.die()));
+
+                long key = (long) first.from() * 64 + second.to();
+                // Both hops can land on a blot: one on the way, one at the end.
+                int takes = (first.hit() ? 1 : 0) + (second.hit() ? 1 : 0);
+                ComboHop combo = new ComboHop(first.from(), first.to(), second.to(),
+                        first.die(), second.die());
+
+                Integer seen = at.get(key);
+                if (seen == null) {
+                    at.put(key, out.size());
+                    taken.put(key, takes);
+                    out.add(combo);
+                } else if (takes > taken.get(key)) {
+                    // Same square, but this order takes more of the opponent's
+                    // checkers than the order already stored.
+                    out.set(seen, combo);
+                    taken.put(key, takes);
                 }
             }
         }

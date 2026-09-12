@@ -42,6 +42,26 @@ class TablaEngineTest {
         return BackgammonRules.legalTurnHops(b, s, dice, used, m);
     }
 
+    /** What undo does: rebuild the position by replaying hops from a snapshot. */
+    private static BoardState replay(BoardState from, Side side, List<Hop> hops) {
+        BoardState b = from;
+        for (Hop h : hops) {
+            b = BackgammonRules.apply(b, side, h);
+        }
+        return b;
+    }
+
+    /** BoardState holds an array, so its record equals() compares references. */
+    private static void assertSamePosition(BoardState expected, BoardState actual) {
+        for (int p = 1; p <= BoardState.POINTS; p++) {
+            assertEquals(expected.at(p), actual.at(p), "point " + p);
+        }
+        assertEquals(expected.whiteBar(), actual.whiteBar(), "white bar");
+        assertEquals(expected.blackBar(), actual.blackBar(), "black bar");
+        assertEquals(expected.whiteOff(), actual.whiteOff(), "white off");
+        assertEquals(expected.blackOff(), actual.blackOff(), "black off");
+    }
+
     @Nested
     @DisplayName("Board structure")
     class Structure {
@@ -286,6 +306,122 @@ class TablaEngineTest {
             assertEquals(1, out.size(), "10-3-2 and 10-2-3 both land on 5; one entry is enough");
             assertEquals(10, out.getFirst().from());
             assertEquals(5, out.getFirst().to());
+        }
+
+        @Test
+        @DisplayName("a checker six away bears off with both dice")
+        void bearsOffWithBothDice() {
+            // The board's last checker sits on 6 with a 2 and a 4. No single die
+            // takes it out; 6-2 to 4, then the 4 exactly, does. The client used
+            // to consult only single-die hops for the tray, so this checker had
+            // no way out on screen even though the engine allowed it.
+            BoardState b = board(0, 0, 14, 0, 6, 1);
+            assertEquals(2, maxUsed(b, Side.WHITE, 2, 4));
+
+            List<ComboHop> out = combos(b, Side.WHITE, new int[]{2, 4});
+
+            assertTrue(out.stream().anyMatch(c -> c.from() == 6 && c.to() == MoverView.OFF),
+                    "bearing off with both dice must be offered");
+        }
+
+        @Test
+        @DisplayName("a combo takes a blot it lands on along the way")
+        void comboHitsOnTheMidpoint() {
+            // 7 holds a lone black checker. White plays 10-3 onto it and then
+            // 7-2 onward, so the hit happens on the midpoint of what the player
+            // sees as a single two-dice move.
+            BoardState b = board(0, 0, 0, 0, 10, 1, 7, -1);
+            assertEquals(2, maxUsed(b, Side.WHITE, 3, 2));
+
+            // Both orders reach 5: via 8 quietly, via 7 over the blot. The
+            // route that takes the checker is the one offered.
+            assertTrue(combos(b, Side.WHITE, new int[]{3, 2}).stream()
+                            .anyMatch(c -> c.from() == 10 && c.via() == 7 && c.to() == 5),
+                    "the two-dice move is routed through the blot, not around it");
+
+            Hop first = turnHops(b, Side.WHITE, new int[]{3, 2}, 0, 2).stream()
+                    .filter(h -> h.from() == 10 && h.die() == 3)
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("10/7 is not legal"));
+
+            assertTrue(first.hit(), "the midpoint is a blot, so the hop takes it");
+            assertEquals(1, BackgammonRules.apply(b, Side.WHITE, first).blackBar(),
+                    "the checker it took sits on the bar");
+        }
+
+        @Test
+        @DisplayName("with 2 and 4, a blot at either die's distance is taken")
+        void eitherDieTakesItsBlot() {
+            // A checker on 12 with a 2 and a 4. Blots sit on 10 (the 2) and on
+            // 8 (the 4); each is taken by playing that die on its own.
+            BoardState b = board(0, 0, 0, 0, 12, 1, 10, -1, 8, -1);
+
+            List<Hop> hops = turnHops(b, Side.WHITE, new int[]{2, 4}, 0, maxUsed(b, Side.WHITE, 2, 4));
+
+            assertTrue(hops.stream().anyMatch(h -> h.from() == 12 && h.die() == 2 && h.to() == 10 && h.hit()),
+                    "the 2 takes the blot on 10");
+            assertTrue(hops.stream().anyMatch(h -> h.from() == 12 && h.die() == 4 && h.to() == 8 && h.hit()),
+                    "the 4 takes the blot on 8");
+        }
+
+        @Test
+        @DisplayName("with 2 and 4, a combo takes a blot on the midpoint and one at the end")
+        void comboTakesBothBlots() {
+            // Blots on 10 and on 6. Playing the 2 first lands on 10 and takes
+            // it, then the 4 lands on 6 and takes that too: two checkers to the
+            // bar from what the player sees as one move.
+            BoardState b = board(0, 0, 0, 0, 12, 1, 10, -1, 6, -1);
+            assertEquals(2, maxUsed(b, Side.WHITE, 2, 4));
+
+            ComboHop combo = combos(b, Side.WHITE, new int[]{2, 4}).stream()
+                    .filter(c -> c.from() == 12 && c.to() == 6)
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("12 to 6 with both dice is not offered"));
+
+            assertEquals(10, combo.via(),
+                    "12-8-6 also reaches 6 but takes only one; the order through 10 takes both");
+
+            // Play it out the way the server does, one hop at a time.
+            Hop first = turnHops(b, Side.WHITE, new int[]{2, 4}, 0, 2).stream()
+                    .filter(h -> h.from() == 12 && h.die() == combo.firstDie())
+                    .findFirst().orElseThrow();
+            BoardState mid = BackgammonRules.apply(b, Side.WHITE, first);
+
+            Hop second = turnHops(mid, Side.WHITE, new int[]{combo.secondDie()}, 1, 2).stream()
+                    .filter(h -> h.from() == combo.via() && h.die() == combo.secondDie())
+                    .findFirst().orElseThrow();
+            BoardState end = BackgammonRules.apply(mid, Side.WHITE, second);
+
+            assertEquals(2, end.blackBar(), "both blots end up on the bar");
+        }
+
+        @Test
+        @DisplayName("taking a combo back twice restores the starting position")
+        void undoingACombo() {
+            // Undo replays the turn from its opening snapshot rather than
+            // inverting the last hop, so this is the property it depends on:
+            // replaying a prefix of the hops reproduces that point in the turn
+            // exactly, including a checker that was sent to the bar coming back.
+            BoardState start = board(0, 0, 0, 0, 12, 1, 10, -1, 6, -1);
+
+            Hop first = turnHops(start, Side.WHITE, new int[]{2, 4}, 0, 2).stream()
+                    .filter(h -> h.from() == 12 && h.die() == 2)
+                    .findFirst().orElseThrow();
+            BoardState afterFirst = BackgammonRules.apply(start, Side.WHITE, first);
+
+            Hop second = turnHops(afterFirst, Side.WHITE, new int[]{4}, 1, 2).stream()
+                    .filter(h -> h.from() == 10 && h.die() == 4)
+                    .findFirst().orElseThrow();
+            BoardState afterBoth = BackgammonRules.apply(afterFirst, Side.WHITE, second);
+
+            assertEquals(2, afterBoth.blackBar(), "both blots were taken");
+
+            // One Върни: replay only the first hop.
+            assertSamePosition(afterFirst, replay(start, Side.WHITE, List.of(first)));
+            // A second Върни: replay nothing at all.
+            assertSamePosition(start, replay(start, Side.WHITE, List.of()));
+            assertEquals(0, replay(start, Side.WHITE, List.of()).blackBar(),
+                    "the checkers that were taken are back off the bar");
         }
 
         @Test
