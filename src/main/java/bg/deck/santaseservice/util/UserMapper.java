@@ -25,6 +25,11 @@ public interface UserMapper {
         // when the account is registered.
     }
 
+    /**
+     * The record left behind by a deleted account: the username, so old games
+     * still name the player, and the date. Nothing personal can come across —
+     * {@link DeletedUser} has nowhere to put it.
+     */
     DeletedUser toDeletedUser(User user);
 
     @AfterMapping
