@@ -130,6 +130,44 @@ public class TablaUtilService {
     }
 
     /**
+     * Hands the turn on when the clock runs out on a roll that has no legal
+     * move. Returns true when it did.
+     *
+     * <p>Such a turn is the one case where sitting still is not a choice: the
+     * dice decided it, and the player has nothing to play. The client passes
+     * for them a couple of seconds after the roll, but it can only do that
+     * while it is open — close the app on a blocked roll and the clock ran
+     * out, which for табла means losing the game outright. The pass now
+     * happens on the server too, so the outcome no longer depends on whether
+     * anyone was watching.
+     *
+     * <p>Nothing else about the turn changes: this is the same hand-off the
+     * player's own pass performs, and {@code setInTurnPlayer} starts the
+     * opponent's clock.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean passIfBlocked(UUID gameId) {
+        Game game = gameRepository.findById(gameId).orElse(null);
+        if (game == null || game.getWinner() != null) {
+            return false;
+        }
+
+        TablaGameState state = game.getTablaState();
+        if (state == null || !state.isRolled() || state.getMaxDiceUsable() != 0) {
+            return false;
+        }
+
+        Player blocked = state.getInTurnPlayer();
+        log.info("Табла: {} timed out with no legal move — the turn passes instead", blocked.getUsername());
+
+        state.clearTurn();
+        state.setInTurnPlayer(game.getOpponent(blocked));
+        gameRepository.save(game);
+        pushToBoth(game);
+        return true;
+    }
+
+    /**
      * Called by the scheduler when a player's clock runs out. Mirrors the Santase
      * path, including the guard against a game that already finished normally.
      */
