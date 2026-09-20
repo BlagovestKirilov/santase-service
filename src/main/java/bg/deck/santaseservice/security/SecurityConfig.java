@@ -89,6 +89,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        // Liveness for the deploy, and nothing else: only
+                        // health is exposed, and it answers UP or DOWN without
+                        // saying anything about why.
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/game/**").hasRole(USER)
                         .requestMatchers("/tabla/**").hasRole(USER)
                         .requestMatchers("/user/confirm-deletion").permitAll()

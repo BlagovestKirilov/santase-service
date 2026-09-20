@@ -39,6 +39,16 @@ jwt:
   expiration: ${JWT_EXPIRATION}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION}
 
+# Only health, and only whether it is up — never the details of why.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 # ============================================================
 # DEV PROFILE
 # ============================================================
