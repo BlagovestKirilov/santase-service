@@ -105,15 +105,23 @@ jobs:
             # The backend publishes no ports — nginx reaches it over the docker
             # network — so the probe runs inside that network too, from a
             # throwaway container. The JRE image carries no curl of its own.
+            # The Host header says localhost, not santase_backend. Tomcat
+            # rejects a host containing an underscore outright — "The character
+            # [_] is never valid in a domain name" — so every probe came back
+            # 400 while the backend was perfectly healthy. The connection still
+            # goes to the container; only the header it sees changes.
+            probe() {
+              docker run --rm --network app_santase_network curlimages/curl:latest \
+                "$@" -H "Host: localhost" --max-time 5 \
+                http://santase_backend:8080/actuator/health 2>/dev/null || true
+            }
+
             echo "Waiting for the backend to report healthy..."
             for i in $(seq 1 12); do
-              status=$(docker run --rm --network app_santase_network curlimages/curl:latest \
-                -s -o /dev/null -w "%{http_code}" --max-time 5 \
-                http://santase_backend:8080/actuator/health 2>/dev/null || true)
+              status=$(probe -s -o /dev/null -w "%{http_code}")
               if [ "$status" = "200" ]; then
                 echo "Backend healthy after $((i*5))s"
-                docker run --rm --network app_santase_network curlimages/curl:latest \
-                  -s --max-time 5 http://santase_backend:8080/actuator/health
+                probe -s
                 echo ""
                 exit 0
               fi
