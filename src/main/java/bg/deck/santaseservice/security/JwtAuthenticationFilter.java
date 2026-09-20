@@ -37,8 +37,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
+        // TRANSITIONAL. The game socket authenticates on its STOMP CONNECT
+        // frame now (see StompAuthChannelInterceptor), so the token no longer
+        // travels in the URL where logs pick it up. A client from the previous
+        // build still puts it there, and is still let through until those are
+        // gone; then this branch goes with it.
         if (request.getRequestURI().startsWith(WEB_SOCKET_ENDPOINT)) {
-            authHeader = BEARER.concat(request.getParameter(TOKEN));
+            String parameter = request.getParameter(TOKEN);
+            authHeader = parameter == null ? null : BEARER.concat(parameter);
         }
 
         if (authHeader == null || !authHeader.startsWith(BEARER)) {

@@ -1,0 +1,72 @@
+databaseChangeLog:
+  # A deleted account leaves a deleted_users row behind: finished games still
+  # have to name the player who sat in them, so the row and its username stay.
+  # Everything else in it goes.
+  #
+  # The row used to be a copy of the whole user — email, password hash, IP
+  # address, role and the email-confirmed flag — kept with no end date, because
+  # DeletedUser inherited the user's shape. It now extends BaseEntity and holds
+  # only the username and the deletion date, so these columns have no field
+  # behind them any more.
+  #
+  # IRREVERSIBLE: dropping a column destroys its data. That is the point here —
+  # the data is personal, belongs to accounts that no longer exist, and nothing
+  # reads it (only Player.getUsername() touches this table's contents).
+  #
+  # DEPLOY ORDER: Liquibase runs before Hibernate validates the schema, so the
+  # release carrying the new entity applies this cleanly. The previous release
+  # cannot start afterwards — it still maps these columns — so a rollback means
+  # restoring them first.
+  #
+  # Idempotent and name-agnostic, like 015: it introspects information_schema
+  # rather than trusting Liquibase's history, because changes/001..008 are not
+  # included in the master changelog and 007's recorded shape cannot be assumed
+  # to match production.
+  - changeSet:
+      id: 016-strip-deleted-users-to-a-name
+      author: Blagovest Kirilov
+      comment: A deleted account keeps only its username and the date it went
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              DO $$
+              DECLARE
+                  target_column text;
+              BEGIN
+                  IF NOT EXISTS (
+                      SELECT 1 FROM information_schema.tables
+                      WHERE table_schema = current_schema()
+                        AND table_name = 'deleted_users'
+                  ) THEN
+                      RAISE NOTICE 'deleted_users does not exist — nothing to strip';
+                      RETURN;
+                  END IF;
+
+                  -- Guard: the one column that must survive, because
+                  -- Player.getUsername() reads it for every finished game.
+                  IF NOT EXISTS (
+                      SELECT 1 FROM information_schema.columns
+                      WHERE table_schema = current_schema()
+                        AND table_name = 'deleted_users'
+                        AND column_name = 'username'
+                  ) THEN
+                      RAISE EXCEPTION
+                          'deleted_users.username is missing — refusing to touch this table';
+                  END IF;
+
+                  FOREACH target_column IN ARRAY
+                      ARRAY['email', 'password', 'ip_address', 'role', 'is_email_confirmed']
+                  LOOP
+                      IF EXISTS (
+                          SELECT 1 FROM information_schema.columns
+                          WHERE table_schema = current_schema()
+                            AND table_name = 'deleted_users'
+                            AND column_name = target_column
+                      ) THEN
+                          EXECUTE format('ALTER TABLE deleted_users DROP COLUMN %I', target_column);
+                          RAISE NOTICE 'Dropped deleted_users.%', target_column;
+                      END IF;
+                  END LOOP;
+              END $$;

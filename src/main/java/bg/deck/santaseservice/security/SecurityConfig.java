@@ -89,11 +89,25 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        // Liveness for the deploy, and nothing else: only
+                        // health is exposed, and it answers UP or DOWN without
+                        // saying anything about why.
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/game/**").hasRole(USER)
                         .requestMatchers("/tabla/**").hasRole(USER)
                         .requestMatchers("/user/confirm-deletion").permitAll()
                         .requestMatchers("/user/**").hasRole(USER)
-                        .requestMatchers("/ws-game/**").hasRole(USER)
+                        // The socket's handshake is open; the socket is not. A
+                        // browser cannot put a header on a WebSocket handshake,
+                        // which is why the token used to ride in the URL and
+                        // land in every access log. Authentication happens one
+                        // frame later, on STOMP CONNECT, in
+                        // StompAuthChannelInterceptor: without a valid token
+                        // the connection is refused, and a connected player can
+                        // only subscribe to their own topics. Opening the
+                        // handshake buys an anonymous caller nothing but a
+                        // socket that refuses to talk.
+                        .requestMatchers("/ws-game/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

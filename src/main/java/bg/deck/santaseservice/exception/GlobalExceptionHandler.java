@@ -2,6 +2,7 @@ package bg.deck.santaseservice.exception;
 
 import bg.deck.santaseservice.constant.ExceptionConstants;
 import bg.deck.santaseservice.model.response.ErrorResponse;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.log4j.Log4j2;
@@ -76,6 +77,38 @@ public class GlobalExceptionHandler {
         log.error(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(CF_CONNECTING_IP), request.getRequestURI());
 
         return buildResponse(HttpStatus.UNAUTHORIZED, HttpStatus.UNAUTHORIZED.getReasonPhrase(), request.getRequestURI());
+    }
+
+    /**
+     * A JWT that cannot be parsed or has expired — 401, not 500.
+     *
+     * <p>{@code refreshToken} reads the username out of the token before it
+     * checks validity, so an expired or tampered refresh token came out of
+     * jjwt as a parse failure and fell through to the catch-all below. The
+     * client had to recognise a 500 carrying the exception's name to tell a
+     * dead session from a server hiccup; the answer is now what it should
+     * always have been.
+     */
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ErrorResponse> handleJwt(JwtException ex, HttpServletRequest request) {
+        log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getClass().getSimpleName(),
+                request.getHeader(CF_CONNECTING_IP), request.getRequestURI());
+
+        return buildResponse(HttpStatus.UNAUTHORIZED, HttpStatus.UNAUTHORIZED.getReasonPhrase(), request.getRequestURI());
+    }
+
+    /**
+     * A link from an email that is unknown, already used or expired. That is a
+     * bad request about the link — never 401, which the client reads as "your
+     * session ended" and answers by sending the person to the login screen
+     * instead of the invalid-link page.
+     */
+    @ExceptionHandler(InvalidLinkException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidLink(InvalidLinkException ex, HttpServletRequest request) {
+        log.warn(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(),
+                request.getHeader(CF_CONNECTING_IP), request.getRequestURI());
+
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler({

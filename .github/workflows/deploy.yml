@@ -91,3 +91,36 @@ jobs:
 
             echo "Cleaning up unused Docker data..."
             docker image prune -f
+
+      - name: Verify backend health
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            set -e
+            cd /home/ubuntu/santase
+
+            # The backend publishes no ports — nginx reaches it over the docker
+            # network — so the probe runs inside that network too, from a
+            # throwaway container. The JRE image carries no curl of its own.
+            echo "Waiting for the backend to report healthy..."
+            for i in $(seq 1 12); do
+              status=$(docker run --rm --network app_santase_network curlimages/curl:latest \
+                -s -o /dev/null -w "%{http_code}" --max-time 5 \
+                http://santase_backend:8080/actuator/health 2>/dev/null || true)
+              if [ "$status" = "200" ]; then
+                echo "Backend healthy after $((i*5))s"
+                docker run --rm --network app_santase_network curlimages/curl:latest \
+                  -s --max-time 5 http://santase_backend:8080/actuator/health
+                echo ""
+                exit 0
+              fi
+              echo "Attempt $i/12: status=$status, retrying in 5s..."
+              sleep 5
+            done
+
+            echo "FATAL: backend not healthy after 60s"
+            docker compose logs --tail=50 backend
+            exit 1

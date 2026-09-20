@@ -72,6 +72,14 @@ public class GameInactivityService {
 
     private void surrender(UUID gameId, GameType gameType) {
         if (gameType == GameType.TABLA) {
+            // A табла roll with no legal move is passed, not lost: the player
+            // had nothing to play, so the clock running out says nothing about
+            // them. The turn goes to the opponent, and the timer is re-armed
+            // against the deadline that hand-off just set.
+            if (tablaUtilService.passIfBlocked(gameId)) {
+                gameRepository.findById(gameId).ifPresent(this::updateNextMoveTime);
+                return;
+            }
             tablaUtilService.surrenderByInactivity(gameId);
         } else {
             gameUtilService.surrenderByInactivity(gameId);

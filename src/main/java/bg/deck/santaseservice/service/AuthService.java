@@ -7,6 +7,7 @@ import bg.deck.santaseservice.enums.ForgotPasswordStatus;
 import bg.deck.santaseservice.exception.EmailAlreadyExistsException;
 import bg.deck.santaseservice.exception.EmailNotConfirmedException;
 import bg.deck.santaseservice.exception.InvalidCredentialsException;
+import bg.deck.santaseservice.exception.InvalidLinkException;
 import bg.deck.santaseservice.exception.InvalidPasswordException;
 import bg.deck.santaseservice.exception.InvalidTokenException;
 import bg.deck.santaseservice.exception.UserAlreadyExistsException;
@@ -207,7 +208,7 @@ public class AuthService {
     public void changeForgottenPassword(ChangeForgottenPasswordRequest changeForgottenPasswordRequest) {
         ForgotPassword forgotPassword = forgotPasswordRepository
                 .findByForgotPasswordTokenAndStatus(changeForgottenPasswordRequest.getToken(), ForgotPasswordStatus.PENDING)
-                .orElseThrow(InvalidTokenException::new);
+                .orElseThrow(InvalidLinkException::new);
 
         User user = forgotPassword.getUser();
 
@@ -235,6 +236,6 @@ public class AuthService {
     public void verifyForgotPasswordToken(UUID token) {
         forgotPasswordRepository
                 .findByForgotPasswordTokenAndStatus(token, ForgotPasswordStatus.PENDING)
-                .orElseThrow(InvalidTokenException::new);
+                .orElseThrow(InvalidLinkException::new);
     }
 }
