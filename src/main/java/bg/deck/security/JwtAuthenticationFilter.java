@@ -1,0 +1,78 @@
+package bg.deck.security;
+
+import bg.deck.service.JwtService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.jspecify.annotations.NonNull;
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.List;
+
+import static bg.deck.constant.Constants.BEARER;
+import static bg.deck.constant.Constants.TOKEN;
+import static bg.deck.constant.Constants.WEB_SOCKET_ENDPOINT;
+import static bg.deck.constant.ExceptionConstants.INVALID_TOKEN;
+
+@Log4j2
+@Component
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtService jwtService;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
+            throws ServletException, IOException {
+
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+
+        // TRANSITIONAL. The game socket authenticates on its STOMP CONNECT
+        // frame now (see StompAuthChannelInterceptor), so the token no longer
+        // travels in the URL where logs pick it up. A client from the previous
+        // build still puts it there, and is still let through until those are
+        // gone; then this branch goes with it.
+        if (request.getRequestURI().startsWith(WEB_SOCKET_ENDPOINT)) {
+            String parameter = request.getParameter(TOKEN);
+            authHeader = parameter == null ? null : BEARER.concat(parameter);
+        }
+
+        if (authHeader == null || !authHeader.startsWith(BEARER)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            String jwt = authHeader.substring(7);
+            String username = jwtService.extractUsername(jwt);
+
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                String role = jwtService.extractRole(jwt);
+
+                if (jwtService.isTokenValid(jwt)) {
+                    SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            username, null, List.of(authority)
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            }
+            filterChain.doFilter(request, response);
+        } catch (Exception exception) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write(INVALID_TOKEN);
+            log.warn(exception.getMessage());
+        }
+    }
+}

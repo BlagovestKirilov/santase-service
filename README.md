@@ -105,7 +105,7 @@ Santase is played with a 24-card deck (9, J, Q, K, 10, A in four suits). Each de
 ## Architecture
 
 ```
-src/main/java/bg/deck/santaseservice/
+src/main/java/bg/deck/
 ├── config/             # App config, WebSocket, email properties, async executor
 ├── constant/           # Application-wide constants (game, ranking, validation, logging)
 ├── controller/         # REST controllers (Auth, Game, User)
@@ -113,9 +113,11 @@ src/main/java/bg/deck/santaseservice/
 ├── exception/          # Custom exceptions + global exception handler
 ├── model/              # JPA entities (User, Player, Game, GameState, Card, etc.)
 │   ├── base/           # BaseEntity, BaseUser mapped superclasses
-│   ├── dto/            # Data transfer objects
-│   ├── request/        # Incoming request models
-│   └── response/       # Outgoing response models
+│   ├── dto/            # Data transfer objects (records)
+│   ├── event/          # Application events (records), e.g. OutgoingEmail
+│   ├── request/        # Incoming request models (records)
+│   ├── response/       # Outgoing response models (records)
+│   └── tabla/          # Табла engine: board, dice, hops, rules
 ├── repository/         # Spring Data JPA repositories
 ├── security/           # JWT filter, JWT properties, SecurityConfig
 ├── service/            # Business logic (Auth, Game, User, Ranking, WebSocket, Email)

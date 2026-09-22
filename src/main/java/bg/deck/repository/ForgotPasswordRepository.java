@@ -1,0 +1,18 @@
+package bg.deck.repository;
+
+import bg.deck.enums.ForgotPasswordStatus;
+import bg.deck.model.ForgotPassword;
+import bg.deck.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface ForgotPasswordRepository extends JpaRepository<ForgotPassword, UUID> {
+    Optional<ForgotPassword> findByForgotPasswordTokenAndStatus(UUID token, ForgotPasswordStatus status);
+
+    List<ForgotPassword> findAllByUserAndStatus(User user, ForgotPasswordStatus status);
+
+    List<ForgotPassword> findAllByUser(User user);
+}

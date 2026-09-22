@@ -1,0 +1,138 @@
+package bg.deck.tabla;
+
+import bg.deck.model.Game;
+import bg.deck.model.Player;
+import bg.deck.model.TablaGameState;
+import bg.deck.model.User;
+import bg.deck.repository.GameRepository;
+import bg.deck.service.RankingService;
+import bg.deck.service.TablaDiceService;
+import bg.deck.service.TablaUtilService;
+import bg.deck.service.WebSocketService;
+import bg.deck.model.tabla.BoardState;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * What happens when the clock runs out on a табла roll that has no legal move.
+ *
+ * <p>The player had nothing to play — the dice decided the turn, not them — so
+ * the turn is passed rather than the game lost. Their own client passes for
+ * them a moment after the roll, but only while it is open; closing the app on
+ * a blocked roll used to cost the whole game.
+ */
+@DisplayName("A blocked roll that times out")
+class TablaBlockedTimeoutTest {
+
+    private GameRepository gameRepository;
+    private TablaUtilService tablaUtilService;
+
+    private Game game;
+    private Player white;
+    private Player black;
+    private TablaGameState state;
+
+    @BeforeEach
+    void setUp() {
+        gameRepository = mock(GameRepository.class);
+        tablaUtilService = new TablaUtilService(
+                gameRepository,
+                mock(WebSocketService.class),
+                mock(RankingService.class),
+                mock(TablaDiceService.class));
+
+        // A player's name comes from the account behind the seat.
+        white = seat("petko91");
+        black = seat("ninja2011");
+
+        state = new TablaGameState();
+        state.setBoardState(BoardState.initial());
+        state.setInTurnPlayer(white);
+
+        game = new Game();
+        game.setFirstPlayer(white);
+        game.setSecondPlayer(black);
+        game.setTablaState(state);
+        // The push reads the id; it is generated on persist, which never
+        // happens here.
+        setId(game, UUID.randomUUID());
+
+        when(gameRepository.findById(any())).thenReturn(Optional.of(game));
+        when(gameRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    private static void setId(Game game, UUID id) {
+        try {
+            var field = Class.forName("bg.deck.model.base.BaseEntity").getDeclaredField("id");
+            field.setAccessible(true);
+            field.set(game, id);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static Player seat(String username) {
+        User user = new User();
+        user.setUsername(username);
+        Player player = new Player();
+        player.setUser(user);
+        return player;
+    }
+
+    @Test
+    void passesTheTurnAndLeavesTheGameRunning() {
+        state.setDie1(6);
+        state.setDie2(5);
+        state.setMaxDiceUsable(0);
+
+        assertTrue(tablaUtilService.passIfBlocked(UUID.randomUUID()));
+
+        assertEquals(black, state.getInTurnPlayer(), "the opponent plays next");
+        assertNull(game.getWinner(), "nobody wins a turn that could not be played");
+        assertNull(state.getDie1(), "the roll is cleared with the turn");
+    }
+
+    @Test
+    void aTurnWithMovesLeftIsNotPassed() {
+        state.setDie1(6);
+        state.setDie2(5);
+        state.setMaxDiceUsable(2);
+
+        assertFalse(tablaUtilService.passIfBlocked(UUID.randomUUID()));
+        assertEquals(white, state.getInTurnPlayer(), "their turn, their clock");
+    }
+
+    @Test
+    void aTurnBeforeTheRollIsNotPassed() {
+        state.setMaxDiceUsable(0);
+
+        assertFalse(tablaUtilService.passIfBlocked(UUID.randomUUID()),
+                "no dice yet — running out of time here is genuinely not moving");
+        assertEquals(white, state.getInTurnPlayer());
+    }
+
+    @Test
+    void aFinishedGameIsLeftAlone() {
+        state.setDie1(6);
+        state.setDie2(5);
+        state.setMaxDiceUsable(0);
+        // The plain setter: the two-argument one also moves the players' stats,
+        // which is not what this is about.
+        game.setWinner(black);
+
+        assertFalse(tablaUtilService.passIfBlocked(UUID.randomUUID()));
+        assertEquals(white, state.getInTurnPlayer(), "a finished game keeps its last state");
+    }
+}
