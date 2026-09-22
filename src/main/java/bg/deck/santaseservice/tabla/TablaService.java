@@ -99,6 +99,24 @@ public class TablaService {
        The turn
        ------------------------------------------------------------------ */
 
+    /**
+     * This player's die of the opening roll. Either player may throw, in any
+     * order; the second die settles it (see TablaUtilService#settleOpening).
+     */
+    @Transactional
+    public void openingThrow() {
+        String username = gameUtilService.getUsername();
+        Game game = tablaUtilService.findActiveGame(username);
+        if (!tablaUtilService.isOpening(game)) {
+            throw TablaException.openingOver();
+        }
+
+        if (tablaUtilService.openingThrow(game, game.getPlayerByUsername(username))) {
+            gameInactivityService.updateNextMoveTime(game);
+        }
+        tablaUtilService.pushToBoth(game);
+    }
+
     @Transactional
     public void roll() {
         String username = gameUtilService.getUsername();
@@ -112,17 +130,7 @@ public class TablaService {
 
         Dice dice = diceService.roll(game.getServerSeed(), game.getId(), state.getTurnIndex());
         state.setTurnIndex(state.getTurnIndex() + 1);
-        state.setDie1(dice.d1());
-        state.setDie2(dice.d2());
-        state.setRemainingDiceValues(dice.values());
-        state.setPendingHopList(List.of());
-        state.snapshotTurnStart();
-
-        Side side = tablaUtilService.sideOf(game, player);
-        state.setMaxDiceUsable(BackgammonRules.maxUsed(state.boardState(), side, dice.values()));
-
-        // The clock is extended on roll and confirm only — see move()/undo().
-        state.extendNextMoveTime();
+        tablaUtilService.placeDice(game, player, dice);
         gameInactivityService.updateNextMoveTime(game);
 
         // A completely blocked roll used to pass the turn in the same request,
@@ -267,6 +275,9 @@ public class TablaService {
     public void reportInactivity() {
         String username = gameUtilService.getUsername();
         Game game = tablaUtilService.findActiveGame(username);
+        // Deliberately unguarded: the client reads a 400 here as "allowance
+        // spent" and forfeits, so a report racing the end of a turn must not
+        // be refused.
         Player player = game.getPlayerByUsername(username);
 
         int count = (player.getInactivityCount() == null ? 0 : player.getInactivityCount()) + 1;
@@ -290,11 +301,20 @@ public class TablaService {
     public void extendTime() {
         String username = gameUtilService.getUsername();
         Game game = tablaUtilService.findActiveGame(username);
-        requireInTurn(game, username);
+        requireToAct(game, username);
 
         game.getTablaState().extendNextMoveTime();
         gameInactivityService.updateNextMoveTime(game);
         tablaUtilService.pushToBoth(game);
+    }
+
+    /** On turn, or in the opening with their die still to throw. */
+    private Player requireToAct(Game game, String username) {
+        Player player = game.getPlayerByUsername(username);
+        if (!tablaUtilService.mustAct(game, player)) {
+            throw TablaException.notYourTurn();
+        }
+        return player;
     }
 
     private Player requireInTurn(Game game, String username) {

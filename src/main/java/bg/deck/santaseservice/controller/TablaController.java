@@ -37,6 +37,12 @@ public class TablaController {
         return ResponseEntity.accepted().build();
     }
 
+    @PostMapping("/opening-throw")
+    public ResponseEntity<Void> openingThrow() {
+        tablaService.openingThrow();
+        return ResponseEntity.accepted().build();
+    }
+
     @PostMapping("/roll")
     public ResponseEntity<Void> roll() {
         tablaService.roll();

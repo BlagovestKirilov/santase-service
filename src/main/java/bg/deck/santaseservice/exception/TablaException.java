@@ -35,4 +35,8 @@ public class TablaException extends RuntimeException {
     public static TablaException notYourTurn() {
         return new TablaException("Не е Ваш ред.");
     }
+
+    public static TablaException openingOver() {
+        return new TablaException("Първото хвърляне вече е изиграно.");
+    }
 }

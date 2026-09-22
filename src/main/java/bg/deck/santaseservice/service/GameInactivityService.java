@@ -76,6 +76,12 @@ public class GameInactivityService {
             // had nothing to play, so the clock running out says nothing about
             // them. The turn goes to the opponent, and the timer is re-armed
             // against the deadline that hand-off just set.
+            // Nobody has started yet: the opening has rules of its own for a
+            // die left unthrown — but never throws it for anyone.
+            if (tablaUtilService.openingTimedOut(gameId)) {
+                gameRepository.findById(gameId).ifPresent(this::updateNextMoveTime);
+                return;
+            }
             if (tablaUtilService.passIfBlocked(gameId)) {
                 gameRepository.findById(gameId).ifPresent(this::updateNextMoveTime);
                 return;

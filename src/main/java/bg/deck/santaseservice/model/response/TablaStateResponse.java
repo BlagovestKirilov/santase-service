@@ -67,6 +67,21 @@ public class TablaStateResponse {
     private int inactivityCount;
     private Integer nextMoveTimeInSeconds;
 
+    /** Nobody has started yet: both players are throwing one die each. */
+    private boolean openingPhase;
+
+    /**
+     * Finished throws of the opening roll, ties included — during the opening,
+     * and while the starter plays the opening dice. Null after that.
+     */
+    private List<OpeningThrowDTO> openingThrows;
+
+    /** This player's die of the opening throw in progress, once thrown. */
+    private Integer openingMine;
+
+    /** The opponent's die of the opening throw in progress, once thrown. */
+    private Integer openingOpponent;
+
     /** Published from move one so the dice can be verified afterwards. */
     private String serverSeedHash;
     /** Revealed only once the game is finished. */
