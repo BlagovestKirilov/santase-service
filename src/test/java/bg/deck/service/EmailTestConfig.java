@@ -9,6 +9,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import static org.mockito.Mockito.mock;
 
 /**
@@ -24,6 +27,12 @@ class EmailTestConfig {
     @Bean
     JavaMailSender javaMailSender() {
         return mock(JavaMailSender.class);
+    }
+
+    /** The production mail thread: one, so emails leave in order. */
+    @Bean(destroyMethod = "shutdown")
+    ExecutorService mailExecutor() {
+        return Executors.newSingleThreadExecutor(Thread.ofVirtual().name("mail-", 0).factory());
     }
 
     @Bean

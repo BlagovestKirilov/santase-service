@@ -36,6 +36,8 @@ public class Constants {
      */
     public static final String DECK_BG_PERSONAL = "DECK BG";
     public static final String DECK_BG_EMAIL_SUBJECT = "Потвърди своя профил в DECK.bg";
+    /** The one thread account emails are sent on, so they leave in order. */
+    public static final String MAIL_EXECUTOR = "mailExecutor";
     public static final String EMAIL_USERNAME = "{{USERNAME}}";
     public static final String EMAIL_CONFIRMATION_LINK = "{{CONFIRMATION_LINK}}";
     public static final String EMAIL_CONFIRMATION_TEMPLATE = "/templates/email-confirmation.html";

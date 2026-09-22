@@ -20,11 +20,14 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -109,6 +112,34 @@ class EmailServiceTest {
 
         pause(600);
         verify(mailSender, never()).send(any(MimeMessage.class));
+    }
+
+    @Test
+    @DisplayName("links asked for in a row arrive in that order, and carry the time they were asked for")
+    void keepsTheOrderTheyWereAskedIn() throws Exception {
+        // Asking again expires the link before it, so the last email must be
+        // the last link — otherwise the one on top of the inbox is dead.
+        List<ForgotPassword> asked = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            ForgotPassword forgotPassword = new ForgotPassword(user());
+            asked.add(forgotPassword);
+            emailService.sendForgotPasswordEmail(forgotPassword);
+        }
+
+        ArgumentCaptor<MimeMessage> sent = ArgumentCaptor.forClass(MimeMessage.class);
+        verify(mailSender, timeout(5000).times(5)).send(sent.capture());
+
+        List<MimeMessage> messages = sent.getAllValues();
+        for (int i = 0; i < 5; i++) {
+            String token = asked.get(i).getForgotPasswordToken().toString();
+            assertTrue(htmlOf(messages.get(i)).contains(token), "email " + (i + 1) + " carries link " + (i + 1));
+            if (i > 0) {
+                assertFalse(
+                        messages.get(i).getSentDate().before(messages.get(i - 1).getSentDate()),
+                        "the date never goes backwards"
+                );
+            }
+        }
     }
 
     @Test
