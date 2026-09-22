@@ -52,6 +52,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // A token this filter cannot read leaves the request unauthenticated and
+        // goes no further than that. Refusing it here refused the request
+        // itself, including the ones that need no token at all: a browser with
+        // an expired session still sends it, so opening a password-reset link
+        // answered "Invalid token." about the session and never looked at the
+        // link. What the request is allowed to do is for the rules below to
+        // say, and an endpoint that does need authentication still answers 401
+        // — from the entry point in SecurityConfig.
         try {
             String jwt = authHeader.substring(7);
             String username = jwtService.extractUsername(jwt);
@@ -68,11 +76,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-            filterChain.doFilter(request, response);
         } catch (Exception exception) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write(INVALID_TOKEN);
+            SecurityContextHolder.clearContext();
             log.warn(exception.getMessage());
         }
+
+        filterChain.doFilter(request, response);
     }
 }

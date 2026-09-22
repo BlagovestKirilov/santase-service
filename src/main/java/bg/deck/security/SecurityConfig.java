@@ -1,5 +1,6 @@
 package bg.deck.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,11 +8,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import static bg.deck.constant.Constants.USER;
+import static bg.deck.constant.ExceptionConstants.INVALID_TOKEN;
 
 /**
  * The filter chain, in two variants that differ in exactly one respect:
@@ -110,6 +113,24 @@ public class SecurityConfig {
                         .requestMatchers("/ws-game/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(handling -> handling.authenticationEntryPoint(unauthorized()))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+    }
+
+    /**
+     * The answer to a request that needed authentication and did not have it:
+     * 401, the same status and body the JWT filter used to write itself.
+     *
+     * <p>Spring's own default here is 403, which the client does not act on —
+     * it renews the session on a 401 and on nothing else. Stated explicitly,
+     * an expired token still ends in a renewed session and the request going
+     * through, exactly as before, while a request that needs no token is no
+     * longer refused over the token it happens to carry.
+     */
+    private static AuthenticationEntryPoint unauthorized() {
+        return (request, response, authException) -> {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write(INVALID_TOKEN);
+        };
     }
 }
