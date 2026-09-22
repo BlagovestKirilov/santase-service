@@ -1,25 +1,26 @@
 <!DOCTYPE html>
-<html lang="bg" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="bg" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="color-scheme" content="light only">
     <meta name="supported-color-schemes" content="light">
-    <!-- The site's own faces. Clients that block web fonts (Gmail) fall back
-         to the stacks inline below, chosen to keep the same shape. -->
-    <link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;700&family=Sofia+Sans+Extra+Condensed:wght@800&display=swap" rel="stylesheet">
+    <!--[if mso]>
+    <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+    <![endif]-->
     <style>
         body { margin: 0; padding: 0; }
-        /* Everything that matters is inline, because Gmail on Android ignores
-           this block. All it does is give the title room on a wide screen. */
+        /* Phone sizes are the inline ones. Gmail drops this block, and all it
+           does is give a big screen more room — nothing here is load-bearing. */
         @media screen and (min-width: 481px) {
-            .frame { padding: 36px 16px !important; }
-            .card { padding: 30px 30px 32px !important; }
-            .title { font-size: 32px !important; }
+            .frame { padding: 40px 20px !important; }
+            .card { padding: 40px 40px 34px !important; }
+            .title { font-size: 30px !important; }
         }
     </style>
 </head>
-<body style="margin:0; padding:0; -webkit-text-size-adjust:100%; text-size-adjust:100%; background-color:#16432a;" bgcolor="#16432a">
+<body style="margin:0; padding:0; background-color:#16432a;" bgcolor="#16432a">
 
 <!-- The line the inbox shows under the subject. -->
 <div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#16432a; opacity:0;">
@@ -28,44 +29,45 @@
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#16432a" style="background-color:#16432a;">
     <tr>
-        <td class="frame" align="center" style="padding:24px 12px;">
-            <!-- width="100%", not width="480": Gmail's app ignores max-width and obeys the attribute, which left the table wider than the phone and set Android inflating the text inside it. Fluid, it can never be wider than the screen; max-width still caps it everywhere else. -->
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:480px; margin:0 auto;">
+        <td class="frame" align="center" style="padding:20px 12px;">
+            <!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+            <!-- Fluid first, capped second: a client that ignores max-width still
+                 cannot make this wider than the screen it is read on. -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:600px; margin:0 auto;">
 
-                <!-- The card: K♣, the card every outcome page is printed on. -->
                 <tr>
-                    <td class="card" bgcolor="#faf8f3" style="background-color:#faf8f3; border-radius:20px; padding:26px 22px 28px;">
+                    <td class="card" bgcolor="#faf8f3" style="background-color:#faf8f3; border-radius:16px; padding:28px 24px 24px;">
 
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                        <!-- The card's own corner: rank over suit, as it is held.
+                             Full-width rows, never floated — a floated index is
+                             one the headline wraps around. -->
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                                <td align="center" style="font-family:'Sofia Sans Extra Condensed', 'Roboto Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-weight:800; font-size:24px; line-height:1; color:#1d1b18;">K</td>
+                                <td align="left" style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight:700; font-size:24px; line-height:110%; color:#1d1b18;">K</td>
                             </tr>
                             <tr>
-                                <td align="center" style="font-family:Arial, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:17px; line-height:1.15; color:#1d1b18;">&#9827;&#xFE0E;</td>
+                                <td align="left" style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:19px; line-height:115%; color:#1d1b18;">&#9827;&#xFE0E;</td>
                             </tr>
                         </table>
 
-                        <h1 class="title" style="margin:14px 0 0; font-family:'Sofia Sans Extra Condensed', 'Roboto Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-weight:800; font-size:28px; line-height:1.05; color:#1d1b18; text-align:center;">
+                        <h1 class="title" style="margin:18px 0 0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight:700; font-size:26px; line-height:120%; letter-spacing:-0.2px; color:#1d1b18;">
                             Изтриване на профила
                         </h1>
 
-                        <p style="margin:12px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:16px; line-height:1.55; color:#4f4a42; text-align:center;">
-                            Здравей, <strong style="color:#1d1b18;">{{USERNAME}}</strong>! Получихме заявка за изтриване
-                            на профила ти в&nbsp;DECK.bg. Изтриването е окончателно:
-                            профилът и всичко, свързано с него, не могат да бъдат върнати.
+                        <p style="margin:12px 0 0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; line-height:150%; color:#4a453d;">
+                            Здравей, <strong style="font-weight:700; color:#1d1b18;">{{USERNAME}}</strong>! Получихме заявка за изтриване на профила ти в&nbsp;DECK.bg. Изтриването е окончателно: профилът и всичко, свързано с него, не могат да бъдат върнати.
                         </p>
 
-                        <!-- A table cell carries the colour, so the button survives Outlook. -->
+                        <!-- A coloured cell behind the link, so the button is a
+                             button in Outlook too. Padding, not margin: Outlook
+                             ignores margin on a table. -->
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                                <td align="center" style="padding:24px 0 4px;">
+                                <td align="left" style="padding:24px 0 6px;">
                                     <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                                         <tr>
-                                            <td bgcolor="#b4232c" style="background-color:#b4232c; border-radius:12px;">
-                                                <a href="{{CONFIRMATION_LINK}}"
-                                                   class="cta" style="display:inline-block; -webkit-text-size-adjust:100%; text-size-adjust:100%; padding:15px 28px; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; font-size:16px; font-weight:700; line-height:1; color:#faf8f3; text-decoration:none; border-radius:12px;">
-                                                    Продължи към изтриването
-                                                </a>
+                                            <td bgcolor="#b4232c" align="center" style="background-color:#b4232c; border-radius:10px;">
+                                                <a href="{{CONFIRMATION_LINK}}" style="display:block; padding:16px 30px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:17px; font-weight:700; line-height:120%; color:#faf8f3; text-decoration:none; border-radius:10px;">Продължи към изтриването</a>
                                             </td>
                                         </tr>
                                     </table>
@@ -73,33 +75,44 @@
                             </tr>
                         </table>
 
-                        <!-- The fine print, set off from the one thing to do. -->
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                                <td style="padding-top:24px; border-bottom:1px solid #e3ded3; font-size:0; line-height:0;">&nbsp;</td>
+                                <td style="padding-top:28px; border-bottom:1px solid #e3ded3; font-size:0; line-height:0;">&nbsp;</td>
                             </tr>
                         </table>
 
-                        <p style="margin:18px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:14px; line-height:1.5; color:#6b655b;">
+                        <p style="margin:20px 0 0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:155%; color:#6b655b;">
                             Ако бутонът не се отваря, копирай този линк в браузъра:
                         </p>
-                        <p style="margin:6px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:14px; line-height:1.5; word-break:break-all;">
-                            <a href="{{CONFIRMATION_LINK}}" style="color:#155235;">{{CONFIRMATION_LINK}}</a>
+                        <p style="margin:6px 0 0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:155%; word-break:break-all;">
+                            <a href="{{CONFIRMATION_LINK}}" style="color:#155235; word-break:break-all;">{{CONFIRMATION_LINK}}</a>
                         </p>
-                        <p style="margin:16px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:14px; line-height:1.5; color:#6b655b;">
+                        <p style="margin:16px 0 0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:155%; color:#6b655b;">
                             Ако поискаш нов линк, този спира да важи — работи само последният имейл. Ако заявката не е твоя, пренебрегни този имейл. Профилът ти остава активен.
                         </p>
+
+                        <!-- The far corner of the card, the way it is printed. -->
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td align="right" style="padding-top:18px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:19px; line-height:115%; color:#1d1b18;">&#9827;&#xFE0E;</td>
+                            </tr>
+                            <tr>
+                                <td align="right" style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight:700; font-size:24px; line-height:24px; color:#1d1b18;">K</td>
+                            </tr>
+                        </table>
+
                     </td>
                 </tr>
 
                 <tr>
-                    <td align="center" style="padding:20px 8px 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:13px; line-height:1.6; color:#a9c2b0;">
+                    <td align="center" style="padding:18px 8px 0; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:14px; line-height:150%; color:#a9c2b0;">
                         Сантасе и табла онлайн<br>
                         <a href="https://deck.bg" style="color:#eef3ef; font-weight:700; text-decoration:none;">deck.bg</a>
                     </td>
                 </tr>
 
             </table>
+            <!--[if mso]></td></tr></table><![endif]-->
         </td>
     </tr>
 </table>
