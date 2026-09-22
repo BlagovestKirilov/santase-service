@@ -162,7 +162,7 @@ public class TablaService {
         Hop hop = BackgammonRules
                 .legalTurnHops(board, side, remaining, used, state.getMaxDiceUsable())
                 .stream()
-                .filter(h -> h.from() == request.getFrom() && h.die() == request.getDie())
+                .filter(h -> h.from() == request.from() && h.die() == request.die())
                 .findFirst()
                 .orElseThrow(TablaException::illegalHop);
 
