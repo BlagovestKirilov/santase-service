@@ -61,13 +61,13 @@ public class AuthService {
     private final EmailService emailService;
 
     public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request) {
-        log.info(TRY_LOGIN_LOG, loginRequest.getUsername());
+        log.info(TRY_LOGIN_LOG, loginRequest.username());
 
-        User user = userRepository.findByUsername(loginRequest.getUsername())
-                .filter(foundUser -> passwordEncoder.matches(loginRequest.getPassword(), foundUser.getPassword()))
-                .orElseThrow(() -> new InvalidCredentialsException(loginRequest.getUsername()));
+        User user = userRepository.findByUsername(loginRequest.username())
+                .filter(foundUser -> passwordEncoder.matches(loginRequest.password(), foundUser.getPassword()))
+                .orElseThrow(() -> new InvalidCredentialsException(loginRequest.username()));
 
-        log.info(SUCCESSFUL_LOGIN_LOG, loginRequest.getUsername());
+        log.info(SUCCESSFUL_LOGIN_LOG, loginRequest.username());
 
         user.setIpAddress(request.getHeader(CF_CONNECTING_IP));
         userRepository.save(user);
@@ -81,14 +81,14 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest registerRequest) {
-        log.info(TRY_REGISTER_LOG, registerRequest.getUsername());
+        log.info(TRY_REGISTER_LOG, registerRequest.username());
 
-        if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            throw new UserAlreadyExistsException(registerRequest.getUsername());
+        if (userRepository.existsByUsername(registerRequest.username())) {
+            throw new UserAlreadyExistsException(registerRequest.username());
         }
 
-        if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new EmailAlreadyExistsException(registerRequest.getEmail());
+        if (userRepository.existsByEmail(registerRequest.email())) {
+            throw new EmailAlreadyExistsException(registerRequest.email());
         }
 
         User user = userMapper.toEntity(registerRequest);
@@ -107,7 +107,7 @@ public class AuthService {
 
         emailService.sendConfirmationEmail(emailConfirmation);
 
-        log.info(SUCCESSFUL_REGISTER_LOG, registerRequest.getUsername());
+        log.info(SUCCESSFUL_REGISTER_LOG, registerRequest.username());
 
         return AuthResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())
@@ -180,7 +180,7 @@ public class AuthService {
     }
 
     public void forgotPassword(ForgotPasswordEmailRequest forgotPasswordEmailRequest) {
-        String email = forgotPasswordEmailRequest.getEmail();
+        String email = forgotPasswordEmailRequest.email();
 
         log.info(LogConstants.FORGOT_PASSWORD_STARTED, email);
 
@@ -207,7 +207,7 @@ public class AuthService {
 
     public void changeForgottenPassword(ChangeForgottenPasswordRequest changeForgottenPasswordRequest) {
         ForgotPassword forgotPassword = forgotPasswordRepository
-                .findByForgotPasswordTokenAndStatus(changeForgottenPasswordRequest.getToken(), ForgotPasswordStatus.PENDING)
+                .findByForgotPasswordTokenAndStatus(changeForgottenPasswordRequest.token(), ForgotPasswordStatus.PENDING)
                 .orElseThrow(InvalidLinkException::new);
 
         User user = forgotPassword.getUser();
@@ -219,12 +219,12 @@ public class AuthService {
             throw new EmailNotConfirmedException(user.getEmail());
         }
 
-        if (passwordEncoder.matches(changeForgottenPasswordRequest.getNewPassword(), user.getPassword())) {
+        if (passwordEncoder.matches(changeForgottenPasswordRequest.newPassword(), user.getPassword())) {
             log.warn(LogConstants.SAME_PASSWORD, user.getUsername());
             throw new InvalidPasswordException(ExceptionConstants.SAME_PASSWORD);
         }
 
-        user.setPassword(passwordEncoder.encode(changeForgottenPasswordRequest.getNewPassword()));
+        user.setPassword(passwordEncoder.encode(changeForgottenPasswordRequest.newPassword()));
         userRepository.save(user);
 
         forgotPassword.setStatus(ForgotPasswordStatus.SUCCESS);

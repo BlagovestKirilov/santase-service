@@ -4,40 +4,35 @@ import bg.deck.santaseservice.model.dto.CardDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 
 import java.util.List;
 
-@Getter
-@Setter
 @Builder(toBuilder = true)
-@ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class GameStateResponse {
-    private String gameId;
-    private List<CardDTO> deck;
-    private CardDTO trumpCard;
-    private CardDTO playedCard;
-    private CardDTO opponentPlayedCard;
-    private int opponentPlayerCardsCount;
-    private int remainingCardsCount;
-    private String firstPlayerUsername;
-    private int firstPlayerResult;
-    private String secondPlayerUsername;
-    private int secondPlayerResult;
-    @JsonProperty("isOnTurn")
-    private boolean isOnTurn;
-    @JsonProperty("isClosed")
-    private boolean isClosed;
-    private String winnerUsername;
-    private String trickWinnerUsername;
-    private String surrenderPlayerUsername;
-    private int trickFirstPlayerScore;
-    private int trickSecondPlayerScore;
-    private Integer bonus;
-    private Integer opponentPlayerBonus;
-    private int inactivityCount;
-    private Integer nextMoveTimeInSeconds;
+public record GameStateResponse(
+        String gameId,
+        List<CardDTO> deck,
+        CardDTO trumpCard,
+        CardDTO playedCard,
+        CardDTO opponentPlayedCard,
+        int opponentPlayerCardsCount,
+        int remainingCardsCount,
+        String firstPlayerUsername,
+        int firstPlayerResult,
+        String secondPlayerUsername,
+        int secondPlayerResult,
+        @JsonProperty("isOnTurn")
+        boolean isOnTurn,
+        @JsonProperty("isClosed")
+        boolean isClosed,
+        String winnerUsername,
+        String trickWinnerUsername,
+        String surrenderPlayerUsername,
+        int trickFirstPlayerScore,
+        int trickSecondPlayerScore,
+        Integer bonus,
+        Integer opponentPlayerBonus,
+        int inactivityCount,
+        Integer nextMoveTimeInSeconds
+) {
 }

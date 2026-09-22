@@ -4,7 +4,6 @@ import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.model.Game;
 import bg.deck.santaseservice.model.TurnClock;
 import bg.deck.santaseservice.repository.GameRepository;
-import bg.deck.santaseservice.tabla.TablaUtilService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

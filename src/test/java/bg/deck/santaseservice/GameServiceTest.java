@@ -10,6 +10,7 @@ import bg.deck.santaseservice.model.Player;
 import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.request.CardRequest;
 import bg.deck.santaseservice.model.response.SearchGameResponse;
+import bg.deck.santaseservice.service.GameInactivityService;
 import bg.deck.santaseservice.service.GameService;
 import bg.deck.santaseservice.service.GameUtilService;
 import bg.deck.santaseservice.service.WebSocketService;
@@ -47,6 +48,8 @@ class GameServiceTest {
     private WebSocketService webSocketService;
     @Mock
     private GameUtilService gameUtilService;
+    @Mock
+    private GameInactivityService gameInactivityService;
     @InjectMocks
     private GameService gameService;
     private Player p1;
@@ -254,8 +257,8 @@ class GameServiceTest {
             gameService.surrender();
 
             // 3. Assertions: Check if the real logic worked
-            // The winner should be P2 because P1 surrendered
-            assertThat(game.getWinner()).isEqualTo(p2);
+            // The winner should be P2 because P1 surrendered (setting it is delegated to GameUtilService)
+            verify(gameUtilService).setGameWinner(game, p2, true);
 
             // Check if hands were cleared as per your service logic
             assertThat(p1.getHand()).isEmpty();

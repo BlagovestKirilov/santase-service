@@ -52,11 +52,12 @@ public class WebSocketUtilService {
         for (Player player : players) {
             String username = player.getUsername();
 
-            GameStateResponse response = buildBaseGameStateResponse(game, username);
-
-            response.setTrickWinnerUsername(trickWinner);
-            response.setTrickFirstPlayerScore(game.getFirstPlayer().getScore());
-            response.setTrickSecondPlayerScore(game.getSecondPlayer().getScore());
+            GameStateResponse response = buildBaseGameStateResponse(game, username)
+                    .toBuilder()
+                    .trickWinnerUsername(trickWinner)
+                    .trickFirstPlayerScore(game.getFirstPlayer().getScore())
+                    .trickSecondPlayerScore(game.getSecondPlayer().getScore())
+                    .build();
 
             webSocketService.notifyGameUpdate(game.getId().toString(), username, response);
         }

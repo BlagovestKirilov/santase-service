@@ -1,4 +1,6 @@
-package bg.deck.santaseservice.tabla.engine;
+package bg.deck.santaseservice.model.tabla;
+
+import bg.deck.santaseservice.enums.Side;
 
 import java.util.Arrays;
 

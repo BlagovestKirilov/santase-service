@@ -45,7 +45,7 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-        return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
+        return ResponseEntity.ok(authService.refreshToken(request.refreshToken()));
     }
 
     @GetMapping("/confirm-email")

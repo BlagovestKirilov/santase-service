@@ -1,4 +1,4 @@
-package bg.deck.santaseservice.tabla.engine;
+package bg.deck.santaseservice.model.tabla;
 
 import java.util.List;
 

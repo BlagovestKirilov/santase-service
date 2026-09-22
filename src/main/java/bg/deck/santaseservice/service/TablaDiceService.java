@@ -1,6 +1,6 @@
-package bg.deck.santaseservice.tabla;
+package bg.deck.santaseservice.service;
 
-import bg.deck.santaseservice.tabla.engine.Dice;
+import bg.deck.santaseservice.model.tabla.Dice;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;

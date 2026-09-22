@@ -1,4 +1,6 @@
-package bg.deck.santaseservice.tabla.engine;
+package bg.deck.santaseservice.model.tabla;
+
+import bg.deck.santaseservice.enums.Side;
 
 /**
  * The board seen from the side that is about to move — the single most important

@@ -55,7 +55,7 @@ public class UserController {
      */
     @PostMapping("/confirm-deletion")
     public ResponseEntity<Void> confirmDeletion(@Valid @RequestBody ConfirmDeletionRequest confirmDeletionRequest) {
-        return userService.confirmDeletion(confirmDeletionRequest.getToken())
+        return userService.confirmDeletion(confirmDeletionRequest.token())
                 ? ResponseEntity.ok().build()
                 : ResponseEntity.badRequest().build();
     }

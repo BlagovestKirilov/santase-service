@@ -4,6 +4,7 @@ import bg.deck.santaseservice.config.TemplateLoader;
 import bg.deck.santaseservice.model.EmailConfirmation;
 import bg.deck.santaseservice.model.ForgotPassword;
 import bg.deck.santaseservice.model.User;
+import bg.deck.santaseservice.model.event.OutgoingEmail;
 import jakarta.mail.Session;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -13,18 +14,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.transaction.support.AbstractPlatformTransactionManager;
-import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Properties;
@@ -52,32 +45,8 @@ import static org.mockito.Mockito.when;
  * the production one; only the mail server and the database are stand-ins.
  */
 @DisplayName("Sending account emails")
-@SpringJUnitConfig(EmailServiceTest.Config.class)
+@SpringJUnitConfig(EmailTestConfig.class)
 class EmailServiceTest {
-
-    @Configuration
-    @EnableAsync
-    @EnableTransactionManagement
-    @Import({EmailService.class, TemplateLoader.class})
-    static class Config {
-        @Bean
-        JavaMailSender javaMailSender() {
-            return mock(JavaMailSender.class);
-        }
-
-        @Bean
-        PlatformTransactionManager transactionManager() {
-            return new NoDatabaseTransactionManager();
-        }
-    }
-
-    /** Real transaction boundaries and synchronisation, with nothing behind them. */
-    static class NoDatabaseTransactionManager extends AbstractPlatformTransactionManager {
-        @Override protected Object doGetTransaction() { return new Object(); }
-        @Override protected void doBegin(Object transaction, TransactionDefinition definition) { }
-        @Override protected void doCommit(DefaultTransactionStatus status) { }
-        @Override protected void doRollback(DefaultTransactionStatus status) { }
-    }
 
     @Autowired private EmailService emailService;
     @Autowired private JavaMailSender mailSender;
@@ -150,7 +119,7 @@ class EmailServiceTest {
         doThrow(new MailSendException("connection refused")).when(down).send(any(MimeMessage.class));
         EmailService service = new EmailService(down, new TemplateLoader(), mock(ApplicationEventPublisher.class));
 
-        assertDoesNotThrow(() -> service.deliver(new EmailService.OutgoingEmail("petko@example.com", "s", "<p>x</p>")));
+        assertDoesNotThrow(() -> service.deliver(new OutgoingEmail("petko@example.com", "s", "<p>x</p>")));
         verify(down).send(any(MimeMessage.class));
     }
 

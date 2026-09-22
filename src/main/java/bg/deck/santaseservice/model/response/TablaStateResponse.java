@@ -1,10 +1,11 @@
 package bg.deck.santaseservice.model.response;
 
+import bg.deck.santaseservice.model.dto.HopDTO;
+import bg.deck.santaseservice.model.dto.ComboHopDTO;
+import bg.deck.santaseservice.model.dto.OpeningThrowDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.List;
 
@@ -16,74 +17,72 @@ import java.util.List;
  * disagree about "use both dice", the higher-die rule or bearing off. It is
  * naturally empty for the player who is not on turn.
  */
-@Getter
-@Setter
 @Builder(toBuilder = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TablaStateResponse {
+public record TablaStateResponse(
+        String gameId,
+        String gameType,
 
-    private String gameId;
-    private String gameType;
+        String firstPlayerUsername,
+        String secondPlayerUsername,
 
-    private String firstPlayerUsername;
-    private String secondPlayerUsername;
+        /** WHITE or BLACK — which side this recipient plays. */
+        String mySide,
 
-    /** WHITE or BLACK — which side this recipient plays. */
-    private String mySide;
+        /** 24 entries, canonical numbering; positive = WHITE checkers. */
+        List<Integer> points,
 
-    /** 24 entries, canonical numbering; positive = WHITE checkers. */
-    private List<Integer> points;
+        int myBar,
+        int opponentBar,
+        int myOff,
+        int opponentOff,
 
-    private int myBar;
-    private int opponentBar;
-    private int myOff;
-    private int opponentOff;
+        int myPipCount,
+        int opponentPipCount,
 
-    private int myPipCount;
-    private int opponentPipCount;
+        @JsonProperty("isOnTurn")
+        boolean isOnTurn,
 
-    @JsonProperty("isOnTurn")
-    private boolean isOnTurn;
+        Integer die1,
+        Integer die2,
+        List<Integer> remainingDice,
 
-    private Integer die1;
-    private Integer die2;
-    private List<Integer> remainingDice;
+        int maxDiceUsable,
+        int usedDiceCount,
+        boolean mustConfirm,
+        boolean noMovesAvailable,
 
-    private int maxDiceUsable;
-    private int usedDiceCount;
-    private boolean mustConfirm;
-    private boolean noMovesAvailable;
+        List<HopDTO> legalHops,
+        /** Destinations reachable by playing both dice with one checker. */
+        List<ComboHopDTO> comboHops,
+        List<HopDTO> pendingHops,
 
-    private List<HopDTO> legalHops;
-    /** Destinations reachable by playing both dice with one checker. */
-    private List<ComboHopDTO> comboHops;
-    private List<HopDTO> pendingHops;
+        String winnerUsername,
+        String surrenderPlayerUsername,
+        /** SINGLE, GAMMON (марс) or BACKGAMMON (кокс). Display only. */
+        String resultKind,
 
-    private String winnerUsername;
-    private String surrenderPlayerUsername;
-    /** SINGLE, GAMMON (марс) or BACKGAMMON (кокс). Display only. */
-    private String resultKind;
+        int inactivityCount,
+        Integer nextMoveTimeInSeconds,
 
-    private int inactivityCount;
-    private Integer nextMoveTimeInSeconds;
+        /** Nobody has started yet: both players are throwing one die each. */
+        boolean openingPhase,
 
-    /** Nobody has started yet: both players are throwing one die each. */
-    private boolean openingPhase;
+        /**
+         * Finished throws of the opening roll, ties included — during the opening,
+         * and while the starter plays the opening dice. Null after that.
+         */
+        List<OpeningThrowDTO> openingThrows,
 
-    /**
-     * Finished throws of the opening roll, ties included — during the opening,
-     * and while the starter plays the opening dice. Null after that.
-     */
-    private List<OpeningThrowDTO> openingThrows;
+        /** This player's die of the opening throw in progress, once thrown. */
+        Integer openingMine,
 
-    /** This player's die of the opening throw in progress, once thrown. */
-    private Integer openingMine;
+        /** The opponent's die of the opening throw in progress, once thrown. */
+        Integer openingOpponent,
 
-    /** The opponent's die of the opening throw in progress, once thrown. */
-    private Integer openingOpponent;
-
-    /** Published from move one so the dice can be verified afterwards. */
-    private String serverSeedHash;
-    /** Revealed only once the game is finished. */
-    private String serverSeed;
+        /** Published from move one so the dice can be verified afterwards. */
+        String serverSeedHash,
+        /** Revealed only once the game is finished. */
+        String serverSeed
+) {
 }

@@ -1,4 +1,4 @@
-package bg.deck.santaseservice.tabla.engine;
+package bg.deck.santaseservice.enums;
 
 /**
  * How decisively a game was won. Display only — a win is one win in

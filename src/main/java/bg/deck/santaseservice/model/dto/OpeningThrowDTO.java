@@ -1,4 +1,4 @@
-package bg.deck.santaseservice.model.response;
+package bg.deck.santaseservice.model.dto;
 
 /**
  * One throw of the opening roll, from one player's side of the board: each

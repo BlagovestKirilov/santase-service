@@ -1,4 +1,4 @@
-package bg.deck.santaseservice.tabla;
+package bg.deck.santaseservice.service;
 
 import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.enums.GameType;
@@ -9,14 +9,11 @@ import bg.deck.santaseservice.model.Player;
 import bg.deck.santaseservice.model.TablaGameState;
 import bg.deck.santaseservice.model.request.MoveRequest;
 import bg.deck.santaseservice.model.response.SearchGameResponse;
-import bg.deck.santaseservice.service.GameInactivityService;
-import bg.deck.santaseservice.service.GameUtilService;
-import bg.deck.santaseservice.service.WebSocketService;
-import bg.deck.santaseservice.tabla.engine.BackgammonRules;
-import bg.deck.santaseservice.tabla.engine.BoardState;
-import bg.deck.santaseservice.tabla.engine.Dice;
-import bg.deck.santaseservice.tabla.engine.Hop;
-import bg.deck.santaseservice.tabla.engine.Side;
+import bg.deck.santaseservice.model.tabla.BackgammonRules;
+import bg.deck.santaseservice.model.tabla.BoardState;
+import bg.deck.santaseservice.model.tabla.Dice;
+import bg.deck.santaseservice.model.tabla.Hop;
+import bg.deck.santaseservice.enums.Side;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -162,7 +159,7 @@ public class TablaService {
         Hop hop = BackgammonRules
                 .legalTurnHops(board, side, remaining, used, state.getMaxDiceUsable())
                 .stream()
-                .filter(h -> h.from() == request.getFrom() && h.die() == request.getDie())
+                .filter(h -> h.from() == request.from() && h.die() == request.die())
                 .findFirst()
                 .orElseThrow(TablaException::illegalHop);
 

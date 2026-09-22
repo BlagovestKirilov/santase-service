@@ -1,4 +1,4 @@
-package bg.deck.santaseservice.tabla.engine;
+package bg.deck.santaseservice.enums;
 
 /**
  * The two sides of a backgammon board.

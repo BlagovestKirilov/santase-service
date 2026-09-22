@@ -1,7 +1,7 @@
 package bg.deck.santaseservice.controller;
 
 import bg.deck.santaseservice.model.request.MoveRequest;
-import bg.deck.santaseservice.tabla.TablaService;
+import bg.deck.santaseservice.service.TablaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

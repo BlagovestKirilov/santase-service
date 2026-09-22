@@ -4,21 +4,25 @@ import bg.deck.santaseservice.constant.ValidationConstants;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
-public class ChangePasswordRequest {
-    @NotBlank(message = ValidationConstants.PASSWORD_EMPTY)
-    @Size(min = ValidationConstants.PASSWORD_MIN, max = ValidationConstants.PASSWORD_MAX, message = ValidationConstants.PASSWORD_SIZE)
-    @Pattern(regexp = ValidationConstants.PASSWORD_PATTERN, message = ValidationConstants.PASSWORD_PATTERN_MSG)
-    private String currentPassword;
+public record ChangePasswordRequest(
+        @NotBlank(message = ValidationConstants.PASSWORD_EMPTY)
+        @Size(min = ValidationConstants.PASSWORD_MIN, max = ValidationConstants.PASSWORD_MAX, message = ValidationConstants.PASSWORD_SIZE)
+        @Pattern(regexp = ValidationConstants.PASSWORD_PATTERN, message = ValidationConstants.PASSWORD_PATTERN_MSG)
+        String currentPassword,
 
-    @NotBlank(message = ValidationConstants.PASSWORD_EMPTY)
-    @Size(min = ValidationConstants.PASSWORD_MIN, max = ValidationConstants.PASSWORD_MAX, message = ValidationConstants.PASSWORD_SIZE)
-    @Pattern(regexp = ValidationConstants.PASSWORD_PATTERN, message = ValidationConstants.PASSWORD_PATTERN_MSG)
-    private String newPassword;
+        @NotBlank(message = ValidationConstants.PASSWORD_EMPTY)
+        @Size(min = ValidationConstants.PASSWORD_MIN, max = ValidationConstants.PASSWORD_MAX, message = ValidationConstants.PASSWORD_SIZE)
+        @Pattern(regexp = ValidationConstants.PASSWORD_PATTERN, message = ValidationConstants.PASSWORD_PATTERN_MSG)
+        String newPassword
+) {
+
+    /**
+     * A record prints every component, and this one carries a secret —
+     * a password or a one-time token — that must never reach a log.
+     */
+    @Override
+    public String toString() {
+        return "ChangePasswordRequest[currentPassword=***, newPassword=***]";
+    }
 }

@@ -1,13 +1,13 @@
 package bg.deck.santaseservice.tabla;
 
-import bg.deck.santaseservice.tabla.engine.BackgammonRules;
-import bg.deck.santaseservice.tabla.engine.BoardState;
-import bg.deck.santaseservice.tabla.engine.ComboHop;
-import bg.deck.santaseservice.tabla.engine.Dice;
-import bg.deck.santaseservice.tabla.engine.GameResultKind;
-import bg.deck.santaseservice.tabla.engine.Hop;
-import bg.deck.santaseservice.tabla.engine.MoverView;
-import bg.deck.santaseservice.tabla.engine.Side;
+import bg.deck.santaseservice.model.tabla.BackgammonRules;
+import bg.deck.santaseservice.model.tabla.BoardState;
+import bg.deck.santaseservice.model.tabla.ComboHop;
+import bg.deck.santaseservice.model.tabla.Dice;
+import bg.deck.santaseservice.enums.GameResultKind;
+import bg.deck.santaseservice.model.tabla.Hop;
+import bg.deck.santaseservice.model.tabla.MoverView;
+import bg.deck.santaseservice.enums.Side;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

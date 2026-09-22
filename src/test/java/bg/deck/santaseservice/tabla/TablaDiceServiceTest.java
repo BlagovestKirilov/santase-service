@@ -1,6 +1,7 @@
 package bg.deck.santaseservice.tabla;
 
-import bg.deck.santaseservice.tabla.engine.Dice;
+import bg.deck.santaseservice.service.TablaDiceService;
+import bg.deck.santaseservice.model.tabla.Dice;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
