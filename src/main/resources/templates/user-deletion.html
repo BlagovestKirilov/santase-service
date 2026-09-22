@@ -9,25 +9,17 @@
          to the stacks inline below, chosen to keep the same shape. -->
     <link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;700&family=Sofia+Sans+Extra+Condensed:wght@800&display=swap" rel="stylesheet">
     <style>
-        /* Android's WebView inflates text in a block wider than the screen, so
-           a phone showed this email far larger than it is set — that is what
-           made it look wrong there. Turning that off is what keeps the sizes
-           below meaning what they say. */
-        body, table, td, p, a {
-            -webkit-text-size-adjust: 100%;
-            -ms-text-size-adjust: 100%;
-            text-size-adjust: 100%;
-        }
         body { margin: 0; padding: 0; }
-        @media (max-width: 480px) {
-            .frame { padding: 24px 12px !important; }
-            .card { padding: 26px 22px 28px !important; }
-            .title { font-size: 28px !important; }
-            .cta { padding: 15px 28px !important; }
+        /* Everything that matters is inline, because Gmail on Android ignores
+           this block. All it does is give the title room on a wide screen. */
+        @media screen and (min-width: 481px) {
+            .frame { padding: 36px 16px !important; }
+            .card { padding: 30px 30px 32px !important; }
+            .title { font-size: 32px !important; }
         }
     </style>
 </head>
-<body style="margin:0; padding:0; background-color:#16432a;" bgcolor="#16432a">
+<body style="margin:0; padding:0; -webkit-text-size-adjust:100%; text-size-adjust:100%; background-color:#16432a;" bgcolor="#16432a">
 
 <!-- The line the inbox shows under the subject. -->
 <div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#16432a; opacity:0;">
@@ -36,27 +28,27 @@
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#16432a" style="background-color:#16432a;">
     <tr>
-        <td class="frame" align="center" style="padding:36px 16px;">
+        <td class="frame" align="center" style="padding:24px 12px;">
             <table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:480px;">
 
                 <!-- The card: K♣, the card every outcome page is printed on. -->
                 <tr>
-                    <td class="card" bgcolor="#faf8f3" style="background-color:#faf8f3; border-radius:20px; padding:30px 30px 32px;">
+                    <td class="card" bgcolor="#faf8f3" style="background-color:#faf8f3; border-radius:20px; padding:26px 22px 28px;">
 
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                                <td align="center" style="font-family:'Sofia Sans Extra Condensed', 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif; font-weight:800; font-size:26px; line-height:1; color:#1d1b18;">K</td>
+                                <td align="center" style="font-family:'Sofia Sans Extra Condensed', 'Roboto Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-weight:800; font-size:24px; line-height:1; color:#1d1b18;">K</td>
                             </tr>
                             <tr>
-                                <td align="center" style="font-family:Arial, sans-serif; font-size:18px; line-height:1.15; color:#1d1b18;">&#9827;&#xFE0E;</td>
+                                <td align="center" style="font-family:Arial, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:17px; line-height:1.15; color:#1d1b18;">&#9827;&#xFE0E;</td>
                             </tr>
                         </table>
 
-                        <h1 class="title" style="margin:14px 0 0; font-family:'Sofia Sans Extra Condensed', 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif; font-weight:800; font-size:32px; line-height:1.05; color:#1d1b18; text-align:center;">
+                        <h1 class="title" style="margin:14px 0 0; font-family:'Sofia Sans Extra Condensed', 'Roboto Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-weight:800; font-size:28px; line-height:1.05; color:#1d1b18; text-align:center;">
                             Изтриване на профила
                         </h1>
 
-                        <p style="margin:12px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; font-size:16px; line-height:1.55; color:#4f4a42; text-align:center;">
+                        <p style="margin:12px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:16px; line-height:1.55; color:#4f4a42; text-align:center;">
                             Здравей, <strong style="color:#1d1b18;">{{USERNAME}}</strong>! Получихме заявка за изтриване
                             на профила ти в&nbsp;DECK.bg. Изтриването е окончателно:
                             профилът и всичко, свързано с него, не могат да бъдат върнати.
@@ -70,7 +62,7 @@
                                         <tr>
                                             <td bgcolor="#b4232c" style="background-color:#b4232c; border-radius:12px;">
                                                 <a href="{{CONFIRMATION_LINK}}"
-                                                   class="cta" style="display:inline-block; padding:15px 30px; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; font-size:16px; font-weight:700; line-height:1; color:#faf8f3; text-decoration:none; border-radius:12px;">
+                                                   class="cta" style="display:inline-block; -webkit-text-size-adjust:100%; text-size-adjust:100%; padding:15px 28px; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; font-size:16px; font-weight:700; line-height:1; color:#faf8f3; text-decoration:none; border-radius:12px;">
                                                     Продължи към изтриването
                                                 </a>
                                             </td>
@@ -87,20 +79,20 @@
                             </tr>
                         </table>
 
-                        <p style="margin:18px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5; color:#6b655b;">
+                        <p style="margin:18px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:14px; line-height:1.5; color:#6b655b;">
                             Ако бутонът не се отваря, копирай този линк в браузъра:
                         </p>
-                        <p style="margin:6px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5; word-break:break-all;">
+                        <p style="margin:6px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:14px; line-height:1.5; word-break:break-all;">
                             <a href="{{CONFIRMATION_LINK}}" style="color:#155235;">{{CONFIRMATION_LINK}}</a>
                         </p>
-                        <p style="margin:16px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; font-size:14px; line-height:1.5; color:#6b655b;">
+                        <p style="margin:16px 0 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:14px; line-height:1.5; color:#6b655b;">
                             Ако заявката не е твоя, пренебрегни този имейл. Профилът ти остава активен.
                         </p>
                     </td>
                 </tr>
 
                 <tr>
-                    <td align="center" style="padding:20px 8px 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; font-size:13px; line-height:1.6; color:#a9c2b0;">
+                    <td align="center" style="padding:20px 8px 0; font-family:'Sofia Sans', Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:13px; line-height:1.6; color:#a9c2b0;">
                         Сантасе и табла онлайн<br>
                         <a href="https://deck.bg" style="color:#eef3ef; font-weight:700; text-decoration:none;">deck.bg</a>
                     </td>
