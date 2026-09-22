@@ -22,6 +22,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 import static bg.deck.constant.Constants.DECK_BG_CONFIRM_EMAIL;
 import static bg.deck.constant.Constants.DECK_BG_DELETE_ACCOUNT;
@@ -36,6 +37,7 @@ import static bg.deck.constant.Constants.EMAIL_CONFIRMATION_TEMPLATE;
 import static bg.deck.constant.Constants.EMAIL_USERNAME;
 import static bg.deck.constant.Constants.FORGOT_PASSWORD_SUBJECT;
 import static bg.deck.constant.Constants.FORGOT_PASSWORD_TEMPLATE;
+import static bg.deck.constant.Constants.MAIL_EXECUTOR;
 
 /**
  * Sends the account emails — confirmation, new password, deletion — without
@@ -76,12 +78,15 @@ public class EmailService {
     }
 
     /**
-     * Runs on its own (virtual) thread once the caller's transaction has
-     * committed, or straight away when there was none — without
-     * {@code fallbackExecution}, an email queued outside a transaction would
-     * never be sent at all.
+     * Runs off the request thread once the caller's transaction has committed,
+     * or straight away when there was none — without {@code fallbackExecution},
+     * an email queued outside a transaction would never be sent at all.
+     *
+     * <p>On {@code mailExecutor}, which is a single thread: several links asked
+     * for in a row must arrive in the order they were made, because only the
+     * last one still works.
      */
-    @Async
+    @Async(MAIL_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void deliver(OutgoingEmail email) {
         try {
@@ -92,6 +97,8 @@ public class EmailService {
             helper.setTo(email.to());
             helper.setSubject(email.subject());
             helper.setText(email.html(), true);
+            // When it was asked for, not when the mail server got round to it.
+            helper.setSentDate(Date.from(email.queuedAt()));
 
             javaMailSender.send(message);
             log.info(LogConstants.EMAIL_SENT_LOG, email.to());
