@@ -105,7 +105,7 @@ public class GameService {
     @Transactional
     public void playCard(CardRequest cardRequest) {
         String username = gameUtilService.getUsername();
-        log.info(LogConstants.PLAY_CARD_START, username, cardRequest.getCardId());
+        log.info(LogConstants.PLAY_CARD_START, username, cardRequest.cardId());
 
         Game game = gameUtilService.findGameByUsername(username);
         Player player = game.getPlayerByUsername(username);
@@ -116,7 +116,7 @@ public class GameService {
         }
 
         Card cardForRemoval = player.getHand().stream()
-                .filter(c -> c.getId().equals(cardRequest.getCardId()))
+                .filter(c -> c.getId().equals(cardRequest.cardId()))
                 .filter(Card::getIsPlayable)
                 .findFirst()
                 .orElseThrow(() -> new CardNotFoundException(username));
@@ -145,7 +145,7 @@ public class GameService {
     @Transactional
     public void announceCombination(CardRequest cardRequest) {
         String username = gameUtilService.getUsername();
-        log.info(LogConstants.ANNOUNCE_START, username, cardRequest.getCardId());
+        log.info(LogConstants.ANNOUNCE_START, username, cardRequest.cardId());
 
         Game game = gameUtilService.findGameByUsername(username);
 
@@ -162,7 +162,7 @@ public class GameService {
         }
 
         Card card = player.getHand().stream()
-                .filter(c -> c.getId().equals(cardRequest.getCardId()))
+                .filter(c -> c.getId().equals(cardRequest.cardId()))
                 .findFirst()
                 .orElseThrow(() -> new CardNotFoundException(username));
 

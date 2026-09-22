@@ -16,7 +16,7 @@ import bg.deck.santaseservice.model.request.UserDeletionRequest;
 import bg.deck.santaseservice.constant.RankingConstants;
 import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.model.UserGameStats;
-import bg.deck.santaseservice.model.response.GameStatsDTO;
+import bg.deck.santaseservice.model.dto.GameStatsDTO;
 import bg.deck.santaseservice.model.response.ProfileResponse;
 import bg.deck.santaseservice.repository.EmailConfirmationRepository;
 import bg.deck.santaseservice.repository.UserDeletionRepository;
@@ -57,9 +57,6 @@ public class UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException(username));
 
-        ProfileResponse response = new ProfileResponse();
-        response.setEmailConfirmed(Boolean.TRUE.equals(user.getIsEmailConfirmed()));
-
         Map<String, GameStatsDTO> stats = new LinkedHashMap<>();
         for (GameType type : GameType.values()) {
             UserGameStats s = user.statsFor(type);
@@ -67,15 +64,16 @@ public class UserService {
             stats.put(type.name(), new GameStatsDTO(
                     s.getWins(), s.getLosses(), s.getRank().name(), remaining));
         }
-        response.setStats(stats);
-
-        // Legacy shape for the client that is deployed right now.
+        // The santase* fields and rank are the legacy shape, for the client that
+        // is deployed right now.
         UserGameStats santase = user.statsFor(GameType.SANTASE);
-        response.setSantaseWins(santase.getWins());
-        response.setSantaseLosses(santase.getLosses());
-        response.setRank(santase.getRank().name());
-
-        return response;
+        return ProfileResponse.builder()
+                .emailConfirmed(Boolean.TRUE.equals(user.getIsEmailConfirmed()))
+                .stats(stats)
+                .santaseWins(santase.getWins())
+                .santaseLosses(santase.getLosses())
+                .rank(santase.getRank().name())
+                .build();
     }
 
     public boolean confirmEmail() {
@@ -127,17 +125,17 @@ public class UserService {
             throw new EmailNotConfirmedException(user.getEmail());
         }
 
-        if (!passwordEncoder.matches(changePasswordRequest.getCurrentPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(changePasswordRequest.currentPassword(), user.getPassword())) {
             log.warn(LogConstants.INVALID_CURRENT_PASSWORD, username);
             throw new InvalidCredentialsException(username);
         }
 
-        if (passwordEncoder.matches(changePasswordRequest.getNewPassword(), user.getPassword())) {
+        if (passwordEncoder.matches(changePasswordRequest.newPassword(), user.getPassword())) {
             log.warn(LogConstants.SAME_PASSWORD, username);
             throw new InvalidPasswordException(ExceptionConstants.SAME_PASSWORD);
         }
 
-        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        user.setPassword(passwordEncoder.encode(changePasswordRequest.newPassword()));
         userRepository.save(user);
 
         log.info(LogConstants.PASSWORD_CHANGE_SUCCESS, username);
@@ -160,7 +158,7 @@ public class UserService {
             throw new EmailNotConfirmedException(user.getEmail());
         }
 
-        if (!passwordEncoder.matches(userDeletionRequest.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(userDeletionRequest.password(), user.getPassword())) {
             log.warn(LogConstants.INVALID_PASSWORD, username);
             throw new InvalidCredentialsException(username);
         }

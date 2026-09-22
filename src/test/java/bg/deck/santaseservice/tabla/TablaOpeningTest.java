@@ -6,12 +6,14 @@ import bg.deck.santaseservice.model.TablaGameState;
 import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.UserGameStats;
-import bg.deck.santaseservice.model.response.OpeningThrowDTO;
+import bg.deck.santaseservice.model.dto.OpeningThrowDTO;
 import bg.deck.santaseservice.model.response.TablaStateResponse;
 import bg.deck.santaseservice.repository.GameRepository;
 import bg.deck.santaseservice.service.RankingService;
+import bg.deck.santaseservice.service.TablaDiceService;
+import bg.deck.santaseservice.service.TablaUtilService;
 import bg.deck.santaseservice.service.WebSocketService;
-import bg.deck.santaseservice.tabla.engine.Dice;
+import bg.deck.santaseservice.model.tabla.Dice;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -79,10 +81,10 @@ class TablaOpeningTest {
         assertNotNull(state.getNextMoveTime(), "the opening window is running");
 
         TablaStateResponse view = service.buildState(game, "petko91");
-        assertTrue(view.isOpeningPhase());
+        assertTrue(view.openingPhase());
         assertFalse(view.isOnTurn());
-        assertNull(view.getOpeningMine());
-        assertNull(view.getOpeningOpponent());
+        assertNull(view.openingMine());
+        assertNull(view.openingOpponent());
     }
 
     @Test
@@ -97,15 +99,15 @@ class TablaOpeningTest {
 
         TablaStateResponse mine = service.buildState(game, "petko91");
         TablaStateResponse theirs = service.buildState(game, "ninja2011");
-        assertEquals(pair.d1(), mine.getOpeningMine());
-        assertNull(mine.getOpeningOpponent(), "the other die is not thrown yet");
-        assertEquals(pair.d1(), theirs.getOpeningOpponent());
-        assertNull(theirs.getOpeningMine());
+        assertEquals(pair.d1(), mine.openingMine());
+        assertNull(mine.openingOpponent(), "the other die is not thrown yet");
+        assertEquals(pair.d1(), theirs.openingOpponent());
+        assertNull(theirs.openingMine());
 
         // The opening die must not look like a roll.
-        assertNull(mine.getDie1());
-        assertNull(mine.getDie2());
-        assertNull(theirs.getDie1());
+        assertNull(mine.die1());
+        assertNull(mine.die2());
+        assertNull(theirs.die1());
         assertTrue(service.isOpening(game));
     }
 
@@ -149,7 +151,7 @@ class TablaOpeningTest {
         assertEquals(1, state.getTurnIndex(), "the next roll draws a fresh pair");
 
         // Both players see the throw that decided it.
-        List<OpeningThrowDTO> view = service.buildState(game, "petko91").getOpeningThrows();
+        List<OpeningThrowDTO> view = service.buildState(game, "petko91").openingThrows();
         assertEquals(List.of(new OpeningThrowDTO(pair.d1(), pair.d2())), view);
     }
 
@@ -172,7 +174,7 @@ class TablaOpeningTest {
 
         // The tie stays on the record, for both.
         assertEquals(List.of(new OpeningThrowDTO(tie.d1(), tie.d2())),
-                service.buildState(game, "ninja2011").getOpeningThrows());
+                service.buildState(game, "ninja2011").openingThrows());
 
         // Throw until it is settled; every throw comes from the seed, in order.
         int deciding = realDice.openingRollIndexUsed(seed, GAME_ID, 0);
@@ -185,7 +187,7 @@ class TablaOpeningTest {
         assertEquals(decided.d1(), state.getDie1());
         assertEquals(deciding + 1, state.getTurnIndex());
 
-        List<OpeningThrowDTO> record = service.buildState(game, "petko91").getOpeningThrows();
+        List<OpeningThrowDTO> record = service.buildState(game, "petko91").openingThrows();
         assertEquals(deciding + 1, record.size());
         record.subList(0, deciding).forEach(t -> assertEquals(t.mine(), t.opponent()));
         assertNotEquals(record.getLast().mine(), record.getLast().opponent());
@@ -234,13 +236,13 @@ class TablaOpeningTest {
 
         assertTrue(service.mustAct(game, white));
         assertTrue(service.mustAct(game, black));
-        assertNotNull(service.buildState(game, "petko91").getNextMoveTimeInSeconds());
+        assertNotNull(service.buildState(game, "petko91").nextMoveTimeInSeconds());
 
         service.openingThrow(game, white);
         assertFalse(service.mustAct(game, white), "white has thrown");
         assertTrue(service.mustAct(game, black));
-        assertNull(service.buildState(game, "petko91").getNextMoveTimeInSeconds(), "no clock for white now");
-        assertNotNull(service.buildState(game, "ninja2011").getNextMoveTimeInSeconds());
+        assertNull(service.buildState(game, "petko91").nextMoveTimeInSeconds(), "no clock for white now");
+        assertNotNull(service.buildState(game, "ninja2011").nextMoveTimeInSeconds());
 
         service.openingThrow(game, black);
         Player starter = game.getTablaState().getInTurnPlayer();
@@ -272,15 +274,15 @@ class TablaOpeningTest {
         service.openingThrow(game, white);
         service.openingThrow(game, black);
         TablaGameState state = game.getTablaState();
-        assertNotNull(service.buildState(game, "petko91").getOpeningThrows());
+        assertNotNull(service.buildState(game, "petko91").openingThrows());
 
         // What endTurn does when the starter confirms.
         state.clearTurn();
         state.setInTurnPlayer(game.getOpponent(state.getInTurnPlayer()));
 
-        assertNull(service.buildState(game, "petko91").getOpeningThrows());
-        assertNull(service.buildState(game, "ninja2011").getOpeningThrows());
-        assertFalse(service.buildState(game, "petko91").isOpeningPhase());
+        assertNull(service.buildState(game, "petko91").openingThrows());
+        assertNull(service.buildState(game, "ninja2011").openingThrows());
+        assertFalse(service.buildState(game, "petko91").openingPhase());
     }
 
     @Test
@@ -295,13 +297,13 @@ class TablaOpeningTest {
         state.setInTurnPlayer(white);
         state.setFirstTurnPlayer(white);
         state.setTurnIndex(1);
-        assertNull(service.buildState(game, "petko91").getOpeningThrows());
-        assertFalse(service.buildState(game, "petko91").isOpeningPhase());
+        assertNull(service.buildState(game, "petko91").openingThrows());
+        assertFalse(service.buildState(game, "petko91").openingPhase());
 
         // And after that throw: a fresh pair, which moved the turn index on.
         state.setTurnIndex(2);
         service.placeDice(game, white, realDice.roll(seed, GAME_ID, 1));
-        assertNull(service.buildState(game, "petko91").getOpeningThrows());
+        assertNull(service.buildState(game, "petko91").openingThrows());
     }
 
     /* ---------------- helpers ---------------- */

@@ -1,4 +1,4 @@
-package bg.deck.santaseservice.tabla.engine;
+package bg.deck.santaseservice.model.tabla;
 
 /**
  * One checker movement consuming one die, expressed in the mover's normalised

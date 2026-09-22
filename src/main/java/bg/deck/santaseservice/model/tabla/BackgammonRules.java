@@ -1,12 +1,13 @@
-package bg.deck.santaseservice.tabla.engine;
+package bg.deck.santaseservice.model.tabla;
+
+import bg.deck.santaseservice.enums.GameResultKind;
+import bg.deck.santaseservice.enums.Side;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The rules of Обикновена табла (standard backgammon / portes), with no

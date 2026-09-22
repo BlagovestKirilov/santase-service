@@ -1,7 +1,7 @@
-package bg.deck.santaseservice.model.response;
+package bg.deck.santaseservice.model.dto;
 
-import bg.deck.santaseservice.tabla.engine.Hop;
-import bg.deck.santaseservice.tabla.engine.MoverView;
+import bg.deck.santaseservice.model.tabla.Hop;
+import bg.deck.santaseservice.model.tabla.MoverView;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**

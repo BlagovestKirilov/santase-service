@@ -2,9 +2,6 @@ package bg.deck.santaseservice.model.request;
 
 import bg.deck.santaseservice.constant.ValidationConstants;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.UUID;
 
@@ -12,10 +9,17 @@ import java.util.UUID;
  * The token from the account-deletion email, sent in the body rather than the
  * query string so it does not end up in access logs or a {@code Referer}.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-public class ConfirmDeletionRequest {
-    @NotNull(message = ValidationConstants.TOKEN_NULL)
-    private UUID token;
+public record ConfirmDeletionRequest(
+        @NotNull(message = ValidationConstants.TOKEN_NULL)
+        UUID token
+) {
+
+    /**
+     * A record prints every component, and this one carries a secret —
+     * a password or a one-time token — that must never reach a log.
+     */
+    @Override
+    public String toString() {
+        return "ConfirmDeletionRequest[token=***]";
+    }
 }

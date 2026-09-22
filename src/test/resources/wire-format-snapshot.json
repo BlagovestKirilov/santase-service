@@ -1,0 +1,257 @@
+{
+  "AuthResponse" : {
+    "status" : "SUCCESS",
+    "message" : "ok",
+    "token" : "access",
+    "refreshToken" : "refresh"
+  },
+  "ErrorResponse" : {
+    "timestamp" : "2026-09-22T10:15:30Z",
+    "status" : 400,
+    "error" : "Bad Request",
+    "message" : "Невалиден ход.",
+    "details" : {
+      "field" : "reason"
+    },
+    "path" : "/tabla/move"
+  },
+  "SearchGameResponse.waiting" : {
+    "status" : "WAITING"
+  },
+  "SearchGameResponse.started" : {
+    "status" : "GAME_STARTED",
+    "gameId" : "11111111-2222-3333-4444-555555555555"
+  },
+  "CardDTO" : {
+    "id" : "11111111-2222-3333-4444-555555555555",
+    "suit" : "HEARTS",
+    "rank" : "ACE",
+    "points" : 11,
+    "isPlayable" : true,
+    "isLastDrawn" : true
+  },
+  "GameStateResponse" : {
+    "gameId" : "g1",
+    "deck" : [ {
+      "id" : "11111111-2222-3333-4444-555555555555",
+      "suit" : "HEARTS",
+      "rank" : "ACE",
+      "points" : 11,
+      "isPlayable" : true,
+      "isLastDrawn" : true
+    } ],
+    "trumpCard" : {
+      "id" : "11111111-2222-3333-4444-555555555555",
+      "suit" : "HEARTS",
+      "rank" : "ACE",
+      "points" : 11,
+      "isPlayable" : true,
+      "isLastDrawn" : true
+    },
+    "playedCard" : {
+      "id" : "11111111-2222-3333-4444-555555555555",
+      "suit" : "HEARTS",
+      "rank" : "ACE",
+      "points" : 11,
+      "isPlayable" : true,
+      "isLastDrawn" : true
+    },
+    "opponentPlayedCard" : {
+      "id" : "11111111-2222-3333-4444-555555555555",
+      "suit" : "HEARTS",
+      "rank" : "ACE",
+      "points" : 11,
+      "isPlayable" : true,
+      "isLastDrawn" : true
+    },
+    "opponentPlayerCardsCount" : 6,
+    "remainingCardsCount" : 12,
+    "firstPlayerUsername" : "petko91",
+    "firstPlayerResult" : 3,
+    "secondPlayerUsername" : "ninja2011",
+    "secondPlayerResult" : 2,
+    "isOnTurn" : true,
+    "isClosed" : true,
+    "winnerUsername" : "petko91",
+    "trickWinnerUsername" : "petko91",
+    "surrenderPlayerUsername" : "ninja2011",
+    "trickFirstPlayerScore" : 66,
+    "trickSecondPlayerScore" : 40,
+    "bonus" : 20,
+    "opponentPlayerBonus" : 40,
+    "inactivityCount" : 1,
+    "nextMoveTimeInSeconds" : 18
+  },
+  "HopDTO" : {
+    "from" : 24,
+    "to" : 18,
+    "die" : 6,
+    "isHit" : true,
+    "isBearOff" : false,
+    "isEntry" : false
+  },
+  "ComboHopDTO" : {
+    "from" : 24,
+    "to" : 13,
+    "vias" : [ 18 ],
+    "dice" : [ 6, 5 ]
+  },
+  "OpeningThrowDTO" : {
+    "mine" : 5,
+    "opponent" : 2
+  },
+  "TablaStateResponse" : {
+    "gameId" : "g1",
+    "gameType" : "TABLA",
+    "firstPlayerUsername" : "petko91",
+    "secondPlayerUsername" : "ninja2011",
+    "mySide" : "WHITE",
+    "points" : [ 2, 0, -5 ],
+    "myBar" : 1,
+    "opponentBar" : 2,
+    "myOff" : 3,
+    "opponentOff" : 4,
+    "myPipCount" : 167,
+    "opponentPipCount" : 160,
+    "isOnTurn" : true,
+    "die1" : 5,
+    "die2" : 2,
+    "remainingDice" : [ 5, 2 ],
+    "maxDiceUsable" : 2,
+    "usedDiceCount" : 0,
+    "mustConfirm" : true,
+    "noMovesAvailable" : true,
+    "legalHops" : [ {
+      "from" : 24,
+      "to" : 18,
+      "die" : 6,
+      "isHit" : true,
+      "isBearOff" : false,
+      "isEntry" : false
+    } ],
+    "comboHops" : [ {
+      "from" : 24,
+      "to" : 13,
+      "vias" : [ 18 ],
+      "dice" : [ 6, 5 ]
+    } ],
+    "pendingHops" : [ {
+      "from" : 24,
+      "to" : 18,
+      "die" : 6,
+      "isHit" : true,
+      "isBearOff" : false,
+      "isEntry" : false
+    } ],
+    "winnerUsername" : "petko91",
+    "surrenderPlayerUsername" : "ninja2011",
+    "resultKind" : "GAMMON",
+    "inactivityCount" : 1,
+    "nextMoveTimeInSeconds" : 40,
+    "openingPhase" : true,
+    "openingThrows" : [ {
+      "mine" : 5,
+      "opponent" : 2
+    } ],
+    "openingMine" : 5,
+    "openingOpponent" : 2,
+    "serverSeedHash" : "abc",
+    "serverSeed" : "def"
+  },
+  "GameStatsDTO" : {
+    "wins" : 10,
+    "losses" : 4,
+    "rank" : "GOLD",
+    "placementGamesRemaining" : 0
+  },
+  "ProfileResponse" : {
+    "santaseWins" : 10,
+    "santaseLosses" : 4,
+    "rank" : "GOLD",
+    "isEmailConfirmed" : true,
+    "stats" : {
+      "SANTASE" : {
+        "wins" : 10,
+        "losses" : 4,
+        "rank" : "GOLD",
+        "placementGamesRemaining" : 0
+      }
+    }
+  },
+  "CardRequest" : {
+    "readsBack" : {
+      "cardId" : "11111111-2222-3333-4444-555555555555"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[cardId:NotNull]"
+  },
+  "ChangeForgottenPasswordRequest" : {
+    "readsBack" : {
+      "newPassword" : "secret12",
+      "token" : "11111111-2222-3333-4444-555555555555"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[newPassword:NotBlank, token:NotNull]"
+  },
+  "ChangePasswordRequest" : {
+    "readsBack" : {
+      "currentPassword" : "secret12",
+      "newPassword" : "secret34"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[currentPassword:NotBlank, newPassword:NotBlank]"
+  },
+  "ConfirmDeletionRequest" : {
+    "readsBack" : {
+      "token" : "11111111-2222-3333-4444-555555555555"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[token:NotNull]"
+  },
+  "ForgotPasswordEmailRequest" : {
+    "readsBack" : {
+      "email" : "petko@example.com"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[email:NotBlank]"
+  },
+  "LoginRequest" : {
+    "readsBack" : {
+      "username" : "petko91",
+      "password" : "secret12"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[password:NotBlank, username:NotBlank]"
+  },
+  "MoveRequest" : {
+    "readsBack" : {
+      "from" : 24,
+      "die" : 6
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[die:NotNull, from:NotNull]"
+  },
+  "RefreshRequest" : {
+    "readsBack" : {
+      "refreshToken" : "refresh"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[refreshToken:NotBlank]"
+  },
+  "RegisterRequest" : {
+    "readsBack" : {
+      "username" : "petko91",
+      "password" : "secret12",
+      "email" : "petko@example.com"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[email:NotBlank, password:NotBlank, username:NotBlank]"
+  },
+  "UserDeletionRequest" : {
+    "readsBack" : {
+      "password" : "secret12"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[password:NotBlank]"
+  }
+}

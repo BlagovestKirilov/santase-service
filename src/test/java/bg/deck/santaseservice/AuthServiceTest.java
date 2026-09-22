@@ -3,14 +3,18 @@ package bg.deck.santaseservice;
 import bg.deck.santaseservice.exception.InvalidCredentialsException;
 import bg.deck.santaseservice.exception.InvalidTokenException;
 import bg.deck.santaseservice.exception.UserAlreadyExistsException;
-import bg.deck.santaseservice.model.Player;
+import bg.deck.santaseservice.enums.GameType;
+import bg.deck.santaseservice.model.EmailConfirmation;
 import bg.deck.santaseservice.model.User;
 import bg.deck.santaseservice.model.request.LoginRequest;
 import bg.deck.santaseservice.model.request.RegisterRequest;
 import bg.deck.santaseservice.model.response.AuthResponse;
+import bg.deck.santaseservice.repository.EmailConfirmationRepository;
+import bg.deck.santaseservice.repository.ForgotPasswordRepository;
 import bg.deck.santaseservice.repository.PlayerRepository;
 import bg.deck.santaseservice.repository.UserRepository;
 import bg.deck.santaseservice.service.AuthService;
+import bg.deck.santaseservice.service.EmailService;
 import bg.deck.santaseservice.service.JwtService;
 import bg.deck.santaseservice.util.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -32,8 +37,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +52,12 @@ class AuthServiceTest {
     private UserRepository userRepository;
     @Mock
     private PlayerRepository playerRepository;
+    @Mock
+    private ForgotPasswordRepository forgotPasswordRepository;
+    @Mock
+    private EmailConfirmationRepository emailConfirmationRepository;
+    @Mock
+    private EmailService emailService;
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
@@ -70,9 +83,7 @@ class AuthServiceTest {
         @Test
         void login_Success() {
             // given
-            LoginRequest request = new LoginRequest();
-            request.setUsername(username);
-            request.setPassword(password);
+            LoginRequest request = new LoginRequest(username, password);
 
             when(userRepository.findByUsername(username))
                     .thenReturn(Optional.of(testUser));
@@ -90,9 +101,9 @@ class AuthServiceTest {
 
             // then
             assertNotNull(response);
-            assertEquals(HttpStatus.OK.getReasonPhrase(), response.getStatus());
-            assertEquals("access-token", response.getToken());
-            assertEquals("refresh-token", response.getRefreshToken());
+            assertEquals(HttpStatus.OK.getReasonPhrase(), response.status());
+            assertEquals("access-token", response.token());
+            assertEquals("refresh-token", response.refreshToken());
             assertEquals("127.0.0.1", testUser.getIpAddress());
 
             verify(userRepository).findByUsername(username);
@@ -104,9 +115,7 @@ class AuthServiceTest {
         @Test
         void login_InvalidCredentials_ThrowsException() {
             // given
-            LoginRequest request = new LoginRequest();
-            request.setUsername(username);
-            request.setPassword("wrong-password");
+            LoginRequest request = new LoginRequest(username, "wrong-password");
 
             when(userRepository.findByUsername(username))
                     .thenReturn(Optional.of(testUser));
@@ -130,31 +139,44 @@ class AuthServiceTest {
     class RegisterTests {
         @Test
         void register_Success() {
-            RegisterRequest request = new RegisterRequest();
-            request.setUsername(username);
-            request.setPassword(password);
+            RegisterRequest request = new RegisterRequest(username, password, "test@example.com");
 
-            when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
+            testUser.setPassword(password);
+            when(userRepository.existsByUsername(username)).thenReturn(false);
+            when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
             when(userMapper.toEntity(request)).thenReturn(testUser);
-            when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
+            when(passwordEncoder.encode(password)).thenReturn("encodedPassword");
 
             AuthResponse response = authService.register(request);
 
             assertNotNull(response);
-            assertEquals(HttpStatus.OK.getReasonPhrase(), response.getStatus());
-            verify(userRepository).save(any(User.class));
-            verify(playerRepository).save(any(Player.class));
+            assertEquals(HttpStatus.OK.getReasonPhrase(), response.status());
+            assertEquals("encodedPassword", testUser.getPassword());
+            verify(userRepository, atLeastOnce()).save(testUser);
+
+            // One stats row per game type is created up front.
+            assertNotNull(testUser.statsFor(GameType.SANTASE));
+            assertNotNull(testUser.statsFor(GameType.TABLA));
+
+            // A pending confirmation is stored for the new user and emailed.
+            ArgumentCaptor<EmailConfirmation> confirmation = ArgumentCaptor.forClass(EmailConfirmation.class);
+            verify(emailConfirmationRepository).save(confirmation.capture());
+            assertEquals(testUser, confirmation.getValue().getUser());
+            verify(emailService).sendConfirmationEmail(confirmation.getValue());
+
+            // Seats are created per game, not at registration.
+            verifyNoInteractions(playerRepository);
         }
 
         @Test
         void register_UserExists_ThrowsException() {
-            RegisterRequest request = new RegisterRequest();
-            request.setUsername(username);
+            RegisterRequest request = new RegisterRequest(username, null, null);
 
-            when(userRepository.findByUsername(username)).thenReturn(Optional.of(testUser));
+            when(userRepository.existsByUsername(username)).thenReturn(true);
 
             assertThrows(UserAlreadyExistsException.class, () -> authService.register(request));
             verify(userRepository, never()).save(any());
+            verifyNoInteractions(emailConfirmationRepository, emailService);
         }
     }
 
@@ -172,8 +194,8 @@ class AuthServiceTest {
 
             AuthResponse response = authService.refreshToken(oldRefreshToken);
 
-            assertEquals("new-access-token", response.getToken());
-            assertEquals("new-refresh-token", response.getRefreshToken());
+            assertEquals("new-access-token", response.token());
+            assertEquals("new-refresh-token", response.refreshToken());
         }
 
         @Test

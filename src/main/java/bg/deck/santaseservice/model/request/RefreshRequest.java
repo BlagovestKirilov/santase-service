@@ -2,16 +2,18 @@ package bg.deck.santaseservice.model.request;
 
 import bg.deck.santaseservice.constant.ValidationConstants;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
-@ToString
-@Getter
-@Setter
-@NoArgsConstructor
-public class RefreshRequest {
-    @NotBlank(message = ValidationConstants.REFRESH_TOKEN_EMPTY)
-    private String refreshToken;
+public record RefreshRequest(
+        @NotBlank(message = ValidationConstants.REFRESH_TOKEN_EMPTY)
+        String refreshToken
+) {
+
+    /**
+     * A record prints every component, and this one carries a secret —
+     * a password or a one-time token — that must never reach a log.
+     */
+    @Override
+    public String toString() {
+        return "RefreshRequest[refreshToken=***]";
+    }
 }

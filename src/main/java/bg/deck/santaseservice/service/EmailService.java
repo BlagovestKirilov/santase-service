@@ -5,6 +5,7 @@ import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.model.EmailConfirmation;
 import bg.deck.santaseservice.model.ForgotPassword;
 import bg.deck.santaseservice.model.UserDeletion;
+import bg.deck.santaseservice.model.event.OutgoingEmail;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
@@ -58,10 +59,6 @@ public class EmailService {
     private final JavaMailSender javaMailSender;
     private final TemplateLoader templateLoader;
     private final ApplicationEventPublisher events;
-
-    /** One email, fully built, waiting to be sent. */
-    public record OutgoingEmail(String to, String subject, String html) {
-    }
 
     public void sendConfirmationEmail(EmailConfirmation emailConfirmation) {
         queue(emailConfirmation.getUser().getEmail(), DECK_BG_EMAIL_SUBJECT, buildConfirmationBody(emailConfirmation));

@@ -1,10 +1,10 @@
 package bg.deck.santaseservice.model;
 
 import bg.deck.santaseservice.model.base.BaseEntity;
-import bg.deck.santaseservice.tabla.engine.BoardState;
-import bg.deck.santaseservice.tabla.engine.Dice;
-import bg.deck.santaseservice.tabla.engine.Hop;
-import bg.deck.santaseservice.tabla.engine.Side;
+import bg.deck.santaseservice.model.tabla.BoardState;
+import bg.deck.santaseservice.model.tabla.Dice;
+import bg.deck.santaseservice.model.tabla.Hop;
+import bg.deck.santaseservice.enums.Side;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;

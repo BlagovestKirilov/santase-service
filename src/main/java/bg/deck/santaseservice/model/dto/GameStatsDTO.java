@@ -1,4 +1,4 @@
-package bg.deck.santaseservice.model.response;
+package bg.deck.santaseservice.model.dto;
 
 /**
  * One game's record for a player.

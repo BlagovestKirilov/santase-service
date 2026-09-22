@@ -1,4 +1,4 @@
-package bg.deck.santaseservice.tabla;
+package bg.deck.santaseservice.service;
 
 import bg.deck.santaseservice.enums.GameType;
 import bg.deck.santaseservice.exception.NoActiveGameFoundException;
@@ -10,14 +10,12 @@ import bg.deck.santaseservice.model.dto.HopDTO;
 import bg.deck.santaseservice.model.dto.OpeningThrowDTO;
 import bg.deck.santaseservice.model.response.TablaStateResponse;
 import bg.deck.santaseservice.repository.GameRepository;
-import bg.deck.santaseservice.service.RankingService;
-import bg.deck.santaseservice.service.WebSocketService;
-import bg.deck.santaseservice.tabla.engine.BackgammonRules;
-import bg.deck.santaseservice.tabla.engine.BoardState;
-import bg.deck.santaseservice.tabla.engine.Dice;
-import bg.deck.santaseservice.tabla.engine.GameResultKind;
-import bg.deck.santaseservice.tabla.engine.Hop;
-import bg.deck.santaseservice.tabla.engine.Side;
+import bg.deck.santaseservice.model.tabla.BackgammonRules;
+import bg.deck.santaseservice.model.tabla.BoardState;
+import bg.deck.santaseservice.model.tabla.Dice;
+import bg.deck.santaseservice.enums.GameResultKind;
+import bg.deck.santaseservice.model.tabla.Hop;
+import bg.deck.santaseservice.enums.Side;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;

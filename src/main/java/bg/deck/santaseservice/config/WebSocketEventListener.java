@@ -2,7 +2,7 @@ package bg.deck.santaseservice.config;
 
 import bg.deck.santaseservice.constant.LogConstants;
 import bg.deck.santaseservice.service.GameService;
-import bg.deck.santaseservice.tabla.TablaService;
+import bg.deck.santaseservice.service.TablaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.event.EventListener;

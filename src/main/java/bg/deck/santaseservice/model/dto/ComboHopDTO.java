@@ -1,6 +1,6 @@
-package bg.deck.santaseservice.model.response;
+package bg.deck.santaseservice.model.dto;
 
-import bg.deck.santaseservice.tabla.engine.ComboHop;
+import bg.deck.santaseservice.model.tabla.ComboHop;
 
 import java.util.List;
 

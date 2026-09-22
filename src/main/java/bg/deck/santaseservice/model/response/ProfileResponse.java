@@ -1,29 +1,28 @@
 package bg.deck.santaseservice.model.response;
 
+import bg.deck.santaseservice.model.dto.GameStatsDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Builder;
 
 import java.util.Map;
 
-@Getter
-@Setter
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ProfileResponse {
+public record ProfileResponse(
+        /**
+         * Kept, and still populated from the SANTASE stats row, purely so the
+         * currently deployed frontend keeps working. New clients should read
+         * {@link #stats} instead.
+         */
+        int santaseWins,
+        int santaseLosses,
+        String rank,
 
-    /**
-     * Kept, and still populated from the SANTASE stats row, purely so the
-     * currently deployed frontend keeps working. New clients should read
-     * {@link #stats} instead.
-     */
-    private int santaseWins;
-    private int santaseLosses;
-    private String rank;
+        @JsonProperty("isEmailConfirmed")
+        boolean emailConfirmed,
 
-    @JsonProperty("isEmailConfirmed")
-    private boolean emailConfirmed;
-
-    /** Per-game record, keyed by game type: SANTASE, TABLA. */
-    private Map<String, GameStatsDTO> stats;
+        /** Per-game record, keyed by game type: SANTASE, TABLA. */
+        Map<String, GameStatsDTO> stats
+) {
 }
