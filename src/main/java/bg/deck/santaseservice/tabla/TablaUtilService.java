@@ -7,6 +7,7 @@ import bg.deck.santaseservice.model.Player;
 import bg.deck.santaseservice.model.TablaGameState;
 import bg.deck.santaseservice.model.response.ComboHopDTO;
 import bg.deck.santaseservice.model.response.HopDTO;
+import bg.deck.santaseservice.model.response.OpeningThrowDTO;
 import bg.deck.santaseservice.model.response.TablaStateResponse;
 import bg.deck.santaseservice.repository.GameRepository;
 import bg.deck.santaseservice.service.RankingService;
@@ -80,27 +81,181 @@ public class TablaUtilService {
 
         game = gameRepository.save(game);
 
-        decideStarter(game);
+        // Nobody is on turn yet: each player throws one die first, with the same
+        // time — and the same warning — as any turn.
+        state.extendNextMoveTime();
         return gameRepository.save(game);
     }
 
+    /* ------------------------------------------------------------------
+       The opening roll
+       ------------------------------------------------------------------ */
+
     /**
-     * Consumes the opening roll to pick who begins, and nothing else.
+     * True until someone has won the opening roll: nobody is on turn yet.
      *
-     * The roll index is still advanced past it so the starter's own throw draws
-     * fresh, unseen dice from the committed seed.
+     * <p>The phase needs no column of its own. The turn index is the throw in
+     * progress, and die1/die2 hold whichever of its two dice have been thrown
+     * — the first player's (WHITE) and the second player's.
      */
-    private void decideStarter(Game game) {
+    public boolean isOpening(Game game) {
+        return game.getWinner() == null && game.getTablaState().getInTurnPlayer() == null;
+    }
+
+    /**
+     * One player throws their die of the opening roll. Returns false when they
+     * already had — a double tap changes nothing.
+     *
+     * <p>The value is not chosen here: every throw is derived from the seed that
+     * was committed when the game began, so tapping reveals the die, and nobody
+     * can throw again for a better one. Once both dice are out the throw is
+     * settled — see {@link #settleOpening}.
+     */
+    public boolean openingThrow(Game game, Player player) {
         TablaGameState state = game.getTablaState();
-        int index = diceService.openingRollIndexUsed(game.getServerSeed(), game.getId(), 0);
-        Dice dice = diceService.roll(game.getServerSeed(), game.getId(), index);
+        boolean first = player.equals(game.getFirstPlayer());
+        if ((first ? state.getDie1() : state.getDie2()) != null) {
+            return false;
+        }
 
-        // The higher single die decides who starts; first player is WHITE.
-        Player starter = dice.d1() > dice.d2() ? game.getFirstPlayer() : game.getSecondPlayer();
+        Dice pair = diceService.roll(game.getServerSeed(), game.getId(), state.getTurnIndex());
+        if (first) {
+            state.setDie1(pair.d1());
+        } else {
+            state.setDie2(pair.d2());
+        }
 
+        if (state.getDie1() != null && state.getDie2() != null) {
+            settleOpening(game, pair);
+        }
+        return true;
+    }
+
+    /**
+     * Both dice are out. Equal dice are thrown again by both players; otherwise
+     * the higher one starts, and starts by playing those two dice — no second
+     * throw. The turn index moves past every throw the opening used, so the next
+     * roll of the game still draws unseen dice from the seed.
+     */
+    private void settleOpening(Game game, Dice pair) {
+        TablaGameState state = game.getTablaState();
+        state.setTurnIndex(state.getTurnIndex() + 1);
+
+        if (pair.isDouble()) {
+            state.setDie1(null);
+            state.setDie2(null);
+            state.extendNextMoveTime();
+            return;
+        }
+
+        Player starter = pair.d1() > pair.d2() ? game.getFirstPlayer() : game.getSecondPlayer();
         state.setFirstTurnPlayer(starter);
-        state.setTurnIndex(index + 1);
         state.setInTurnPlayer(starter);
+        placeDice(game, starter, pair);
+    }
+
+    /**
+     * Whether this player has something to do right now, and so a clock
+     * running against them: on turn, or in the opening with their die still
+     * unthrown. Time extensions and the inactivity count use this, so the
+     * opening throw has exactly the time and warnings a turn has.
+     */
+    public boolean mustAct(Game game, Player player) {
+        TablaGameState state = game.getTablaState();
+        if (isOpening(game)) {
+            return (player.equals(game.getFirstPlayer()) ? state.getDie1() : state.getDie2()) == null;
+        }
+        return state.isInTurn(player);
+    }
+
+    /**
+     * Called by the scheduler when the opening window runs out. Returns true
+     * when the game was in its opening.
+     *
+     * <p>Nothing is ever thrown for a player. One who let the time run out
+     * while the other had thrown is treated as any player who let a turn run
+     * out: the game is lost. When neither has thrown, neither is singled out —
+     * the window is simply opened again, and either of them can come back and
+     * throw, or leave.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean openingTimedOut(UUID gameId) {
+        Game game = gameRepository.findById(gameId).orElse(null);
+        if (game == null || !isOpening(game)) {
+            return false;
+        }
+
+        TablaGameState state = game.getTablaState();
+        boolean firstThrew = state.getDie1() != null;
+        boolean secondThrew = state.getDie2() != null;
+
+        if (firstThrew != secondThrew) {
+            Player absent = firstThrew ? game.getSecondPlayer() : game.getFirstPlayer();
+            log.info("Табла {}: {} did not throw the opening die in time — the game is lost", gameId, absent.getUsername());
+            finishGame(game, game.getOpponent(absent), true);
+            return true;
+        }
+
+        log.info("Табла {}: neither player threw the opening die — the window opens again", gameId);
+        state.extendNextMoveTime();
+        gameRepository.save(game);
+        pushToBoth(game);
+        return true;
+    }
+
+    /**
+     * Puts a throw on the table for the player on turn: the dice, how many of
+     * them the position lets them use, and the board to undo back to. A normal
+     * roll and the opening roll both start a turn this way.
+     */
+    public void placeDice(Game game, Player player, Dice dice) {
+        TablaGameState state = game.getTablaState();
+        state.setDie1(dice.d1());
+        state.setDie2(dice.d2());
+        state.setRemainingDiceValues(dice.values());
+        state.setPendingHopList(List.of());
+        state.snapshotTurnStart();
+        state.setMaxDiceUsable(BackgammonRules.maxUsed(state.boardState(), sideOf(game, player), dice.values()));
+        // The clock is extended on roll and confirm only — see move()/undo().
+        state.extendNextMoveTime();
+    }
+
+    /**
+     * The finished throws of the opening roll, from this player's side: the
+     * ties so far while it is being thrown, then all of them — ties and the
+     * decider — while the starter plays the opening dice. Null from then on.
+     *
+     * <p>A game that began before the opening dice were played rolls a fresh
+     * pair on its first turn; that roll moves the turn index past the opening,
+     * so such a game never reports one.
+     */
+    private List<OpeningThrowDTO> openingThrows(Game game, Player player) {
+        TablaGameState state = game.getTablaState();
+        if (game.getWinner() != null) {
+            return null;
+        }
+
+        int completed;
+        if (isOpening(game)) {
+            // Every throw before the one in progress was a tie.
+            completed = state.getTurnIndex();
+        } else {
+            Player starter = state.getFirstTurnPlayer();
+            if (starter == null || !state.isInTurn(starter) || !state.isRolled()) {
+                return null;
+            }
+            int deciding = diceService.openingRollIndexUsed(game.getServerSeed(), game.getId(), 0);
+            if (state.getTurnIndex() != deciding + 1) {
+                return null;
+            }
+            completed = deciding + 1;
+        }
+
+        boolean first = player.equals(game.getFirstPlayer());
+        return IntStream.range(0, completed)
+                .mapToObj(i -> diceService.roll(game.getServerSeed(), game.getId(), i))
+                .map(d -> first ? new OpeningThrowDTO(d.d1(), d.d2()) : new OpeningThrowDTO(d.d2(), d.d1()))
+                .toList();
     }
 
     public Game findActiveGame(String username) {
@@ -153,7 +308,7 @@ public class TablaUtilService {
         }
 
         TablaGameState state = game.getTablaState();
-        if (state == null || !state.isRolled() || state.getMaxDiceUsable() != 0) {
+        if (state == null || isOpening(game) || !state.isRolled() || state.getMaxDiceUsable() != 0) {
             return false;
         }
 
@@ -209,7 +364,12 @@ public class TablaUtilService {
         BoardState board = state.boardState();
 
         boolean onTurn = state.isInTurn(player);
-        int[] remaining = state.remainingDiceValues();
+        // During the opening die1/die2 are the opening throw in progress, not a
+        // roll: they are sent as openingMine/openingOpponent instead, so the
+        // table's own dice row stays empty until somebody starts.
+        boolean opening = isOpening(game);
+        boolean first = player.equals(game.getFirstPlayer());
+        int[] remaining = opening ? new int[0] : state.remainingDiceValues();
         int used = state.usedDiceCount();
 
         List<HopDTO> legal = onTurn && game.getWinner() == null
@@ -242,8 +402,8 @@ public class TablaUtilService {
                 .myPipCount(board.pipCount(side))
                 .opponentPipCount(board.pipCount(other))
                 .isOnTurn(onTurn)
-                .die1(state.getDie1())
-                .die2(state.getDie2())
+                .die1(opening ? null : state.getDie1())
+                .die2(opening ? null : state.getDie2())
                 .remainingDice(Arrays.stream(remaining).boxed().toList())
                 .maxDiceUsable(state.getMaxDiceUsable())
                 .usedDiceCount(used)
@@ -258,7 +418,11 @@ public class TablaUtilService {
                         ? game.getSurrenderPlayer().getUsername() : null)
                 .resultKind(kind != null ? kind.name() : null)
                 .inactivityCount(player.getInactivityCount() != null ? player.getInactivityCount() : 0)
-                .nextMoveTimeInSeconds(onTurn && state.getNextMoveTime() != null
+                .openingPhase(opening)
+                .openingThrows(openingThrows(game, player))
+                .openingMine(opening ? (first ? state.getDie1() : state.getDie2()) : null)
+                .openingOpponent(opening ? (first ? state.getDie2() : state.getDie1()) : null)
+                .nextMoveTimeInSeconds(mustAct(game, player) && game.getWinner() == null && state.getNextMoveTime() != null
                         ? Math.toIntExact(Math.max(0,
                                 Duration.between(Instant.now(), state.getNextMoveTime()).getSeconds()))
                         : null)

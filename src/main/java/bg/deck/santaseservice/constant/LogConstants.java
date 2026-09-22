@@ -42,7 +42,7 @@ public class LogConstants {
     public static final String EMAIL_CONFIRM_ATTEMPT = "Attempting to send email confirmation for username={}";
     public static final String EMAIL_CONFIRMATION_NOT_FOUND = "Email confirmation record not found for username={}";
     public static final String EMAIL_CONFIRMATION_ALREADY_CONFIRMED = "Email sending skipped. Email already confirmed for username={}";
-    public static final String EMAIL_SEND_SUCCESS = "Email sent successfully for username={}";
+    public static final String EMAIL_SEND_SUCCESS = "Confirmation email queued for username={}";
     public static final String EMAIL_SEND_FAILED = "Failed to send email to email={}";
     public static final String PASSWORD_CHANGE_STARTED = "Password change attempt started for user {}";
     public static final String PASSWORD_CHANGE_SUCCESS = "Password successfully changed for user {}";
@@ -52,7 +52,7 @@ public class LogConstants {
     public static final String EMAIL_NOT_CONFIRMED = "Password change failed: email not confirmed for user {}";
     public static final String FORGOT_PASSWORD_STARTED = "Forgot password process started for email {}";
     public static final String FORGOT_PASSWORD_EMAIL_NOT_CONFIRMED = "Forgot password failed: email {} is not confirmed or does not exist.";
-    public static final String FORGOT_PASSWORD_EMAIL_SENT = "Forgot password email sent to {}";
+    public static final String FORGOT_PASSWORD_EMAIL_SENT = "Forgot password email queued for {}";
     public static final String PLAYER_INACTIVITY_TIMEOUT = "Player '{}' inactivity timeout in gameId={}, inactivityCount={}";
     public static final String PLAYER_FORCED_SURRENDER_BY_INACTIVITY = "Player '{}' forced to surrender due to inactivity in gameId={}";
     public static final String EXTEND_NEXT_MOVE_TIME = "Extended next move time for player '{}' in gameId={}";
@@ -66,7 +66,7 @@ public class LogConstants {
     public static final String USER_DELETION_SUCCESS = "User successfully deleted. username={}";
     public static final String USER_DELETION_EMAIL_REQUESTED = "User {} requested account deletion.";
     public static final String USER_DELETION_RECORD_CREATED = "UserDeletion record created for username={}, id={}";
-    public static final String USER_DELETION_EMAIL_SENT = "Account deletion confirmation email sent to {}";
+    public static final String USER_DELETION_EMAIL_SENT = "Account deletion email queued for {}";
     public static final String USER_DELETION_CONFIRM_ATTEMPT = "Confirm deletion attempted with token {}";
     public static final String USER_DELETION_TOKEN_INVALID = "Deletion confirmation failed: token not found or not pending.";
     public static final String USER_DELETION_CONFIRMED = "Deletion confirmed for username={}, proceeding with delete.";

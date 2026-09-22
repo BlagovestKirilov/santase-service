@@ -36,7 +36,6 @@ public class GlobalExceptionHandler {
             DeckSizeException.class,
             NoActiveGameFoundException.class,
             EmailConfirmationNotFoundException.class,
-            NotSendEmailException.class,
             EmailNotConfirmedException.class,
             UserNotFoundException.class,
             InvalidPasswordException.class,
