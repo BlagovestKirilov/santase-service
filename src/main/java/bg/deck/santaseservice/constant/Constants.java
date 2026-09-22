@@ -27,18 +27,19 @@ public class Constants {
     public static final String DECK_BG_SUCCESS_CONFIRMATION = "https://deck.bg/confirmation-success";
     public static final String DECK_BG_INVALID_LINK = "https://deck.bg/invalid";
     public static final String DECK_BG_EMAIL = "no.reply.deck.bg@gmail.com";
-    public static final String DECK_BG_PERSONAL = "DECK.BG";
-    public static final String DECK_BG_EMAIL_SUBJECT = "Потвърди своя профил в DECK.BG";
+    /** The brand as it is written everywhere else: DECK in capitals, .bg in lower case. */
+    public static final String DECK_BG_PERSONAL = "DECK.bg";
+    public static final String DECK_BG_EMAIL_SUBJECT = "Потвърди своя профил в DECK.bg";
     public static final String EMAIL_USERNAME = "{{USERNAME}}";
     public static final String EMAIL_CONFIRMATION_LINK = "{{CONFIRMATION_LINK}}";
     public static final String EMAIL_CONFIRMATION_TEMPLATE = "/templates/email-confirmation.html";
     public static final String USER = "USER";
     public static final String PROD = "prod";
     public static final String CF_CONNECTING_IP = "CF-Connecting-IP";
-    public static final String FORGOT_PASSWORD_SUBJECT = "Възстановяване на парола за DECK.BG";
+    public static final String FORGOT_PASSWORD_SUBJECT = "Нова парола за DECK.bg";
     public static final String DECK_BG_FORGOT_PASSWORD = "https://deck.bg/reset-password?token=";
     public static final String FORGOT_PASSWORD_TEMPLATE = "/templates/forgot-password.html";
-    public static final String DELETION_SUBJECT = "Потвърждение на изтриване на акаунт в DECK.BG";
+    public static final String DELETION_SUBJECT = "Изтриване на профила в DECK.bg";
     /**
      * The deletion link goes to a page on the site, which asks the person to
      * confirm and then POSTs the token. It used to point straight at the API
