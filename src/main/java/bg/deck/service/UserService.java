@@ -17,6 +17,7 @@ import bg.deck.model.dto.GameStatsDTO;
 import bg.deck.model.request.ChangePasswordRequest;
 import bg.deck.model.request.UserDeletionRequest;
 import bg.deck.model.response.ProfileResponse;
+import bg.deck.util.TokenFingerprint;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -147,7 +148,7 @@ public class UserService {
 
     @Transactional
     public boolean confirmDeletion(UUID userDeletionToken) {
-        log.info(LogConstants.USER_DELETION_CONFIRM_ATTEMPT, userDeletionToken);
+        log.info(LogConstants.USER_DELETION_CONFIRM_ATTEMPT, TokenFingerprint.of(userDeletionToken));
 
         Optional<UserDeletion> optionalUserDeletion = userDeletionService.findPending(userDeletionToken);
 
@@ -161,7 +162,7 @@ public class UserService {
         if (userDeletion.isOlderThan(Constants.LINK_VALIDITY)) {
             userDeletion.setStatus(UserDeletionStatus.EXPIRED);
             userDeletionService.save(userDeletion);
-            log.warn(LogConstants.LINK_EXPIRED, userDeletionToken);
+            log.warn(LogConstants.LINK_EXPIRED, TokenFingerprint.of(userDeletionToken));
             return false;
         }
 

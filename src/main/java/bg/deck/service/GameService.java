@@ -322,6 +322,14 @@ public class GameService {
         Game game = gameUtilService.findGameByUsername(username);
         Player player = game.getPlayerByUsername(username);
 
+        // A report sent before the clock ran out still counts. It looks like a
+        // way to buy thinking time, and it is — but only three times: the count
+        // it raises is what ends the game at three. Dropping the early ones
+        // instead removes that ceiling, because the client shows its Continue
+        // popup on any answer that is not a refusal and /extend-time only
+        // refuses once the count reaches three. Capping it properly means the
+        // server telling the client whether the timeout was accepted, and
+        // extend-time honouring that — a change on both sides, not here.
         int newInactivityCount = player.getInactivityCount() + 1;
         player.setInactivityCount(newInactivityCount);
 

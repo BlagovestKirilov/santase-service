@@ -22,7 +22,9 @@ import bg.deck.model.request.ForgotPasswordEmailRequest;
 import bg.deck.model.request.LoginRequest;
 import bg.deck.model.request.RegisterRequest;
 import bg.deck.model.response.AuthResponse;
+import bg.deck.util.TokenFingerprint;
 import bg.deck.util.UserMapper;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -109,7 +111,16 @@ public class AuthService {
     }
 
     public AuthResponse refreshToken(String refreshToken) {
-        String username = jwtService.extractUsername(refreshToken);
+        String username;
+        try {
+            username = jwtService.extractUsername(refreshToken);
+        } catch (JwtException | IllegalArgumentException ex) {
+            // Expired, tampered with, or not a token at all: one answer for all
+            // three, and none of them a fault of this server. It used to escape
+            // as a 500 carrying the library's exception name.
+            log.warn(LogConstants.REFRESH_TOKEN_UNREADABLE, ex.getClass().getSimpleName());
+            throw new InvalidTokenException();
+        }
 
         log.info(LogConstants.TRY_REFRESH_TOKEN, username);
 
@@ -132,13 +143,13 @@ public class AuthService {
     }
 
     public boolean confirmEmail(UUID confirmationToken) {
-        log.info(LogConstants.EMAIL_CONFIRMATION_ATTEMPT, confirmationToken);
+        log.info(LogConstants.EMAIL_CONFIRMATION_ATTEMPT, TokenFingerprint.of(confirmationToken));
 
         Optional<EmailConfirmation> optionalEmailConfirmation =
                 emailConfirmationService.findPending(confirmationToken);
 
         if (optionalEmailConfirmation.isEmpty()) {
-            log.warn(LogConstants.EMAIL_CONFIRMATION_TOKEN_NOT_FOUND, confirmationToken);
+            log.warn(LogConstants.EMAIL_CONFIRMATION_TOKEN_NOT_FOUND, TokenFingerprint.of(confirmationToken));
             return false;
         }
 
@@ -147,12 +158,12 @@ public class AuthService {
         if (emailConfirmation.isOlderThan(Constants.EMAIL_CONFIRMATION_VALIDITY)) {
             emailConfirmation.setStatus(EmailConfirmationStatus.EXPIRED);
             emailConfirmationService.save(emailConfirmation);
-            log.warn(LogConstants.LINK_EXPIRED, confirmationToken);
+            log.warn(LogConstants.LINK_EXPIRED, TokenFingerprint.of(confirmationToken));
             return false;
         }
 
         if (emailConfirmation.getUser() == null) {
-            log.warn(LogConstants.EMAIL_CONFIRMATION_TOKEN_NOT_FOUND, confirmationToken);
+            log.warn(LogConstants.EMAIL_CONFIRMATION_TOKEN_NOT_FOUND, TokenFingerprint.of(confirmationToken));
             return false;
         }
 
@@ -184,15 +195,20 @@ public class AuthService {
 
         log.info(LogConstants.FORGOT_PASSWORD_STARTED, email);
 
-        User user = userAccountService.findByEmail(email)
-                .filter(u -> Boolean.TRUE.equals(u.getIsEmailConfirmed()))
-                .orElseThrow(() -> {
-                    log.warn(LogConstants.FORGOT_PASSWORD_EMAIL_NOT_CONFIRMED, email);
-                    return new EmailNotConfirmedException(email);
-                });
+        Optional<User> account = userAccountService.findByEmail(email)
+                .filter(user -> Boolean.TRUE.equals(user.getIsEmailConfirmed()));
+
+        // An address with no account, and one with an unconfirmed account, get
+        // the same answer as one that exists: otherwise this endpoint tells
+        // anyone who asks which addresses are registered here, which is a list
+        // worth having before a password-guessing run.
+        if (account.isEmpty()) {
+            log.warn(LogConstants.FORGOT_PASSWORD_EMAIL_NOT_CONFIRMED, email);
+            return;
+        }
 
         // Asking again ends the link before it: only the newest one works.
-        ForgotPassword forgotPassword = forgotPasswordService.issueFor(user);
+        ForgotPassword forgotPassword = forgotPasswordService.issueFor(account.get());
 
         emailService.sendForgotPasswordEmail(forgotPassword);
 
@@ -243,7 +259,7 @@ public class AuthService {
         if (forgotPassword.isOlderThan(Constants.LINK_VALIDITY)) {
             forgotPassword.setStatus(ForgotPasswordStatus.EXPIRED);
             forgotPasswordService.save(forgotPassword);
-            log.warn(LogConstants.LINK_EXPIRED, token);
+            log.warn(LogConstants.LINK_EXPIRED, TokenFingerprint.of(token));
             throw new InvalidLinkException();
         }
 

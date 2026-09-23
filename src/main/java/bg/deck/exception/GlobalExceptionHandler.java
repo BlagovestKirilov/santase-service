@@ -162,10 +162,13 @@ public class GlobalExceptionHandler {
         log.error(ExceptionConstants.LOG_FORMAT_UNHANDLED, request.getHeader(CF_CONNECTING_IP), request.getRequestURI(),
                 ex.getClass().getSimpleName(), request.getRequestURI(), ex);
 
+        // The class name stays in the log, where it belongs, and out of the
+        // answer: it tells a caller which library failed and where. The one
+        // client that read it now gets a 401 from the refresh endpoint instead
+        // of a 500 to sift through.
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 ExceptionConstants.INTERNAL_SERVER_ERROR_MESSAGE,
-                ex.getClass().getSimpleName(),
                 request.getRequestURI()
         );
     }
