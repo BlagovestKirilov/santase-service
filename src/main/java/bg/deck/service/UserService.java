@@ -1,5 +1,6 @@
 package bg.deck.service;
 
+import bg.deck.constant.Constants;
 import bg.deck.constant.ExceptionConstants;
 import bg.deck.constant.LogConstants;
 import bg.deck.enums.EmailConfirmationStatus;
@@ -191,6 +192,14 @@ public class UserService {
         }
 
         UserDeletion userDeletion = optionalUserDeletion.get();
+
+        if (userDeletion.isOlderThan(Constants.LINK_VALIDITY)) {
+            userDeletion.setStatus(UserDeletionStatus.EXPIRED);
+            userDeletionRepository.save(userDeletion);
+            log.warn(LogConstants.LINK_EXPIRED, userDeletionToken);
+            return false;
+        }
+
         String username = userDeletion.getUser().getUsername();
 
         log.info(LogConstants.USER_DELETION_CONFIRMED, username);

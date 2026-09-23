@@ -10,6 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -28,6 +29,11 @@ public abstract class BaseEntity {
     @UpdateTimestamp
     @Column(nullable = false)
     private Instant updatedAt;
+
+    /** True once this row has been around longer than {@code age}. */
+    public boolean isOlderThan(Duration age) {
+        return createdAt != null && createdAt.isBefore(Instant.now().minus(age));
+    }
 
     @Override
     public final boolean equals(Object o) {

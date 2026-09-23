@@ -1,5 +1,6 @@
 package bg.deck.service;
 
+import bg.deck.constant.Constants;
 import bg.deck.constant.ExceptionConstants;
 import bg.deck.constant.LogConstants;
 import bg.deck.enums.EmailConfirmationStatus;
@@ -150,6 +151,13 @@ public class AuthService {
 
         EmailConfirmation emailConfirmation = optionalEmailConfirmation.get();
 
+        if (emailConfirmation.isOlderThan(Constants.EMAIL_CONFIRMATION_VALIDITY)) {
+            emailConfirmation.setStatus(EmailConfirmationStatus.EXPIRED);
+            emailConfirmationRepository.save(emailConfirmation);
+            log.warn(LogConstants.LINK_EXPIRED, confirmationToken);
+            return false;
+        }
+
         if (emailConfirmation.getUser() == null) {
             log.warn(LogConstants.EMAIL_CONFIRMATION_TOKEN_NOT_FOUND, confirmationToken);
             return false;
@@ -205,9 +213,7 @@ public class AuthService {
     }
 
     public void changeForgottenPassword(ChangeForgottenPasswordRequest changeForgottenPasswordRequest) {
-        ForgotPassword forgotPassword = forgotPasswordRepository
-                .findByForgotPasswordTokenAndStatus(changeForgottenPasswordRequest.token(), ForgotPasswordStatus.PENDING)
-                .orElseThrow(InvalidLinkException::new);
+        ForgotPassword forgotPassword = pendingForgotPassword(changeForgottenPasswordRequest.token());
 
         User user = forgotPassword.getUser();
 
@@ -233,8 +239,28 @@ public class AuthService {
     }
 
     public void verifyForgotPasswordToken(UUID token) {
-        forgotPasswordRepository
+        pendingForgotPassword(token);
+    }
+
+    /**
+     * The reset still open under this token, or no reset at all.
+     *
+     * <p>A link that has outlived {@link Constants#LINK_VALIDITY} is retired on
+     * the way past, so the row says what the answer already was and a second
+     * attempt takes the short path.
+     */
+    private ForgotPassword pendingForgotPassword(UUID token) {
+        ForgotPassword forgotPassword = forgotPasswordRepository
                 .findByForgotPasswordTokenAndStatus(token, ForgotPasswordStatus.PENDING)
                 .orElseThrow(InvalidLinkException::new);
+
+        if (forgotPassword.isOlderThan(Constants.LINK_VALIDITY)) {
+            forgotPassword.setStatus(ForgotPasswordStatus.EXPIRED);
+            forgotPasswordRepository.save(forgotPassword);
+            log.warn(LogConstants.LINK_EXPIRED, token);
+            throw new InvalidLinkException();
+        }
+
+        return forgotPassword;
     }
 }

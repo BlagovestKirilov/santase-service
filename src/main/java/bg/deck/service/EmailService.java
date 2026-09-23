@@ -22,6 +22,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Date;
 
 import static bg.deck.constant.Constants.DECK_BG_CONFIRM_EMAIL;
@@ -35,8 +36,11 @@ import static bg.deck.constant.Constants.DELETION_TEMPLATE;
 import static bg.deck.constant.Constants.EMAIL_CONFIRMATION_LINK;
 import static bg.deck.constant.Constants.EMAIL_CONFIRMATION_TEMPLATE;
 import static bg.deck.constant.Constants.EMAIL_USERNAME;
+import static bg.deck.constant.Constants.EMAIL_CONFIRMATION_VALIDITY;
+import static bg.deck.constant.Constants.EMAIL_VALIDITY;
 import static bg.deck.constant.Constants.FORGOT_PASSWORD_SUBJECT;
 import static bg.deck.constant.Constants.FORGOT_PASSWORD_TEMPLATE;
+import static bg.deck.constant.Constants.LINK_VALIDITY;
 import static bg.deck.constant.Constants.MAIL_EXECUTOR;
 
 /**
@@ -115,23 +119,39 @@ public class EmailService {
 
     private String buildConfirmationBody(EmailConfirmation emailConfirmation) {
         String link = DECK_BG_CONFIRM_EMAIL + emailConfirmation.getConfirmationToken();
-        return buildEmailBody(EMAIL_CONFIRMATION_TEMPLATE, emailConfirmation.getUser().getUsername(), link);
+        return buildEmailBody(EMAIL_CONFIRMATION_TEMPLATE, emailConfirmation.getUser().getUsername(), link,
+                EMAIL_CONFIRMATION_VALIDITY);
     }
 
     private String buildForgotPasswordBody(ForgotPassword forgotPassword) {
         String link = DECK_BG_FORGOT_PASSWORD + forgotPassword.getForgotPasswordToken();
-        return buildEmailBody(FORGOT_PASSWORD_TEMPLATE, forgotPassword.getUser().getUsername(), link);
+        return buildEmailBody(FORGOT_PASSWORD_TEMPLATE, forgotPassword.getUser().getUsername(), link, LINK_VALIDITY);
     }
 
     private String buildDeletionBody(UserDeletion userDeletion) {
         String link = DECK_BG_DELETE_ACCOUNT + userDeletion.getUserDeletionToken();
-        return buildEmailBody(DELETION_TEMPLATE, userDeletion.getUser().getUsername(), link);
+        return buildEmailBody(DELETION_TEMPLATE, userDeletion.getUser().getUsername(), link, LINK_VALIDITY);
     }
 
-    private String buildEmailBody(String templatePath, String username, String link) {
+    private String buildEmailBody(String templatePath, String username, String link, Duration validity) {
         String template = templateLoader.load(templatePath);
         return template
                 .replace(EMAIL_USERNAME, username)
+                .replace(EMAIL_VALIDITY, inWords(validity))
                 .replace(EMAIL_CONFIRMATION_LINK, link);
+    }
+
+    /**
+     * How long the link lasts, in Bulgarian, taken from the same constant the
+     * server checks against — so the email cannot promise one thing while the
+     * server does another.
+     */
+    static String inWords(Duration validity) {
+        if (validity.toMinutes() < 60) {
+            long minutes = validity.toMinutes();
+            return minutes + (minutes == 1 ? " минута" : " минути");
+        }
+        long hours = validity.toHours();
+        return hours + (hours == 1 ? " час" : " часа");
     }
 }
