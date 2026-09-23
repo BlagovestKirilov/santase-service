@@ -1,7 +1,6 @@
 package bg.deck.service;
 
 import bg.deck.enums.GameType;
-import bg.deck.exception.NoActiveGameFoundException;
 import bg.deck.model.Game;
 import bg.deck.model.Player;
 import bg.deck.model.TablaGameState;
@@ -9,7 +8,6 @@ import bg.deck.model.dto.ComboHopDTO;
 import bg.deck.model.dto.HopDTO;
 import bg.deck.model.dto.OpeningThrowDTO;
 import bg.deck.model.response.TablaStateResponse;
-import bg.deck.repository.GameRepository;
 import bg.deck.model.tabla.BackgammonRules;
 import bg.deck.model.tabla.BoardState;
 import bg.deck.model.tabla.Dice;
@@ -39,7 +37,7 @@ import java.util.stream.IntStream;
 @Service
 public class TablaUtilService {
 
-    private final GameRepository gameRepository;
+    private final GameUtilService gameUtilService;
     private final WebSocketService webSocketService;
     private final RankingService rankingService;
     private final TablaDiceService diceService;
@@ -77,12 +75,12 @@ public class TablaUtilService {
                 .serverSeedHash(diceService.hash(seed))
                 .build();
 
-        game = gameRepository.save(game);
+        game = gameUtilService.saveGame(game);
 
         // Nobody is on turn yet: each player throws one die first, with the same
         // time — and the same warning — as any turn.
         state.extendNextMoveTime();
-        return gameRepository.save(game);
+        return gameUtilService.saveGame(game);
     }
 
     /* ------------------------------------------------------------------
@@ -178,7 +176,7 @@ public class TablaUtilService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean openingTimedOut(UUID gameId) {
-        Game game = gameRepository.findById(gameId).orElse(null);
+        Game game = gameUtilService.findGameById(gameId).orElse(null);
         if (game == null || !isOpening(game)) {
             return false;
         }
@@ -196,7 +194,7 @@ public class TablaUtilService {
 
         log.info("Табла {}: neither player threw the opening die — the window opens again", gameId);
         state.extendNextMoveTime();
-        gameRepository.save(game);
+        gameUtilService.saveGame(game);
         pushToBoth(game);
         return true;
     }
@@ -257,10 +255,7 @@ public class TablaUtilService {
     }
 
     public Game findActiveGame(String username) {
-        return gameRepository.findActiveGamesByUsernameAndType(username, GameType.TABLA)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new NoActiveGameFoundException(username));
+        return gameUtilService.findGameByUsername(username, GameType.TABLA);
     }
 
     public Side sideOf(Game game, Player player) {
@@ -278,7 +273,7 @@ public class TablaUtilService {
         }
         game.setWinner(winner, opponentSurrendered);
         rankingService.updateRankingAfterGame(game);
-        gameRepository.save(game);
+        gameUtilService.saveGame(game);
         pushToBoth(game);
     }
 
@@ -300,7 +295,7 @@ public class TablaUtilService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean passIfBlocked(UUID gameId) {
-        Game game = gameRepository.findById(gameId).orElse(null);
+        Game game = gameUtilService.findGameById(gameId).orElse(null);
         if (game == null || game.getWinner() != null) {
             return false;
         }
@@ -315,7 +310,7 @@ public class TablaUtilService {
 
         state.clearTurn();
         state.setInTurnPlayer(game.getOpponent(blocked));
-        gameRepository.save(game);
+        gameUtilService.saveGame(game);
         pushToBoth(game);
         return true;
     }
@@ -326,7 +321,7 @@ public class TablaUtilService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void surrenderByInactivity(UUID gameId) {
-        Game game = gameRepository.findById(gameId).orElse(null);
+        Game game = gameUtilService.findGameById(gameId).orElse(null);
         if (game == null || game.getWinner() != null) {
             return;
         }

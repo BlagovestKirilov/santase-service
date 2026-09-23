@@ -11,6 +11,7 @@ public class LogConstants {
     public static final String TRY_LOGIN_LOG = "Trying to login account with username {}";
     public static final String SUCCESSFUL_REGISTER_LOG = "Successfully registered user: {}";
     public static final String TRY_REGISTER_LOG = "Trying to register account with username {}";
+    public static final String REFRESH_TOKEN_UNREADABLE = "Refresh refused: the token could not be read ({})";
     public static final String TRY_REFRESH_TOKEN = "Trying to refresh token user: {}";
     public static final String TRY_GET_PROFILE = "Trying to get profile user: {}";
     public static final String GET_STATE_LOG = "Trying to get game state: {}";
@@ -35,12 +36,11 @@ public class LogConstants {
     public static final String FINISH_GAME_SURRENDER_INACTIVITY = "User {} has surrendered due to inactivity. Opponent {} wins the game.";
     public static final String FINISH_GAME = "Game finished gameId={} winner={} result={}({}) vs {}({}).";
     public static final String EMAIL_SENT_LOG = "Email sent successfully to email {}";
-    public static final String EMAIL_CONFIRMATION_ATTEMPT = "Attempting email confirmation with token {}";
-    public static final String EMAIL_CONFIRMATION_TOKEN_NOT_FOUND = "Email confirmation failed. Token not found: {}";
+    public static final String EMAIL_CONFIRMATION_ATTEMPT = "Attempting email confirmation. link={}";
+    public static final String EMAIL_CONFIRMATION_TOKEN_NOT_FOUND = "Email confirmation failed: no such open link. link={}";
     public static final String EMAIL_ALREADY_CONFIRMED = "Email already confirmed. Token={}, username={}";
     public static final String EMAIL_CONFIRMED_SUCCESSFULLY = "Email confirmed successfully. Token={}, username={}";
     public static final String EMAIL_CONFIRM_ATTEMPT = "Attempting to send email confirmation for username={}";
-    public static final String EMAIL_CONFIRMATION_NOT_FOUND = "Email confirmation record not found for username={}";
     public static final String EMAIL_CONFIRMATION_ALREADY_CONFIRMED = "Email sending skipped. Email already confirmed for username={}";
     public static final String EMAIL_SEND_SUCCESS = "Confirmation email queued for username={}";
     public static final String EMAIL_SEND_FAILED = "Failed to send email to email={}";
@@ -50,6 +50,10 @@ public class LogConstants {
     public static final String INVALID_CURRENT_PASSWORD = "Password change failed: invalid current password for user {}";
     public static final String SAME_PASSWORD = "Password change failed: new password equals old password for user {}";
     public static final String EMAIL_NOT_CONFIRMED = "Password change failed: email not confirmed for user {}";
+    public static final String LINKS_EXPIRED = "Retired {} expired links: {} password resets, {} email confirmations, {} account deletions. Took {} ms";
+    public static final String LINKS_EXPIRED_NONE = "No links had run out. Took {} ms";
+    public static final String SCHEDULED_JOB_FAILED = "A scheduled job failed. The schedule carries on.";
+    public static final String LINK_EXPIRED = "Link refused: it had run out before it was opened. link={}";
     public static final String FORGOT_PASSWORD_STARTED = "Forgot password process started for email {}";
     public static final String FORGOT_PASSWORD_EMAIL_NOT_CONFIRMED = "Forgot password failed: email {} is not confirmed or does not exist.";
     public static final String FORGOT_PASSWORD_EMAIL_SENT = "Forgot password email queued for {}";
@@ -67,7 +71,7 @@ public class LogConstants {
     public static final String USER_DELETION_EMAIL_REQUESTED = "User {} requested account deletion.";
     public static final String USER_DELETION_RECORD_CREATED = "UserDeletion record created for username={}, id={}";
     public static final String USER_DELETION_EMAIL_SENT = "Account deletion email queued for {}";
-    public static final String USER_DELETION_CONFIRM_ATTEMPT = "Confirm deletion attempted with token {}";
+    public static final String USER_DELETION_CONFIRM_ATTEMPT = "Confirm deletion attempted. link={}";
     public static final String USER_DELETION_TOKEN_INVALID = "Deletion confirmation failed: token not found or not pending.";
     public static final String USER_DELETION_CONFIRMED = "Deletion confirmed for username={}, proceeding with delete.";
     public static final String INVALID_PASSWORD = "Invalid password for user {}";

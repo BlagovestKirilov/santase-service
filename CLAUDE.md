@@ -1,0 +1,144 @@
+# SantaseService — how the layers are arranged
+
+`bg.deck`: `controller`, `service`, `scheduler`, `repository`, `model`,
+`security`, `config`, `constant`, `enums`, `exception`, `util`.
+
+## One repository, one service
+
+**A repository is injected into exactly one class: the service that owns that
+table. Everything else — other services, schedulers, controllers — goes through
+that service.**
+
+| Repository | Its service |
+|---|---|
+| `UserRepository` | `UserAccountService` |
+| `PlayerRepository` | `PlayerService` |
+| `ForgotPasswordRepository` | `ForgotPasswordService` |
+| `EmailConfirmationRepository` | `EmailConfirmationService` |
+| `UserDeletionRepository` | `UserDeletionService` |
+| `GameRepository`, `GameStateRepository` | `GameUtilService` |
+| `DeletedUserRepository` | `UserUtilService` |
+
+Check it in one line — every repository must print `1`:
+
+```bash
+grep -rc "private final ForgotPasswordRepository " --include=*.java src/main/java | grep -v ":0"
+```
+
+### Why
+
+Before this rule, seven classes reached into nine repositories and the same
+table was written from four places. Each caller carried its own copy of the
+rules about that table, so the copies drifted: the "only the newest link works"
+sequence existed three times, and a scheduled job read three tables it had no
+other business with.
+
+### What the owner is for
+
+The owner is not a pass-through. Logic that belongs to the table lives in it,
+so a caller cannot get it half right:
+
+- `issueFor(user)` ends the previous link and makes a new one — one call,
+  because a second live link is a second way into the account.
+- `reassignToDeletedUser(user, tombstone)` lets go of a user without losing the
+  row, which is the whole of `UserUtilService.deleteUser` now.
+- `requireByUsername(name)` is the log-and-throw that three services had each
+  written out.
+
+If a method on the owner reads like the repository method it wraps, ask whether
+the caller's surrounding lines belong in the owner instead.
+
+### Adding a repository
+
+Give it a service of its own in the same commit, and let nothing else inject
+it. If two services both seem to need the table, one of them owns it and the
+other asks.
+
+### Keep the graph acyclic
+
+An owner that everyone needs must depend on as little as possible.
+`UserRepository` is owned by `UserAccountService`, which depends on nothing,
+rather than by `UserService`: `UserService` already depends on
+`GameUtilService`, which needs accounts, so that would have closed a circle and
+the context would not start. Check before adding a dependency between services.
+
+## One top-level type per file
+
+**No nested classes, records, interfaces or enums.** A type that is worth
+naming is worth its own file — a nested one is invisible to anyone scanning the
+package, and it cannot be found by the name they would search for.
+
+`SchedulingProperties` used to carry a nested `Job`; it is now
+`JobSchedule.java`, beside it. Bound configuration nests perfectly well across
+files: `SchedulingProperties` has a `JobSchedule` component and Spring binds
+`deck.scheduling.expired-links.interval` straight into it.
+
+Check it (`src/main/java` only — see below):
+
+```bash
+grep -rn "^    \(public\|private\|protected\|static\)\?.*\(class\|record\|interface\|enum\) [A-Z]" --include=*.java src/main/java
+```
+
+Tests are the exception, and only for JUnit's own idioms: a `@Nested` class
+groups cases and means nothing outside its test, and a small fake or capturing
+appender belongs beside the test that needs it. Neither is a type anyone would
+go looking for.
+
+## No unused imports
+
+**An import nothing refers to is deleted in the commit that orphaned it.**
+`javac` never complains about one, so they accumulate quietly and then lie: an
+import of a repository in a service that no longer touches it reads like a
+dependency that is still there.
+
+The scan, over main and tests together:
+
+```bash
+python - src <<'EOF'
+import io, pathlib, re, sys
+for f in sorted(pathlib.Path(sys.argv[1]).rglob('*.java')):
+    s = io.open(f, encoding='utf-8').read()
+    body = re.sub(r'^import .*$', '', s, flags=re.M)
+    for imported in re.findall(r'^import (?:static )?([\w.]+);', s, flags=re.M):
+        name = imported.split('.')[-1]
+        if name != '*' and not re.search(r'\b%s\b' % re.escape(name), body):
+            print(f'{f}: {imported}')
+EOF
+```
+
+It counts a name mentioned anywhere outside the import block as used, including
+in a javadoc `{@link}` — removing one of those breaks the build, so the scan
+errs towards keeping an import rather than dropping it.
+
+Two things that hide an unused import:
+
+- **A stale import survives a refactor silently.** The last one found had been
+  dead since the JWT filter stopped writing its own 401.
+- **A scripted edit can no-op.** Most files here use CRLF; a replacement
+  written with `\n` matches nothing and reports success anyway. Match the
+  file's endings, then re-read to confirm the edit landed.
+
+## Records in `config`
+
+**A type that only carries values is a record. A type that builds beans stays a
+class.**
+
+- Records: `EmailProperties`, `SchedulingProperties`, `JobSchedule` — read once
+  at startup, never written to.
+- Classes: `Config`, `SchedulingConfig`, `ExecutorConfig`, `DevCorsConfig`,
+  `WebSocketConfig`, `WebSocketEventListener`, `TemplateLoader`.
+
+The line is not taste. Spring proxies a `@Configuration` class with CGLIB,
+which subclasses it, and **a record is final** — a record annotated
+`@Configuration` fails at startup. So a `@ConfigurationProperties` record is
+registered by the configuration that needs it, with
+`@EnableConfigurationProperties(TheRecord.class)`, exactly as `Config` does for
+`EmailProperties` and `SchedulingConfig` does for `SchedulingProperties`.
+
+`TemplateLoader` is a class for the other reason: it holds no state at all, it
+is behaviour, and a record with no components says nothing about it.
+
+## Everything else
+
+The umbrella `CLAUDE.md` one directory up holds the cross-repo contract with
+`santase-client`, the pipelines and the environment variables.

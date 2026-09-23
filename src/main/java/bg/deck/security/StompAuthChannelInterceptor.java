@@ -63,12 +63,10 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         String header = accessor.getFirstNativeHeader(HttpHeaders.AUTHORIZATION);
 
         if (header == null || !header.startsWith(BEARER)) {
-            // No header: a client from the previous build, authenticated by the
-            // handshake. Accept it, but only if that actually happened.
-            if (accessor.getUser() == null) {
-                throw new BadCredentialsException("The game socket needs a token.");
-            }
-            return;
+            // The handshake authenticates nobody: the token used to ride in the
+            // URL, where every access log kept a copy, and that branch is gone.
+            // A CONNECT frame carries its own token or it is refused.
+            throw new BadCredentialsException("The game socket needs a token.");
         }
 
         String jwt = header.substring(BEARER.length());

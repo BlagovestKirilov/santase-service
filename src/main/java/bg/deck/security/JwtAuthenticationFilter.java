@@ -20,9 +20,6 @@ import java.io.IOException;
 import java.util.List;
 
 import static bg.deck.constant.Constants.BEARER;
-import static bg.deck.constant.Constants.TOKEN;
-import static bg.deck.constant.Constants.WEB_SOCKET_ENDPOINT;
-import static bg.deck.constant.ExceptionConstants.INVALID_TOKEN;
 
 @Log4j2
 @Component
@@ -36,16 +33,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-
-        // TRANSITIONAL. The game socket authenticates on its STOMP CONNECT
-        // frame now (see StompAuthChannelInterceptor), so the token no longer
-        // travels in the URL where logs pick it up. A client from the previous
-        // build still puts it there, and is still let through until those are
-        // gone; then this branch goes with it.
-        if (request.getRequestURI().startsWith(WEB_SOCKET_ENDPOINT)) {
-            String parameter = request.getParameter(TOKEN);
-            authHeader = parameter == null ? null : BEARER.concat(parameter);
-        }
 
         if (authHeader == null || !authHeader.startsWith(BEARER)) {
             filterChain.doFilter(request, response);

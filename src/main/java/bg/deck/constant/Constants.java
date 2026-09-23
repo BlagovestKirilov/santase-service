@@ -2,6 +2,8 @@ package bg.deck.constant;
 
 import lombok.experimental.UtilityClass;
 
+import java.time.Duration;
+
 @UtilityClass
 public class Constants {
     public static final String KING = "KING";
@@ -38,6 +40,20 @@ public class Constants {
     public static final String DECK_BG_EMAIL_SUBJECT = "Потвърди своя профил в DECK.bg";
     /** The one thread account emails are sent on, so they leave in order. */
     public static final String MAIL_EXECUTOR = "mailExecutor";
+    /**
+     * How long a password-reset or account-deletion link works. Both are asked
+     * for and acted on in the same minute, so a link that outlives the person
+     * reading it is only a link someone else can find later in the mailbox.
+     */
+    public static final Duration LINK_VALIDITY = Duration.ofMinutes(15);
+    /**
+     * How long a new player's confirmation link works. Longer on purpose: that
+     * one is not asked for at a moment of their choosing — someone signs up and
+     * comes back to their mail later — and a quarter of an hour would lock them
+     * out of the account they just made.
+     */
+    public static final Duration EMAIL_CONFIRMATION_VALIDITY = Duration.ofHours(24);
+    public static final String EMAIL_VALIDITY = "{{VALIDITY}}";
     public static final String EMAIL_USERNAME = "{{USERNAME}}";
     public static final String EMAIL_CONFIRMATION_LINK = "{{CONFIRMATION_LINK}}";
     public static final String EMAIL_CONFIRMATION_TEMPLATE = "/templates/email-confirmation.html";

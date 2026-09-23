@@ -4,6 +4,7 @@ import bg.deck.config.TemplateLoader;
 import bg.deck.model.EmailConfirmation;
 import bg.deck.model.ForgotPassword;
 import bg.deck.model.User;
+import bg.deck.model.UserDeletion;
 import bg.deck.model.event.OutgoingEmail;
 import jakarta.mail.Session;
 import jakarta.mail.internet.InternetAddress;
@@ -87,6 +88,7 @@ class EmailServiceTest {
         String html = htmlOf(message);
         assertTrue(html.contains("petko91"), "username filled in");
         assertTrue(html.contains(confirmation.getConfirmationToken().toString()), "link carries the token");
+        assertTrue(html.contains("Линкът важи 24 часа."), "and says how long it lasts");
         assertTrue(!html.contains("{{"), "no placeholder left");
     }
 
@@ -112,6 +114,32 @@ class EmailServiceTest {
 
         pause(600);
         verify(mailSender, never()).send(any(MimeMessage.class));
+    }
+
+    @Test
+    @DisplayName("a deletion email gives the same fifteen minutes")
+    void deletionEmailStatesItsValidity() throws Exception {
+        emailService.sendDeletionEmail(new UserDeletion(user()));
+
+        ArgumentCaptor<MimeMessage> sent = ArgumentCaptor.forClass(MimeMessage.class);
+        verify(mailSender, timeout(3000)).send(sent.capture());
+
+        String html = htmlOf(sent.getValue());
+        assertTrue(html.contains("Линкът важи 15 минути."), "the email promises what the server keeps");
+        assertTrue(!html.contains("{{"), "no placeholder left");
+    }
+
+    @Test
+    @DisplayName("a reset email gives the fifteen minutes the server allows")
+    void resetEmailStatesItsValidity() throws Exception {
+        emailService.sendForgotPasswordEmail(new ForgotPassword(user()));
+
+        ArgumentCaptor<MimeMessage> sent = ArgumentCaptor.forClass(MimeMessage.class);
+        verify(mailSender, timeout(3000)).send(sent.capture());
+
+        String html = htmlOf(sent.getValue());
+        assertTrue(html.contains("Линкът важи 15 минути."), "the email promises what the server keeps");
+        assertTrue(!html.contains("{{"), "no placeholder left");
     }
 
     @Test

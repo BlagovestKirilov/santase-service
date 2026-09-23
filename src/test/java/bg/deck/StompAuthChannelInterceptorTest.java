@@ -96,14 +96,17 @@ class StompAuthChannelInterceptorTest {
                     () -> interceptor.preSend(message, mock(org.springframework.messaging.MessageChannel.class)));
         }
 
-        /** A client from the previous build, authenticated by the handshake. */
+        /**
+         * The handshake authenticates nobody any more. It used to, from a token
+         * in the URL, which is how access tokens ended up in the access logs —
+         * so a CONNECT without a token of its own is refused, principal or not.
+         */
         @Test
-        void noTokenButAHandshakePrincipalStillConnects() {
+        void aHandshakePrincipalIsNotEnoughWithoutAToken() {
             Message<byte[]> message = frame(StompCommand.CONNECT, null, null, connected());
 
-            interceptor.preSend(message, mock(org.springframework.messaging.MessageChannel.class));
-
-            assertEquals("petko91", StompHeaderAccessor.wrap(message).getUser().getName());
+            assertThrows(BadCredentialsException.class,
+                    () -> interceptor.preSend(message, mock(org.springframework.messaging.MessageChannel.class)));
         }
     }
 

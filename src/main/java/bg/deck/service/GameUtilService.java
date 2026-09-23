@@ -19,8 +19,6 @@ import bg.deck.model.User;
 import bg.deck.model.response.SearchGameResponse;
 import bg.deck.repository.GameRepository;
 import bg.deck.repository.GameStateRepository;
-import bg.deck.repository.PlayerRepository;
-import bg.deck.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,9 +40,9 @@ import static bg.deck.constant.Constants.QUEEN;
 @Service
 public class GameUtilService {
     private final GameRepository gameRepository;
-    private final PlayerRepository playerRepository;
+    private final PlayerService playerService;
     private final GameStateRepository gameStateRepository;
-    private final UserRepository userRepository;
+    private final UserAccountService userAccountService;
     private final WebSocketUtilService webSocketUtilService;
     private final WebSocketService webSocketService;
     private final RankingService rankingService;
@@ -79,8 +77,18 @@ public class GameUtilService {
                 .orElseThrow(() -> new NoActiveGameFoundException(username));
     }
 
-    public void saveGame(Game game) {
-        gameRepository.save(game);
+    /** The game with this id, if it is still there. */
+    public Optional<Game> findGameById(UUID gameId) {
+        return gameRepository.findById(gameId);
+    }
+
+    /** Every game still being played. */
+    public List<Game> findAllActiveGames() {
+        return gameRepository.findAllActive();
+    }
+
+    public Game saveGame(Game game) {
+        return gameRepository.save(game);
     }
 
     public void saveGameState(GameState gameState) {
@@ -100,7 +108,7 @@ public class GameUtilService {
      * a live Santase game no longer blocks a табла search.
      */
     public boolean checkIfUserExistsAndIsAvailable(String username, GameType gameType) {
-        Optional<UUID> gameId = userRepository.findActiveGameIdByUsernameAndType(username, gameType);
+        Optional<UUID> gameId = userAccountService.findActiveGameId(username, gameType);
 
         if (gameId.isPresent()) {
             webSocketService.notifyGameSearch(username, gameType, SearchGameResponse.started(gameId.get()));
@@ -113,9 +121,9 @@ public class GameUtilService {
     /** Creates a fresh seat for a new game. */
     @Transactional
     public Player newPlayerFor(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userAccountService.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException(username));
-        return playerRepository.save(Player.builder().user(user).build());
+        return playerService.save(Player.builder().user(user).build());
     }
 
     public Game findGame(String username) {

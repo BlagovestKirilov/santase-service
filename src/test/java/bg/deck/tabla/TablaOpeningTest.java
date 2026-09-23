@@ -8,7 +8,7 @@ import bg.deck.model.User;
 import bg.deck.model.UserGameStats;
 import bg.deck.model.dto.OpeningThrowDTO;
 import bg.deck.model.response.TablaStateResponse;
-import bg.deck.repository.GameRepository;
+import bg.deck.service.GameUtilService;
 import bg.deck.service.RankingService;
 import bg.deck.service.TablaDiceService;
 import bg.deck.service.TablaUtilService;
@@ -46,15 +46,15 @@ class TablaOpeningTest {
 
     private final TablaDiceService realDice = new TablaDiceService();
 
-    private GameRepository gameRepository;
+    private GameUtilService gameUtilService;
     private Player white;
     private Player black;
 
     @BeforeEach
     void setUp() {
-        gameRepository = mock(GameRepository.class);
+        gameUtilService = mock(GameUtilService.class);
         // Persisting is what assigns the id; the dice are derived from it.
-        when(gameRepository.save(any())).thenAnswer(invocation -> {
+        when(gameUtilService.saveGame(any())).thenAnswer(invocation -> {
             Game game = invocation.getArgument(0);
             if (game.getId() == null) setId(game, GAME_ID);
             return game;
@@ -199,7 +199,7 @@ class TablaOpeningTest {
     @DisplayName("nothing is ever thrown for a player: one who lets the time run out loses, as with any turn")
     void aPlayerWhoDoesNotThrowLoses() {
         Game game = start(seedWhere(false));
-        when(gameRepository.findById(GAME_ID)).thenReturn(Optional.of(game));
+        when(gameUtilService.findGameById(GAME_ID)).thenReturn(Optional.of(game));
         TablaUtilService service = service();
 
         service.openingThrow(game, white);
@@ -213,7 +213,7 @@ class TablaOpeningTest {
     @DisplayName("when neither has thrown, neither is singled out — the window opens again")
     void neitherThrewNobodyLoses() throws Exception {
         Game game = start(seedWhere(false));
-        when(gameRepository.findById(GAME_ID)).thenReturn(Optional.of(game));
+        when(gameUtilService.findGameById(GAME_ID)).thenReturn(Optional.of(game));
         TablaUtilService service = service();
         java.time.Instant before = game.getTablaState().getNextMoveTime();
 
@@ -250,7 +250,7 @@ class TablaOpeningTest {
         assertFalse(service.mustAct(game, game.getOpponent(starter)));
 
         // Past the opening, the scheduler goes back to the ordinary rules.
-        when(gameRepository.findById(GAME_ID)).thenReturn(Optional.of(game));
+        when(gameUtilService.findGameById(GAME_ID)).thenReturn(Optional.of(game));
         assertFalse(service.openingTimedOut(GAME_ID));
     }
 
@@ -258,7 +258,7 @@ class TablaOpeningTest {
     @DisplayName("the blocked-roll pass leaves the opening alone")
     void aBlockedPassIsNotAnOpening() {
         Game game = start(seedWhere(false));
-        when(gameRepository.findById(GAME_ID)).thenReturn(Optional.of(game));
+        when(gameUtilService.findGameById(GAME_ID)).thenReturn(Optional.of(game));
 
         assertFalse(service().passIfBlocked(GAME_ID));
         assertTrue(service().isOpening(game));
@@ -323,7 +323,7 @@ class TablaOpeningTest {
     }
 
     private TablaUtilService service(TablaDiceService dice) {
-        return new TablaUtilService(gameRepository, mock(WebSocketService.class), mock(RankingService.class), dice);
+        return new TablaUtilService(gameUtilService, mock(WebSocketService.class), mock(RankingService.class), dice);
     }
 
     /** A seed whose first opening throw is — or is not — a tie, for this game id. */
