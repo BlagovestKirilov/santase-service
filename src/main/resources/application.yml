@@ -34,6 +34,16 @@ spring:
     username: ${SANTASE_MAIL_USERNAME}
     password: ${SANTASE_MAIL_PASSWORD}
 
+# The scheduled jobs. Defaults also live in SchedulingProperties, so a
+# profile that says nothing still starts with these timings.
+deck:
+  scheduling:
+    pool-size: 2
+    shutdown-grace: PT30S
+    expired-links:
+      interval: PT5M
+      initial-delay: PT1M
+
 jwt:
   secret-key: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}

@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # ShedLock's own table. One row per scheduled job, holding who is running it
+  # and until when, so a second instance of the service skips the run instead
+  # of repeating it.
+  #
+  # Purely additive: a new table nothing else refers to. It does not touch a
+  # single existing row, and dropping it again costs nothing but the lock.
+  #
+  # IF NOT EXISTS rather than Liquibase's own createTable, for the same reason
+  # as 015 and 016: changes/001..008 are not in the master changelog, so the
+  # recorded history cannot be trusted to say what production already has.
+  #
+  # Columns are TIMESTAMP without a zone, which is what the JDBC provider
+  # writes, and the provider is configured with usingDbTime() so both the
+  # writing and the comparing happen on the database's clock — two instances
+  # whose own clocks disagree still take turns correctly.
+  - changeSet:
+      id: 017-shedlock-table
+      author: Blagovest Kirilov
+      comment: The lock a scheduled job holds while it runs
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE TABLE IF NOT EXISTS shedlock (
+                  name       VARCHAR(64)  NOT NULL,
+                  lock_until TIMESTAMP    NOT NULL,
+                  locked_at  TIMESTAMP    NOT NULL,
+                  locked_by  VARCHAR(255) NOT NULL,
+                  PRIMARY KEY (name)
+              );
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: DROP TABLE IF EXISTS shedlock;

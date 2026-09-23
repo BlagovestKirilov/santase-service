@@ -50,7 +50,10 @@ public class LogConstants {
     public static final String INVALID_CURRENT_PASSWORD = "Password change failed: invalid current password for user {}";
     public static final String SAME_PASSWORD = "Password change failed: new password equals old password for user {}";
     public static final String EMAIL_NOT_CONFIRMED = "Password change failed: email not confirmed for user {}";
-    public static final String LINK_EXPIRED = "Link refused: it is past its 15 minutes. token={}";
+    public static final String LINKS_EXPIRED = "Retired {} expired links: {} password resets, {} email confirmations, {} account deletions. Took {} ms";
+    public static final String LINKS_EXPIRED_NONE = "No links had run out. Took {} ms";
+    public static final String SCHEDULED_JOB_FAILED = "A scheduled job failed. The schedule carries on.";
+    public static final String LINK_EXPIRED = "Link refused: it had run out before it was opened. token={}";
     public static final String FORGOT_PASSWORD_STARTED = "Forgot password process started for email {}";
     public static final String FORGOT_PASSWORD_EMAIL_NOT_CONFIRMED = "Forgot password failed: email {} is not confirmed or does not exist.";
     public static final String FORGOT_PASSWORD_EMAIL_SENT = "Forgot password email queued for {}";
