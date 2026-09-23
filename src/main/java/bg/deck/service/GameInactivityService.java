@@ -3,7 +3,6 @@ package bg.deck.service;
 import bg.deck.enums.GameType;
 import bg.deck.model.Game;
 import bg.deck.model.TurnClock;
-import bg.deck.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -36,7 +35,6 @@ public class GameInactivityService {
     private final ExecutorService virtualThreadExecutor;
     private final GameUtilService gameUtilService;
     private final TablaUtilService tablaUtilService;
-    private final GameRepository gameRepository;
 
     private final Map<UUID, ScheduledFuture<?>> tasks = new ConcurrentHashMap<>();
 
@@ -78,11 +76,11 @@ public class GameInactivityService {
             // Nobody has started yet: the opening has rules of its own for a
             // die left unthrown — but never throws it for anyone.
             if (tablaUtilService.openingTimedOut(gameId)) {
-                gameRepository.findById(gameId).ifPresent(this::updateNextMoveTime);
+                gameUtilService.findGameById(gameId).ifPresent(this::updateNextMoveTime);
                 return;
             }
             if (tablaUtilService.passIfBlocked(gameId)) {
-                gameRepository.findById(gameId).ifPresent(this::updateNextMoveTime);
+                gameUtilService.findGameById(gameId).ifPresent(this::updateNextMoveTime);
                 return;
             }
             tablaUtilService.surrenderByInactivity(gameId);
@@ -106,7 +104,7 @@ public class GameInactivityService {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void rescheduleActiveGames() {
-        List<Game> active = gameRepository.findAllActive();
+        List<Game> active = gameUtilService.findAllActiveGames();
         active.forEach(this::updateNextMoveTime);
         if (!active.isEmpty()) {
             log.info("Re-armed inactivity timers for {} live game(s) after startup", active.size());

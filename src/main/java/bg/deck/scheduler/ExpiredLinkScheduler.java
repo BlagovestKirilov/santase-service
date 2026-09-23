@@ -2,12 +2,9 @@ package bg.deck.scheduler;
 
 import bg.deck.constant.Constants;
 import bg.deck.constant.LogConstants;
-import bg.deck.enums.EmailConfirmationStatus;
-import bg.deck.enums.ForgotPasswordStatus;
-import bg.deck.enums.UserDeletionStatus;
-import bg.deck.repository.EmailConfirmationRepository;
-import bg.deck.repository.ForgotPasswordRepository;
-import bg.deck.repository.UserDeletionRepository;
+import bg.deck.service.EmailConfirmationService;
+import bg.deck.service.ForgotPasswordService;
+import bg.deck.service.UserDeletionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -40,9 +37,9 @@ public class ExpiredLinkScheduler {
     /** The name this job holds its lock under. One row in {@code shedlock}. */
     public static final String LOCK_NAME = "expiredLinks";
 
-    private final ForgotPasswordRepository forgotPasswordRepository;
-    private final EmailConfirmationRepository emailConfirmationRepository;
-    private final UserDeletionRepository userDeletionRepository;
+    private final ForgotPasswordService forgotPasswordService;
+    private final EmailConfirmationService emailConfirmationService;
+    private final UserDeletionService userDeletionService;
 
     /**
      * {@code lockAtLeastFor} outlives the run itself: the work takes
@@ -61,23 +58,9 @@ public class ExpiredLinkScheduler {
         Instant now = Instant.now();
         long startedAt = System.nanoTime();
 
-        int resets = forgotPasswordRepository.expireOlderThan(
-                now.minus(Constants.LINK_VALIDITY),
-                ForgotPasswordStatus.PENDING,
-                ForgotPasswordStatus.EXPIRED
-        );
-
-        int confirmations = emailConfirmationRepository.expireOlderThan(
-                now.minus(Constants.EMAIL_CONFIRMATION_VALIDITY),
-                EmailConfirmationStatus.PENDING,
-                EmailConfirmationStatus.EXPIRED
-        );
-
-        int deletions = userDeletionRepository.expireOlderThan(
-                now.minus(Constants.LINK_VALIDITY),
-                UserDeletionStatus.PENDING,
-                UserDeletionStatus.EXPIRED
-        );
+        int resets = forgotPasswordService.expireOlderThan(now.minus(Constants.LINK_VALIDITY));
+        int confirmations = emailConfirmationService.expireOlderThan(now.minus(Constants.EMAIL_CONFIRMATION_VALIDITY));
+        int deletions = userDeletionService.expireOlderThan(now.minus(Constants.LINK_VALIDITY));
 
         int total = resets + confirmations + deletions;
         long tookMs = (System.nanoTime() - startedAt) / 1_000_000;

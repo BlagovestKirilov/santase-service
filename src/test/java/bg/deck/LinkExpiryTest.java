@@ -10,11 +10,11 @@ import bg.deck.model.User;
 import bg.deck.model.UserDeletion;
 import bg.deck.model.base.BaseEntity;
 import bg.deck.model.request.ChangeForgottenPasswordRequest;
-import bg.deck.repository.EmailConfirmationRepository;
-import bg.deck.repository.ForgotPasswordRepository;
-import bg.deck.repository.UserDeletionRepository;
-import bg.deck.repository.UserRepository;
 import bg.deck.service.AuthService;
+import bg.deck.service.EmailConfirmationService;
+import bg.deck.service.ForgotPasswordService;
+import bg.deck.service.UserAccountService;
+import bg.deck.service.UserDeletionService;
 import bg.deck.service.UserService;
 import bg.deck.service.UserUtilService;
 import org.junit.jupiter.api.DisplayName;
@@ -66,15 +66,15 @@ class LinkExpiryTest {
     @DisplayName("The password reset")
     class PasswordReset {
 
-        @Mock private ForgotPasswordRepository forgotPasswordRepository;
-        @Mock private UserRepository userRepository;
+        @Mock private ForgotPasswordService forgotPasswordService;
+        @Mock private UserAccountService userAccountService;
         @InjectMocks private AuthService authService;
 
         @Test
         @DisplayName("opened in time, it verifies")
         void freshLinkVerifies() {
             ForgotPassword forgotPassword = aged(new ForgotPassword(user()), STILL_GOOD);
-            when(forgotPasswordRepository.findByForgotPasswordTokenAndStatus(TOKEN, ForgotPasswordStatus.PENDING))
+            when(forgotPasswordService.findPending(TOKEN))
                     .thenReturn(Optional.of(forgotPassword));
 
             assertDoesNotThrow(() -> authService.verifyForgotPasswordToken(TOKEN));
@@ -85,24 +85,24 @@ class LinkExpiryTest {
         @DisplayName("opened too late, it is refused and retired")
         void staleLinkIsRefused() {
             ForgotPassword forgotPassword = aged(new ForgotPassword(user()), TOO_OLD);
-            when(forgotPasswordRepository.findByForgotPasswordTokenAndStatus(TOKEN, ForgotPasswordStatus.PENDING))
+            when(forgotPasswordService.findPending(TOKEN))
                     .thenReturn(Optional.of(forgotPassword));
 
             assertThrows(InvalidLinkException.class, () -> authService.verifyForgotPasswordToken(TOKEN));
             assertEquals(ForgotPasswordStatus.EXPIRED, forgotPassword.getStatus(), "and it is not asked about twice");
-            verify(forgotPasswordRepository).save(forgotPassword);
+            verify(forgotPasswordService).save(forgotPassword);
         }
 
         @Test
         @DisplayName("a password cannot be set through a link that has run out")
         void staleLinkCannotSetAPassword() {
             ForgotPassword forgotPassword = aged(new ForgotPassword(user()), TOO_OLD);
-            when(forgotPasswordRepository.findByForgotPasswordTokenAndStatus(TOKEN, ForgotPasswordStatus.PENDING))
+            when(forgotPasswordService.findPending(TOKEN))
                     .thenReturn(Optional.of(forgotPassword));
 
             assertThrows(InvalidLinkException.class, () -> authService.changeForgottenPassword(
                     new ChangeForgottenPasswordRequest("a-brand-new-password", TOKEN)));
-            verifyNoInteractions(userRepository);
+            verifyNoInteractions(userAccountService);
         }
     }
 
@@ -110,7 +110,7 @@ class LinkExpiryTest {
     @DisplayName("The address confirmation, which lasts a day")
     class AddressConfirmation {
 
-        @Mock private EmailConfirmationRepository emailConfirmationRepository;
+        @Mock private EmailConfirmationService emailConfirmationService;
         @InjectMocks private AuthService authService;
 
         @Test
@@ -118,7 +118,7 @@ class LinkExpiryTest {
         void freshLinkConfirms() {
             User user = unconfirmedUser();
             EmailConfirmation confirmation = aged(new EmailConfirmation(user), CONFIRMATION_STILL_GOOD);
-            when(emailConfirmationRepository.findByConfirmationTokenAndStatus(TOKEN, EmailConfirmationStatus.PENDING))
+            when(emailConfirmationService.findPending(TOKEN))
                     .thenReturn(Optional.of(confirmation));
 
             assertEquals(true, authService.confirmEmail(TOKEN));
@@ -131,7 +131,7 @@ class LinkExpiryTest {
         void staleLinkDoesNotConfirm() {
             User user = unconfirmedUser();
             EmailConfirmation confirmation = aged(new EmailConfirmation(user), CONFIRMATION_TOO_OLD);
-            when(emailConfirmationRepository.findByConfirmationTokenAndStatus(TOKEN, EmailConfirmationStatus.PENDING))
+            when(emailConfirmationService.findPending(TOKEN))
                     .thenReturn(Optional.of(confirmation));
 
             assertFalse(authService.confirmEmail(TOKEN));
@@ -144,7 +144,7 @@ class LinkExpiryTest {
     @DisplayName("The account deletion")
     class AccountDeletion {
 
-        @Mock private UserDeletionRepository userDeletionRepository;
+        @Mock private UserDeletionService userDeletionService;
         @Mock private UserUtilService userUtilService;
         @InjectMocks private UserService userService;
 
@@ -152,7 +152,7 @@ class LinkExpiryTest {
         @DisplayName("opened too late, nothing is deleted")
         void staleLinkDeletesNothing() {
             UserDeletion deletion = aged(new UserDeletion(user()), TOO_OLD);
-            when(userDeletionRepository.findByUserDeletionTokenAndStatus(TOKEN, UserDeletionStatus.PENDING))
+            when(userDeletionService.findPending(TOKEN))
                     .thenReturn(Optional.of(deletion));
 
             assertFalse(userService.confirmDeletion(TOKEN));
@@ -165,7 +165,7 @@ class LinkExpiryTest {
         void freshLinkDeletes() {
             User user = user();
             UserDeletion deletion = aged(new UserDeletion(user), STILL_GOOD);
-            when(userDeletionRepository.findByUserDeletionTokenAndStatus(TOKEN, UserDeletionStatus.PENDING))
+            when(userDeletionService.findPending(TOKEN))
                     .thenReturn(Optional.of(deletion));
 
             assertEquals(true, userService.confirmDeletion(TOKEN));

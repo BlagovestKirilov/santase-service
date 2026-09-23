@@ -3,12 +3,10 @@ package bg.deck.service;
 import bg.deck.constant.Constants;
 import bg.deck.constant.ExceptionConstants;
 import bg.deck.constant.LogConstants;
-import bg.deck.enums.EmailConfirmationStatus;
 import bg.deck.enums.UserDeletionStatus;
 import bg.deck.exception.EmailNotConfirmedException;
 import bg.deck.exception.InvalidCredentialsException;
 import bg.deck.exception.InvalidPasswordException;
-import bg.deck.exception.UserNotFoundException;
 import bg.deck.model.EmailConfirmation;
 import bg.deck.model.User;
 import bg.deck.model.UserDeletion;
@@ -19,9 +17,6 @@ import bg.deck.enums.GameType;
 import bg.deck.model.UserGameStats;
 import bg.deck.model.dto.GameStatsDTO;
 import bg.deck.model.response.ProfileResponse;
-import bg.deck.repository.EmailConfirmationRepository;
-import bg.deck.repository.UserDeletionRepository;
-import bg.deck.repository.UserRepository;
 import bg.deck.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 
@@ -32,7 +27,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -41,21 +35,21 @@ import java.util.UUID;
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final EmailConfirmationRepository emailConfirmationRepository;
+    private final UserAccountService userAccountService;
+    private final EmailConfirmationService emailConfirmationService;
     private final GameUtilService gameUtilService;
     private final EmailService emailService;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final UserUtilService userUtilService;
-    private final UserDeletionRepository userDeletionRepository;
+    private final UserDeletionService userDeletionService;
 
     public ProfileResponse getProfile() {
         String username = gameUtilService.getUsername();
 
         log.info(LogConstants.TRY_GET_PROFILE, username);
 
-        User user = userRepository.findByUsername(username)
+        User user = userAccountService.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException(username));
 
         Map<String, GameStatsDTO> stats = new LinkedHashMap<>();
@@ -82,25 +76,17 @@ public class UserService {
 
         log.info(LogConstants.EMAIL_CONFIRM_ATTEMPT, username);
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    log.warn(LogConstants.USER_NOT_FOUND, username);
-                    return new UserNotFoundException(username);
-                });
+        User user = userAccountService.requireByUsername(username);
+
+
 
         if (Boolean.TRUE.equals(user.getIsEmailConfirmed())) {
             log.info(LogConstants.EMAIL_CONFIRMATION_ALREADY_CONFIRMED, username);
             return false;
         }
 
-        List<EmailConfirmation> pendingEmailConfirmations = emailConfirmationRepository
-                .findAllByUserAndStatus(user, EmailConfirmationStatus.PENDING);
-
-        pendingEmailConfirmations.forEach(ec -> ec.setStatus(EmailConfirmationStatus.EXPIRED));
-        emailConfirmationRepository.saveAll(pendingEmailConfirmations);
-
-        EmailConfirmation emailConfirmation = new EmailConfirmation(user);
-        emailConfirmationRepository.save(emailConfirmation);
+        // Asking again ends the link before it: only the newest one works.
+        EmailConfirmation emailConfirmation = emailConfirmationService.issueFor(user);
 
         emailService.sendConfirmationEmail(emailConfirmation);
 
@@ -115,11 +101,9 @@ public class UserService {
 
         log.info(LogConstants.PASSWORD_CHANGE_STARTED, username);
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    log.warn(LogConstants.USER_NOT_FOUND, username);
-                    return new UserNotFoundException(username);
-                });
+        User user = userAccountService.requireByUsername(username);
+
+
 
         if (Boolean.FALSE.equals(user.getIsEmailConfirmed())) {
             log.warn(LogConstants.EMAIL_NOT_CONFIRMED, username);
@@ -137,7 +121,7 @@ public class UserService {
         }
 
         user.setPassword(passwordEncoder.encode(changePasswordRequest.newPassword()));
-        userRepository.save(user);
+        userAccountService.save(user);
 
         log.info(LogConstants.PASSWORD_CHANGE_SUCCESS, username);
     }
@@ -148,11 +132,9 @@ public class UserService {
 
         log.info(LogConstants.USER_DELETION_EMAIL_REQUESTED, username);
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    log.warn(LogConstants.USER_NOT_FOUND, username);
-                    return new UserNotFoundException(username);
-                });
+        User user = userAccountService.requireByUsername(username);
+
+
 
         if (Boolean.FALSE.equals(user.getIsEmailConfirmed())) {
             log.warn(LogConstants.EMAIL_NOT_CONFIRMED, username);
@@ -164,15 +146,8 @@ public class UserService {
             throw new InvalidCredentialsException(username);
         }
 
-        List<UserDeletion> pendingForgotPasswordList = userDeletionRepository
-                .findAllByUserAndStatus(user, UserDeletionStatus.PENDING);
-
-        pendingForgotPasswordList.forEach(pendingForgotPassword ->
-                pendingForgotPassword.setStatus(UserDeletionStatus.EXPIRED));
-        userDeletionRepository.saveAll(pendingForgotPasswordList);
-
-        UserDeletion userDeletion = new UserDeletion(user);
-        userDeletionRepository.save(userDeletion);
+        // Asking again ends the link before it: only the newest one works.
+        UserDeletion userDeletion = userDeletionService.issueFor(user);
         log.info(LogConstants.USER_DELETION_RECORD_CREATED, username, userDeletion.getId());
 
         emailService.sendDeletionEmail(userDeletion);
@@ -183,8 +158,7 @@ public class UserService {
     public boolean confirmDeletion(UUID userDeletionToken) {
         log.info(LogConstants.USER_DELETION_CONFIRM_ATTEMPT, userDeletionToken);
 
-        Optional<UserDeletion> optionalUserDeletion = userDeletionRepository
-                .findByUserDeletionTokenAndStatus(userDeletionToken, UserDeletionStatus.PENDING);
+        Optional<UserDeletion> optionalUserDeletion = userDeletionService.findPending(userDeletionToken);
 
         if (optionalUserDeletion.isEmpty()) {
             log.warn(LogConstants.USER_DELETION_TOKEN_INVALID);
@@ -195,7 +169,7 @@ public class UserService {
 
         if (userDeletion.isOlderThan(Constants.LINK_VALIDITY)) {
             userDeletion.setStatus(UserDeletionStatus.EXPIRED);
-            userDeletionRepository.save(userDeletion);
+            userDeletionService.save(userDeletion);
             log.warn(LogConstants.LINK_EXPIRED, userDeletionToken);
             return false;
         }
@@ -208,7 +182,7 @@ public class UserService {
         userUtilService.deleteUser(userDeletion.getUser());
 
         userDeletion.setStatus(UserDeletionStatus.SUCCESS);
-        userDeletionRepository.save(userDeletion);
+        userDeletionService.save(userDeletion);
 
         log.info(LogConstants.USER_DELETION_SUCCESS, username);
         return true;

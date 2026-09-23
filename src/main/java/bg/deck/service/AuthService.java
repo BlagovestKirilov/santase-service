@@ -22,10 +22,6 @@ import bg.deck.model.request.ForgotPasswordEmailRequest;
 import bg.deck.model.request.LoginRequest;
 import bg.deck.model.request.RegisterRequest;
 import bg.deck.model.response.AuthResponse;
-import bg.deck.repository.EmailConfirmationRepository;
-import bg.deck.repository.ForgotPasswordRepository;
-import bg.deck.repository.PlayerRepository;
-import bg.deck.repository.UserRepository;
 import bg.deck.util.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +31,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,10 +46,9 @@ import static bg.deck.constant.LogConstants.TRY_REGISTER_LOG;
 @Service
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PlayerRepository playerRepository;
-    private final ForgotPasswordRepository forgotPasswordRepository;
-    private final EmailConfirmationRepository emailConfirmationRepository;
+    private final UserAccountService userAccountService;
+    private final ForgotPasswordService forgotPasswordService;
+    private final EmailConfirmationService emailConfirmationService;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final JwtService jwtService;
@@ -63,14 +57,14 @@ public class AuthService {
     public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request) {
         log.info(TRY_LOGIN_LOG, loginRequest.username());
 
-        User user = userRepository.findByUsername(loginRequest.username())
+        User user = userAccountService.findByUsername(loginRequest.username())
                 .filter(foundUser -> passwordEncoder.matches(loginRequest.password(), foundUser.getPassword()))
                 .orElseThrow(() -> new InvalidCredentialsException(loginRequest.username()));
 
         log.info(SUCCESSFUL_LOGIN_LOG, loginRequest.username());
 
         user.setIpAddress(request.getHeader(CF_CONNECTING_IP));
-        userRepository.save(user);
+        userAccountService.save(user);
 
         return AuthResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())
@@ -83,27 +77,26 @@ public class AuthService {
     public AuthResponse register(RegisterRequest registerRequest) {
         log.info(TRY_REGISTER_LOG, registerRequest.username());
 
-        if (userRepository.existsByUsername(registerRequest.username())) {
+        if (userAccountService.existsByUsername(registerRequest.username())) {
             throw new UserAlreadyExistsException(registerRequest.username());
         }
 
-        if (userRepository.existsByEmail(registerRequest.email())) {
+        if (userAccountService.existsByEmail(registerRequest.email())) {
             throw new EmailAlreadyExistsException(registerRequest.email());
         }
 
         User user = userMapper.toEntity(registerRequest);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
+        userAccountService.save(user);
 
         // Both stats rows are created up front: lazy creation on first game would
         // need INSERT ... ON CONFLICT handling under concurrency, and one extra
         // row per user is cheaper than that.
         user.addStats(UserGameStats.fresh(user, GameType.SANTASE));
         user.addStats(UserGameStats.fresh(user, GameType.TABLA));
-        userRepository.save(user);
+        userAccountService.save(user);
 
-        EmailConfirmation emailConfirmation = new EmailConfirmation(user);
-        emailConfirmationRepository.save(emailConfirmation);
+        EmailConfirmation emailConfirmation = emailConfirmationService.issueFor(user);
 
         emailService.sendConfirmationEmail(emailConfirmation);
 
@@ -120,7 +113,7 @@ public class AuthService {
 
         log.info(LogConstants.TRY_REFRESH_TOKEN, username);
 
-        User user = userRepository.findByUsername(username)
+        User user = userAccountService.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException(username));
 
         if (username != null && jwtService.isTokenValid(refreshToken)) {
@@ -142,7 +135,7 @@ public class AuthService {
         log.info(LogConstants.EMAIL_CONFIRMATION_ATTEMPT, confirmationToken);
 
         Optional<EmailConfirmation> optionalEmailConfirmation =
-                emailConfirmationRepository.findByConfirmationTokenAndStatus(confirmationToken, EmailConfirmationStatus.PENDING);
+                emailConfirmationService.findPending(confirmationToken);
 
         if (optionalEmailConfirmation.isEmpty()) {
             log.warn(LogConstants.EMAIL_CONFIRMATION_TOKEN_NOT_FOUND, confirmationToken);
@@ -153,7 +146,7 @@ public class AuthService {
 
         if (emailConfirmation.isOlderThan(Constants.EMAIL_CONFIRMATION_VALIDITY)) {
             emailConfirmation.setStatus(EmailConfirmationStatus.EXPIRED);
-            emailConfirmationRepository.save(emailConfirmation);
+            emailConfirmationService.save(emailConfirmation);
             log.warn(LogConstants.LINK_EXPIRED, confirmationToken);
             return false;
         }
@@ -175,7 +168,7 @@ public class AuthService {
         emailConfirmation.setStatus(EmailConfirmationStatus.CONFIRMED);
         emailConfirmation.getUser().setIsEmailConfirmed(true);
 
-        emailConfirmationRepository.save(emailConfirmation);
+        emailConfirmationService.save(emailConfirmation);
 
         log.info(
                 LogConstants.EMAIL_CONFIRMED_SUCCESSFULLY,
@@ -191,21 +184,15 @@ public class AuthService {
 
         log.info(LogConstants.FORGOT_PASSWORD_STARTED, email);
 
-        User user = userRepository.findByEmail(email)
+        User user = userAccountService.findByEmail(email)
                 .filter(u -> Boolean.TRUE.equals(u.getIsEmailConfirmed()))
                 .orElseThrow(() -> {
                     log.warn(LogConstants.FORGOT_PASSWORD_EMAIL_NOT_CONFIRMED, email);
                     return new EmailNotConfirmedException(email);
                 });
 
-        List<ForgotPassword> pendingForgotPasswordList = forgotPasswordRepository
-                .findAllByUserAndStatus(user, ForgotPasswordStatus.PENDING);
-
-        pendingForgotPasswordList.forEach(pendingForgotPassword -> pendingForgotPassword.setStatus(ForgotPasswordStatus.EXPIRED));
-        forgotPasswordRepository.saveAll(pendingForgotPasswordList);
-
-        ForgotPassword forgotPassword = new ForgotPassword(user);
-        forgotPasswordRepository.save(forgotPassword);
+        // Asking again ends the link before it: only the newest one works.
+        ForgotPassword forgotPassword = forgotPasswordService.issueFor(user);
 
         emailService.sendForgotPasswordEmail(forgotPassword);
 
@@ -230,10 +217,10 @@ public class AuthService {
         }
 
         user.setPassword(passwordEncoder.encode(changeForgottenPasswordRequest.newPassword()));
-        userRepository.save(user);
+        userAccountService.save(user);
 
         forgotPassword.setStatus(ForgotPasswordStatus.SUCCESS);
-        forgotPasswordRepository.save(forgotPassword);
+        forgotPasswordService.save(forgotPassword);
 
         log.info(LogConstants.PASSWORD_CHANGE_SUCCESS, user.getUsername());
     }
@@ -250,13 +237,12 @@ public class AuthService {
      * attempt takes the short path.
      */
     private ForgotPassword pendingForgotPassword(UUID token) {
-        ForgotPassword forgotPassword = forgotPasswordRepository
-                .findByForgotPasswordTokenAndStatus(token, ForgotPasswordStatus.PENDING)
+        ForgotPassword forgotPassword = forgotPasswordService.findPending(token)
                 .orElseThrow(InvalidLinkException::new);
 
         if (forgotPassword.isOlderThan(Constants.LINK_VALIDITY)) {
             forgotPassword.setStatus(ForgotPasswordStatus.EXPIRED);
-            forgotPasswordRepository.save(forgotPassword);
+            forgotPasswordService.save(forgotPassword);
             log.warn(LogConstants.LINK_EXPIRED, token);
             throw new InvalidLinkException();
         }

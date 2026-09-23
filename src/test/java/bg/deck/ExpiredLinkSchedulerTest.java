@@ -1,15 +1,12 @@
 package bg.deck;
 
-import bg.deck.enums.EmailConfirmationStatus;
-import bg.deck.enums.ForgotPasswordStatus;
-import bg.deck.enums.UserDeletionStatus;
-import bg.deck.repository.EmailConfirmationRepository;
-import bg.deck.repository.ForgotPasswordRepository;
-import bg.deck.repository.UserDeletionRepository;
 import bg.deck.scheduler.ExpiredLinkScheduler;
+import bg.deck.service.EmailConfirmationService;
+import bg.deck.service.ForgotPasswordService;
+import bg.deck.service.UserDeletionService;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.AfterEach;
@@ -22,34 +19,35 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.time.Instant;
 
 import static bg.deck.constant.Constants.EMAIL_CONFIRMATION_VALIDITY;
 import static bg.deck.constant.Constants.LINK_VALIDITY;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * The job that keeps the tables saying what is true: a link nobody opened is
  * marked expired once its time is up, instead of sitting at PENDING for good.
+ *
+ * <p>It asks each table's own service, and never a repository.
  */
 @DisplayName("Retiring the links nobody came back for")
 @ExtendWith(MockitoExtension.class)
 class ExpiredLinkSchedulerTest {
 
-    @Mock private ForgotPasswordRepository forgotPasswordRepository;
-    @Mock private EmailConfirmationRepository emailConfirmationRepository;
-    @Mock private UserDeletionRepository userDeletionRepository;
+    @Mock private ForgotPasswordService forgotPasswordService;
+    @Mock private EmailConfirmationService emailConfirmationService;
+    @Mock private UserDeletionService userDeletionService;
     @InjectMocks private ExpiredLinkScheduler scheduler;
 
     @Test
-    @DisplayName("each table is retired to its own cutoff, PENDING to EXPIRED")
+    @DisplayName("each table is retired to its own cutoff")
     void retiresEachTableOnItsOwnCutoff() {
         Instant before = Instant.now();
 
@@ -57,13 +55,19 @@ class ExpiredLinkSchedulerTest {
 
         Instant after = Instant.now();
 
-        // A reset and a deletion go after a quarter of an hour.
-        assertCutoff(captureCutoff(ForgotPasswordRepository.class), LINK_VALIDITY, before, after);
-        assertCutoff(captureCutoff(UserDeletionRepository.class), LINK_VALIDITY, before, after);
-        // A new player's confirmation has the whole day.
-        assertCutoff(captureCutoff(EmailConfirmationRepository.class), EMAIL_CONFIRMATION_VALIDITY, before, after);
-    }
+        ArgumentCaptor<Instant> resets = ArgumentCaptor.forClass(Instant.class);
+        ArgumentCaptor<Instant> confirmations = ArgumentCaptor.forClass(Instant.class);
+        ArgumentCaptor<Instant> deletions = ArgumentCaptor.forClass(Instant.class);
+        verify(forgotPasswordService).expireOlderThan(resets.capture());
+        verify(emailConfirmationService).expireOlderThan(confirmations.capture());
+        verify(userDeletionService).expireOlderThan(deletions.capture());
 
+        // A reset and a deletion go after a quarter of an hour.
+        assertCutoff(resets.getValue(), LINK_VALIDITY, before, after);
+        assertCutoff(deletions.getValue(), LINK_VALIDITY, before, after);
+        // A new player's confirmation has the whole day.
+        assertCutoff(confirmations.getValue(), EMAIL_CONFIRMATION_VALIDITY, before, after);
+    }
 
     /**
      * What the line in the log actually says. Five numbers in one message is
@@ -73,9 +77,9 @@ class ExpiredLinkSchedulerTest {
     @Test
     @DisplayName("the line says how many of each were retired")
     void logsWhatItRetired() {
-        when(forgotPasswordRepository.expireOlderThan(any(), any(), any())).thenReturn(3);
-        when(emailConfirmationRepository.expireOlderThan(any(), any(), any())).thenReturn(7);
-        when(userDeletionRepository.expireOlderThan(any(), any(), any())).thenReturn(1);
+        when(forgotPasswordService.expireOlderThan(any())).thenReturn(3);
+        when(emailConfirmationService.expireOlderThan(any())).thenReturn(7);
+        when(userDeletionService.expireOlderThan(any())).thenReturn(1);
 
         Capture capture = captureLogs(Level.INFO);
         scheduler.expireLinks();
@@ -98,41 +102,10 @@ class ExpiredLinkSchedulerTest {
 
     /* ---------------- helpers ---------------- */
 
-    private Instant captureCutoff(Class<?> repository) {
-        ArgumentCaptor<Instant> cutoff = ArgumentCaptor.forClass(Instant.class);
-        if (repository == ForgotPasswordRepository.class) {
-            verify(forgotPasswordRepository).expireOlderThan(
-                    cutoff.capture(),
-                    eq(ForgotPasswordStatus.PENDING),
-                    eq(ForgotPasswordStatus.EXPIRED));
-        } else if (repository == EmailConfirmationRepository.class) {
-            verify(emailConfirmationRepository).expireOlderThan(
-                    cutoff.capture(),
-                    eq(EmailConfirmationStatus.PENDING),
-                    eq(EmailConfirmationStatus.EXPIRED));
-        } else {
-            verify(userDeletionRepository).expireOlderThan(
-                    cutoff.capture(),
-                    eq(UserDeletionStatus.PENDING),
-                    eq(UserDeletionStatus.EXPIRED));
-        }
-        return cutoff.getValue();
-    }
-
     /** The cutoff is exactly one lifetime back from the moment of the run. */
     private static void assertCutoff(Instant cutoff, Duration validity, Instant before, Instant after) {
         assertTrue(!cutoff.isBefore(before.minus(validity)) && !cutoff.isAfter(after.minus(validity)),
                 "taken back by " + validity + ", but the cutoff was " + cutoff);
-    }
-
-    @Test
-    @DisplayName("a run that finds nothing still visits all three")
-    void visitsAllThreeEvenWhenEmpty() {
-        scheduler.expireLinks();
-
-        verify(forgotPasswordRepository).expireOlderThan(any(), any(), any());
-        verify(emailConfirmationRepository).expireOlderThan(any(), any(), any());
-        verify(userDeletionRepository).expireOlderThan(any(), any(), any());
     }
 
     /** Log4j2 without a whole configuration: one appender that keeps the lines. */

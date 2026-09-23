@@ -4,7 +4,7 @@ import bg.deck.model.Game;
 import bg.deck.model.Player;
 import bg.deck.model.TablaGameState;
 import bg.deck.model.User;
-import bg.deck.repository.GameRepository;
+import bg.deck.service.GameUtilService;
 import bg.deck.service.RankingService;
 import bg.deck.service.TablaDiceService;
 import bg.deck.service.TablaUtilService;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 @DisplayName("A blocked roll that times out")
 class TablaBlockedTimeoutTest {
 
-    private GameRepository gameRepository;
+    private GameUtilService gameUtilService;
     private TablaUtilService tablaUtilService;
 
     private Game game;
@@ -46,9 +46,9 @@ class TablaBlockedTimeoutTest {
 
     @BeforeEach
     void setUp() {
-        gameRepository = mock(GameRepository.class);
+        gameUtilService = mock(GameUtilService.class);
         tablaUtilService = new TablaUtilService(
-                gameRepository,
+                gameUtilService,
                 mock(WebSocketService.class),
                 mock(RankingService.class),
                 mock(TablaDiceService.class));
@@ -69,8 +69,8 @@ class TablaBlockedTimeoutTest {
         // happens here.
         setId(game, UUID.randomUUID());
 
-        when(gameRepository.findById(any())).thenReturn(Optional.of(game));
-        when(gameRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(gameUtilService.findGameById(any())).thenReturn(Optional.of(game));
+        when(gameUtilService.saveGame(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     private static void setId(Game game, UUID id) {
