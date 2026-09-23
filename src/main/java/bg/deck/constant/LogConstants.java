@@ -41,7 +41,6 @@ public class LogConstants {
     public static final String EMAIL_ALREADY_CONFIRMED = "Email already confirmed. Token={}, username={}";
     public static final String EMAIL_CONFIRMED_SUCCESSFULLY = "Email confirmed successfully. Token={}, username={}";
     public static final String EMAIL_CONFIRM_ATTEMPT = "Attempting to send email confirmation for username={}";
-    public static final String EMAIL_CONFIRMATION_NOT_FOUND = "Email confirmation record not found for username={}";
     public static final String EMAIL_CONFIRMATION_ALREADY_CONFIRMED = "Email sending skipped. Email already confirmed for username={}";
     public static final String EMAIL_SEND_SUCCESS = "Confirmation email queued for username={}";
     public static final String EMAIL_SEND_FAILED = "Failed to send email to email={}";
