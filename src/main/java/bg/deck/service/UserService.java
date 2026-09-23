@@ -3,6 +3,8 @@ package bg.deck.service;
 import bg.deck.constant.Constants;
 import bg.deck.constant.ExceptionConstants;
 import bg.deck.constant.LogConstants;
+import bg.deck.constant.RankingConstants;
+import bg.deck.enums.GameType;
 import bg.deck.enums.UserDeletionStatus;
 import bg.deck.exception.EmailNotConfirmedException;
 import bg.deck.exception.InvalidCredentialsException;
@@ -10,23 +12,19 @@ import bg.deck.exception.InvalidPasswordException;
 import bg.deck.model.EmailConfirmation;
 import bg.deck.model.User;
 import bg.deck.model.UserDeletion;
-import bg.deck.model.request.ChangePasswordRequest;
-import bg.deck.model.request.UserDeletionRequest;
-import bg.deck.constant.RankingConstants;
-import bg.deck.enums.GameType;
 import bg.deck.model.UserGameStats;
 import bg.deck.model.dto.GameStatsDTO;
+import bg.deck.model.request.ChangePasswordRequest;
+import bg.deck.model.request.UserDeletionRequest;
 import bg.deck.model.response.ProfileResponse;
-import bg.deck.util.UserMapper;
 import lombok.RequiredArgsConstructor;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,7 +37,6 @@ public class UserService {
     private final EmailConfirmationService emailConfirmationService;
     private final GameUtilService gameUtilService;
     private final EmailService emailService;
-    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final UserUtilService userUtilService;
     private final UserDeletionService userDeletionService;
@@ -78,8 +75,6 @@ public class UserService {
 
         User user = userAccountService.requireByUsername(username);
 
-
-
         if (Boolean.TRUE.equals(user.getIsEmailConfirmed())) {
             log.info(LogConstants.EMAIL_CONFIRMATION_ALREADY_CONFIRMED, username);
             return false;
@@ -102,8 +97,6 @@ public class UserService {
         log.info(LogConstants.PASSWORD_CHANGE_STARTED, username);
 
         User user = userAccountService.requireByUsername(username);
-
-
 
         if (Boolean.FALSE.equals(user.getIsEmailConfirmed())) {
             log.warn(LogConstants.EMAIL_NOT_CONFIRMED, username);
@@ -133,8 +126,6 @@ public class UserService {
         log.info(LogConstants.USER_DELETION_EMAIL_REQUESTED, username);
 
         User user = userAccountService.requireByUsername(username);
-
-
 
         if (Boolean.FALSE.equals(user.getIsEmailConfirmed())) {
             log.warn(LogConstants.EMAIL_NOT_CONFIRMED, username);

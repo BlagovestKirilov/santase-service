@@ -22,7 +22,6 @@ import java.util.List;
 import static bg.deck.constant.Constants.BEARER;
 import static bg.deck.constant.Constants.TOKEN;
 import static bg.deck.constant.Constants.WEB_SOCKET_ENDPOINT;
-import static bg.deck.constant.ExceptionConstants.INVALID_TOKEN;
 
 @Log4j2
 @Component
