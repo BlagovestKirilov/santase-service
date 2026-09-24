@@ -98,6 +98,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/game/**").hasRole(USER)
                         .requestMatchers("/tabla/**").hasRole(USER)
+                        .requestMatchers("/belot/**").hasRole(USER)
                         .requestMatchers("/user/confirm-deletion").permitAll()
                         .requestMatchers("/user/**").hasRole(USER)
                         // The socket's handshake is open; the socket is not. A
