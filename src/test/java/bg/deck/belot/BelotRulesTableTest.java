@@ -112,21 +112,29 @@ class BelotRulesTableTest {
         }
 
         @Test
-        @Disabled("""
-                OPEN 1 — the rules page says a no-trump deal is worth 260, but the \
-                cards add to 130. That works only if every point in a no-trump deal \
-                is doubled, the last trick included. Confirm, then delete this \
-                @Disabled and fix CardPoints.""")
-        @DisplayName("no trumps is worth 260 — doubled?")
+        @DisplayName("no trumps is worth 260: the cards add to 130 and every point counts double")
         void noTrumpsDealTotal() {
             assertEquals(260, CardPoints.dealTotal(Contract.NO_TRUMPS));
+            assertEquals(2, CardPoints.multiplier(Contract.NO_TRUMPS));
+            assertEquals(1, CardPoints.multiplier(Contract.ALL_TRUMPS), "and nothing else doubles");
+            assertEquals(1, CardPoints.multiplier(Contract.SPADES));
         }
 
         @Test
-        @DisplayName("the undoubled no-trump arithmetic, so the gap is visible")
-        void noTrumpsUndoubledIsHalfOfIt() {
-            assertEquals(130, CardPoints.dealTotal(Contract.NO_TRUMPS),
-                    "130 is exactly half of the 260 the rules claim — see OPEN 1");
+        @DisplayName("the doubling reaches the last trick too")
+        void theLastTrickDoublesAsWell() {
+            assertEquals(20, CardPoints.lastTrick(Contract.NO_TRUMPS),
+                    "260 only comes out with the ten doubled: 2 x 120 + 2 x 10");
+            assertEquals(10, CardPoints.lastTrick(Contract.SPADES));
+        }
+
+        @Test
+        @DisplayName("an ace is 22 in no trumps, 11 anywhere else")
+        void everyCardDoubles() {
+            Card ace = new Card(Suit.HEARTS, Rank.ACE);
+
+            assertEquals(22, CardPoints.of(ace, Contract.NO_TRUMPS));
+            assertEquals(11, CardPoints.of(ace, Contract.SPADES));
         }
     }
 

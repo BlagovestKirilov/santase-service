@@ -56,8 +56,9 @@ Two of these are arithmetic: a suit contract is 62 (trump suit) + 3 × 30 + 10 =
 260**, so the page's figure only works if every point in a no-trump deal is
 doubled, the last trick included.
 
-> **❓ OPEN 1 — Are all no-trump points doubled (2 × 130 = 260), or is some other
-> scale used?** This changes every no-trump score.
+> **ANSWERED — every point in a no-trump deal counts double**, the last trick
+> included: 2 × 120 + 2 × 10 = 260. An ace is 22 there, a ten 20. Implemented in
+> `CardPoints.multiplier`.
 
 ## 4. Dealing
 
@@ -165,10 +166,14 @@ Rules:
 - **Contra / recontra** double or quadruple everything, bonuses included. Points
   that hang while doubled carry forward still doubled.
 
-> **❓ OPEN 9 — The exact rounding.** The page says only "до цяло число". Which
-> is it: 154 → 15 or 16? And is it the same rule for both teams, or does the
-> contracting side round down and the opponents up? This is the single most
-> visible rule in the game — every player checks the arithmetic.
+> **ANSWERED — the two scores are rounded together, so the sheet adds up.**
+> Each goes to its nearest ten with a **five going down** (85 is 8). If the two
+> then fall a point short of the deal, one comes up: when **both end in 4** the
+> calling team takes the lower rounding and the other the higher (154 and 104
+> are 15 and 11); otherwise **the team that took more** goes up (155 and 103 are
+> 16 and 10). A point over, and the team that took fewer goes down (86 and 76
+> are 9 and 7). `DealRounding`, checked over every possible split of every deal
+> total.
 
 ## 9. Ending the game
 

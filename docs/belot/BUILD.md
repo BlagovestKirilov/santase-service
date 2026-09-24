@@ -100,7 +100,7 @@ depends on nothing but the JDK, which is what makes it testable and portable.
 - [x] `LegalMoves` — follow suit · trump when the opponent holds the trick · overtrump · partner-winning exemption (RULES §6).
 - [x] `Seat`, `Play`, `Trick`, `TrickResolver` — counter-clockwise seating, partnerships, who holds a trick.
 - [x] `Declarations` — detection, comparison, cancellation, belote, no-trump prohibition (RULES §7).
-- [ ] `DealScorer` — card points, last trick, capot, contract made / вътре / висящи, contra multipliers, rounding (RULES §8).
+- [x] `DealScorer` — contract made / вътре / висящи, contra multipliers, rounding (RULES §8). Capot and the last trick are added by the caller of it, so the points it receives are the finished ones.
 - [ ] `GameScorer` — 151, the no-capot extra deal (RULES §9).
 
 **Tests, written alongside:**
