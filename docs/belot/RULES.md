@@ -181,8 +181,10 @@ Rules:
 - **"С капо не се излиза"** — a team cannot finish on a capot deal: if the
   winning team reached 151+ with a capot, **one more deal is played**.
 
-> **❓ OPEN 10 — Both teams cross 151 in the same deal — who wins?** Usually the
-> higher total; and if the totals are equal?
+> **❓ OPEN 10 — Both teams cross 151 in the same deal — who wins?** The higher
+> total, which the engine implements. When the two are **level** it plays another
+> deal rather than leave the game drawn — see
+> `BelotGameScoringTest.openTenALevelFinish` if that is wrong.
 >
 > **❓ OPEN 11 — Does a deal where everyone passes count for the "no capot" rule?**
 > The page excludes all-pass rounds and previous capot deals from the extra deal;

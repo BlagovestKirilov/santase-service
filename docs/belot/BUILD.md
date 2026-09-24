@@ -101,13 +101,13 @@ depends on nothing but the JDK, which is what makes it testable and portable.
 - [x] `Seat`, `Play`, `Trick`, `TrickResolver` — counter-clockwise seating, partnerships, who holds a trick.
 - [x] `Declarations` — detection, comparison, cancellation, belote, no-trump prohibition (RULES §7).
 - [x] `DealScorer` — contract made / вътре / висящи, contra multipliers, rounding (RULES §8). Capot and the last trick are added by the caller of it, so the points it receives are the finished ones.
-- [ ] `GameScorer` — 151, the no-capot extra deal (RULES §9).
+- [x] `GameScorer` — 151, the no-capot extra deal, `Team` and `GameVerdict` (RULES §9).
 
 **Tests, written alongside:**
 
-- [ ] One test per row of RULES §10.
-- [ ] A table-driven test per open question, named after it, so a wrong answer surfaces as a failing test rather than a player's complaint.
-- [ ] **Self-play fuzz**, modelled on `TablaEngineTest`: thousands of random deals played to the end, asserting
+- [x] One test per row of RULES §10 that the answered rules allow.
+- [x] A table-driven test per open question, named after it, so a wrong answer surfaces as a failing test rather than a player's complaint.
+- [x] **Self-play fuzz**, modelled on `TablaEngineTest`: 2000 random deals played to the end, asserting
   - 32 cards conserved, no card played twice,
   - every move legal by `LegalMoves`,
   - deal totals land **exactly** on 162 / 258 / 260 (RULES §3),
