@@ -23,6 +23,11 @@ public enum Contract {
         this.trumpSuit = trumpSuit;
     }
 
+    /** The one suit that trumps, if this contract has one. */
+    public java.util.Optional<Suit> trumpSuit() {
+        return java.util.Optional.ofNullable(trumpSuit);
+    }
+
     /** True when a card of this suit is played by the trump order and points. */
     public boolean isTrump(Suit suit) {
         return switch (this) {

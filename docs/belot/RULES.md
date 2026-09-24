@@ -83,7 +83,9 @@ doubled, the last trick included.
   by the bidding side quadruples it.
 
 > **❓ OPEN 3 — After a contra, may bidding continue with a higher contract, or
-> is the contract fixed?**
+> is the contract fixed?** The engine assumes a raise is allowed and clears the
+> contra with it, since the contra was aimed at the contract just outbid. See
+> `BelotBiddingTest.openThreeRaisingOverAContra`.
 
 ## 6. Playing a trick
 
@@ -98,6 +100,15 @@ doubled, the last trick included.
 > **❓ OPEN 4 — In all trumps, when a partner is winning, must you still play a
 > higher card of the led suit if you hold one?** (In some variants the
 > overtrumping obligation applies within the led suit regardless.)
+
+> **❓ OPEN 12 — When the led suit is the one played by the trump order and you
+> can follow, must you play a card that beats what is on the table?** The engine
+> assumes yes, while an opponent holds the trick. `BelotTrickTest.openTwelveFollowingTrumps`
+> states the assumption and what the other answer would expect instead.
+>
+> **❓ OPEN 13 — You must trump, but every trump you hold is too low to win.
+> Must you still play one, or may you discard?** The engine assumes the trump is
+> compulsory. See `BelotTrickTest.openThirteenUndertrumping`.
 
 ## 7. Declarations (анонси)
 
@@ -133,6 +144,13 @@ Rules:
 >
 > **❓ OPEN 8 — Are declarations allowed in a suit contract, or only all trumps?**
 > §7 of the page implies yes for suit contracts; confirm.
+>
+> **❓ OPEN 14 — Six, seven or eight cards in a row: still 100, or more?** The
+> page stops at five. The engine scores any run of five or more as a quinte.
+>
+> **❓ OPEN 15 — In all trumps, where every suit is a trump suit, how many
+> belotes can a hand hold?** The engine counts one per suit holding both the
+> king and the queen. See `Declarations.belotes`.
 
 ## 8. Scoring a deal
 

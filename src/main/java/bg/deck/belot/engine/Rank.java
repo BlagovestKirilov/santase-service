@@ -47,4 +47,13 @@ public enum Rank {
     public int points(boolean trump) {
         return trump ? trumpPoints : plainPoints;
     }
+
+    /**
+     * Where this rank sits in the natural order — 7 8 9 10 J Q K A — which is
+     * the one sequences are built from, whatever the contract. The enum is
+     * declared in that order, and {@code BelotRulesTableTest} holds it to it.
+     */
+    public int naturalOrder() {
+        return ordinal();
+    }
 }

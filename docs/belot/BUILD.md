@@ -68,12 +68,12 @@ ShedLock, see `ExpiredLinkScheduler`).
 
 # M0 — the seam (½–1 day)
 
-- [ ] `db/changelog/changes/019-belot-schema.yaml` — `CREATE SCHEMA IF NOT EXISTS belot;`, included from the master changelog.
-- [ ] Package `bg.deck.belot` with `model`, `engine`, `service`, `controller`, `repository`.
-- [ ] One entity, `belot.player_profile(user_id UUID PK, username TEXT, created_at, updated_at)`, `@Table(schema = "belot")`.
-- [ ] Provisioning: on first authenticated belot request, insert the row from the SecurityContext. Model it on `UserProvisioningFilter` in the Keycloak stash.
-- [ ] `GET /belot/ping` behind `hasRole(USER)`.
-- [ ] `SecurityConfig`: `/belot/**` requires the role.
+- [x] `db/changelog/changes/019-belot-schema.yaml` — `CREATE SCHEMA IF NOT EXISTS belot;`, included from the master changelog.
+- [x] Package `bg.deck.belot` with `model`, `engine`, `service`, `controller`, `repository`.
+- [x] One entity, `belot.player(id, username UNIQUE, created_at, updated_at)`, `@Table(schema = "belot")`. Keyed by **username**: it is the token's subject, fixed at registration, with no rename path — so belot never needs the user id and never reads `public.users`.
+- [x] Provisioning: on first authenticated belot request, insert the row from the SecurityContext. Model it on `UserProvisioningFilter` in the Keycloak stash.
+- [x] `GET /belot/ping` behind `hasRole(USER)`.
+- [x] `SecurityConfig`: `/belot/**` requires the role.
 
 **Checkpoint.** App starts against dev Postgres · Liquibase applies 019 · the
 table exists in `belot` and **nothing new appears in `public`**:
@@ -92,14 +92,14 @@ changes every score in the game.
 Pure classes. **No Spring, no database, no entities** — `bg.deck.belot.engine`
 depends on nothing but the JDK, which is what makes it testable and portable.
 
-- [ ] `Suit`, `Rank`, `Card`, `Deck` (32 cards).
-- [ ] `Contract` — pass · ♣ ♦ ♥ ♠ · no trumps · all trumps; ordering per RULES §5.
-- [ ] `CardOrder` — trump vs plain ordering (RULES §2).
-- [ ] `CardPoints` — per-contract values (RULES §3).
-- [ ] `Bidding` — turn order, legal raises, contra/recontra, three-pass end, all-pass redeal.
-- [ ] `LegalMoves` — follow suit · trump when the opponent holds the trick · overtrump · partner-winning exemption (RULES §6).
-- [ ] `Declarations` — detection, comparison, cancellation, belote, no-trump prohibition (RULES §7).
-- [ ] `TrickResolver` — winner per contract.
+- [x] `Suit`, `Rank`, `Card`, `Deck` (32 cards).
+- [x] `Contract` — pass · ♣ ♦ ♥ ♠ · no trumps · all trumps; ordering per RULES §5.
+- [x] `CardOrder` — trump vs plain ordering (RULES §2).
+- [x] `CardPoints` — per-contract values (RULES §3).
+- [x] `Bidding` — turn order, legal raises, contra/recontra, three-pass end, all-pass redeal.
+- [x] `LegalMoves` — follow suit · trump when the opponent holds the trick · overtrump · partner-winning exemption (RULES §6).
+- [x] `Seat`, `Play`, `Trick`, `TrickResolver` — counter-clockwise seating, partnerships, who holds a trick.
+- [x] `Declarations` — detection, comparison, cancellation, belote, no-trump prohibition (RULES §7).
 - [ ] `DealScorer` — card points, last trick, capot, contract made / вътре / висящи, contra multipliers, rounding (RULES §8).
 - [ ] `GameScorer` — 151, the no-capot extra deal (RULES §9).
 

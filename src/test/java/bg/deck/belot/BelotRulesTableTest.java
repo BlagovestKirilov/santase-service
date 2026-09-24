@@ -186,6 +186,23 @@ class BelotRulesTableTest {
     }
 
     @Nested
+    @DisplayName("§7 — the order sequences are built from")
+    class NaturalOrder {
+
+        @Test
+        @DisplayName("7 8 9 10 J Q K A, whatever the contract")
+        void naturalOrderIsTheDeclarationOrder() {
+            assertEquals(
+                    List.of(Rank.SEVEN, Rank.EIGHT, Rank.NINE, Rank.TEN,
+                            Rank.JACK, Rank.QUEEN, Rank.KING, Rank.ACE),
+                    java.util.Arrays.stream(Rank.values())
+                            .sorted(java.util.Comparator.comparingInt(Rank::naturalOrder))
+                            .toList(),
+                    "Declarations reads runs off this order; the enum is declared in it");
+        }
+    }
+
+    @Nested
     @DisplayName("the deck")
     class TheDeck {
 
