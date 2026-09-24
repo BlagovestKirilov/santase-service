@@ -53,7 +53,9 @@ class BelotSchemaTest {
                         """)
                 .getResultList();
 
-        assertEquals(List.of("player"), belotTables, "belot owns exactly its own tables");
+        assertEquals(List.of("game", "player", "seat"), belotTables,
+                "belot owns exactly its own tables — this list grows with each migration, "
+                        + "and a table appearing anywhere else fails here");
     }
 
     @Test
@@ -76,12 +78,12 @@ class BelotSchemaTest {
         List<?> references = entityManager.createNativeQuery("""
                         select fk.constraint_name
                           from information_schema.referential_constraints fk
-                          join information_schema.table_constraints child
-                            on child.constraint_name = fk.constraint_name
-                         where upper(child.table_schema) = 'BELOT'
+                         where upper(fk.constraint_schema) = 'BELOT'
+                           and upper(fk.unique_constraint_schema) <> 'BELOT'
                         """)
                 .getResultList();
 
-        assertEquals(List.of(), references, "belot tables have no foreign keys out of the schema");
+        assertEquals(List.of(), references,
+                "a seat points at its game, and nothing belot owns points out of the schema");
     }
 }
