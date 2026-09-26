@@ -1,6 +1,12 @@
 package bg.deck.belot.model;
 
 import bg.deck.belot.engine.Bidding;
+import bg.deck.belot.engine.Card;
+import bg.deck.belot.engine.DealResult;
+import bg.deck.belot.engine.Dealing;
+import bg.deck.belot.engine.Play;
+import bg.deck.belot.engine.Trick;
+import bg.deck.belot.engine.TrickResolver;
 import bg.deck.belot.engine.Contract;
 import bg.deck.belot.engine.Doubling;
 import bg.deck.belot.engine.Seat;
@@ -21,6 +27,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * One hand of belot: its number, who dealt it, and what was said over it.
@@ -65,9 +72,37 @@ public class BelotDeal extends BaseEntity {
     @Column(nullable = false, length = 20)
     private Doubling doubling = Doubling.NONE;
 
+    /**
+     * What the deal came to, once it is played out: the card points each side
+     * took, the game points written down for them, and which of the three
+     * things happened. Null until then.
+     *
+     * <p>Kept rather than recomputed. A score sheet that works itself out
+     * again on every read is a score sheet that can change after the fact.
+     */
+    @Column(name = "caller_points")
+    private Integer callerPoints;
+
+    @Column(name = "opponent_points")
+    private Integer opponentPoints;
+
+    @Column(name = "caller_score")
+    private Integer callerScore;
+
+    @Column(name = "opponent_score")
+    private Integer opponentScore;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private DealResult result;
+
     @OrderBy("ordinal ASC")
     @OneToMany(mappedBy = "deal", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BelotBid> bids = new ArrayList<>();
+
+    @OrderBy("trickNo ASC, orderInTrick ASC")
+    @OneToMany(mappedBy = "deal", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BelotPlay> plays = new ArrayList<>();
 
     public BelotDeal(BelotGame game, int dealNumber, Seat dealerSeat) {
         this.game = game;
@@ -97,5 +132,85 @@ public class BelotDeal extends BaseEntity {
 
     public int nextOrdinal() {
         return bids.size();
+    }
+
+    public void add(BelotPlay play) {
+        play.setDeal(this);
+        plays.add(play);
+    }
+
+    /**
+     * Every trick so far, the last one possibly unfinished.
+     *
+     * <p>Built from the cards rather than kept beside them: a trick is four
+     * plays in order, and there is nothing else to it worth storing.
+     */
+    public List<Trick> tricks() {
+        List<Trick> tricks = new ArrayList<>();
+        Trick current = Trick.empty();
+        int number = 1;
+
+        for (BelotPlay played : plays) {
+            if (played.getTrickNo() != number) {
+                tricks.add(current);
+                current = Trick.empty();
+                number = played.getTrickNo();
+            }
+            current = current.with(played.play());
+        }
+        if (!current.isEmpty()) {
+            tricks.add(current);
+        }
+        return List.copyOf(tricks);
+    }
+
+    /** The trick being played; empty when the next card starts a new one. */
+    public Trick currentTrick() {
+        List<Trick> tricks = tricks();
+        if (tricks.isEmpty()) {
+            return Trick.empty();
+        }
+        Trick last = tricks.getLast();
+        return last.plays().size() < Seat.values().length ? last : Trick.empty();
+    }
+
+    /** Which trick the next card belongs to, counted from one. */
+    public int currentTrickNumber() {
+        return plays.size() / Seat.values().length + 1;
+    }
+
+    /** Where in the trick the next card goes: 0 is the lead. */
+    public int nextPlaceInTrick() {
+        return plays.size() % Seat.values().length;
+    }
+
+    public boolean isPlayedOut() {
+        return plays.size() == Dealing.HAND_SIZE * Seat.values().length;
+    }
+
+    /** The cards this seat has already put on the table. */
+    public List<Card> playedBy(Seat seat) {
+        return plays.stream()
+                .filter(play -> play.getSeat() == seat)
+                .map(BelotPlay::card)
+                .toList();
+    }
+
+    /**
+     * Who took the last finished trick, and so leads the next one.
+     *
+     * <p>Empty while a trick is in progress, and empty before the first card
+     * — the lead then belongs to the seat on the dealer’s right, which is the
+     * deal’s business rather than a trick’s.
+     */
+    public Optional<Seat> lastTrickWinner() {
+        List<Trick> tricks = tricks();
+        if (tricks.isEmpty()) {
+            return Optional.empty();
+        }
+        Trick last = tricks.getLast();
+        return last.plays().size() == Seat.values().length
+                ? TrickResolver.winning(last, contract).map(Play::seat)
+                : Optional.empty();
     }
 }

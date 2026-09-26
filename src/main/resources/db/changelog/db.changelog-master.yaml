@@ -62,3 +62,6 @@ databaseChangeLog:
 
   - include:
       file: db/changelog/changes/023-belot-deal.yaml
+
+  - include:
+      file: db/changelog/changes/024-belot-play.yaml

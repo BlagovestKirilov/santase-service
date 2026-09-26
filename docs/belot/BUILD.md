@@ -119,7 +119,7 @@ forgive.
 
 # M2 — a table over STOMP (1 week)
 
-- [x] Tables: `belot.game`, `belot.seat` (022), `belot.deal`, `belot.bid` (023). All `@Table(schema = "belot")`. `belot.trick`, `belot.play` and `belot.declaration` come with the play phase.
+- [x] Tables: `belot.game`, `belot.seat` (022), `belot.deal`, `belot.bid` (023), `belot.play` (024). All `@Table(schema = "belot")`. No trick table — a trick is four plays in order — and no declaration table, for the reason below.
 - [x] Matchmaking for four: `POST /belot/search` — the oldest table short of players, or a new one; seats handed out in playing order so partners sit opposite.
 - [x] Turn order counter-clockwise; the deal moves one seat along each hand, thrown-in hands included.
 - [x] Per-player views — one `BelotStateResponse` per seat on `/topic/belot/{gameId}/{username}`, carrying that seat’s hand and the calls it may make. `BelotViewTest` checks no other seat’s cards appear in it.
@@ -127,7 +127,9 @@ forgive.
 - [ ] Inactivity: own scheduler, own timeout, and a decision —
       **❓ does a dropped player forfeit for their team, or does the table pause?**
 - [ ] Reconnect: rejoining mid-deal restores the full view. `GET /belot/state` already re-sends one seat’s view; what is missing is the play in progress, which does not exist yet.
-- [ ] The play itself: tricks, following suit, declarations, scoring a deal into the sheet. The engine has all of it (`LegalMoves`, `TrickResolver`, `DealScorer`); what is missing is the tables and the turn loop.
+- [x] The play itself: `belot.play` holds one row per card; tricks, hands and whose turn it is are rebuilt from it. `POST /belot/play` enforces the turn and `LegalMoves`; the last card scores the deal onto the sheet and deals the next hand.
+- [x] Declarations are detected from the hands rather than announced — they are in the cards, and the cards are in the seed. **Simplification worth revisiting:** at a real table an unannounced declaration does not count.
+- [x] Each deal records what it came to (card points, game points, made/вътре/висящи), which is the score sheet M3 needs.
 - [x] `BelotStateResponse` and `BelotBidRequest` pinned in `WireFormatSnapshotTest`. The rest join them as they are written.
 
 **Checkpoint.** Two browsers × two tabs play a full deal end to end; killing one

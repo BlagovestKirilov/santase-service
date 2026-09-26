@@ -1,6 +1,7 @@
 package bg.deck.belot.controller;
 
 import bg.deck.belot.model.request.BelotBidRequest;
+import bg.deck.belot.model.request.BelotPlayRequest;
 import bg.deck.belot.service.BelotPlayerService;
 import bg.deck.belot.service.BelotService;
 import bg.deck.util.AuthenticatedUser;
@@ -47,6 +48,13 @@ public class BelotController {
     @PostMapping("/bid")
     public ResponseEntity<Void> bid(@Valid @RequestBody BelotBidRequest request) {
         belotService.bid(AuthenticatedUser.username(), request);
+        return ResponseEntity.accepted().build();
+    }
+
+    /** Put a card on the table, when it is this player’s turn. */
+    @PostMapping("/play")
+    public ResponseEntity<Void> play(@Valid @RequestBody BelotPlayRequest request) {
+        belotService.play(AuthenticatedUser.username(), request);
         return ResponseEntity.accepted().build();
     }
 

@@ -11,8 +11,11 @@ import bg.deck.belot.engine.Team;
 import bg.deck.belot.model.BelotDealStatus;
 import bg.deck.belot.model.BelotGameStatus;
 import bg.deck.belot.model.request.BelotBidRequest;
+import bg.deck.belot.model.request.BelotPlayRequest;
 import bg.deck.belot.model.response.BelotBidView;
 import bg.deck.belot.model.response.BelotBiddingView;
+import bg.deck.belot.model.response.BelotPlayView;
+import bg.deck.belot.model.response.BelotPlayedCard;
 import bg.deck.belot.model.response.BelotSeatView;
 import bg.deck.belot.model.response.BelotStateResponse;
 import bg.deck.model.dto.CardDTO;
@@ -145,6 +148,14 @@ class WireFormatSnapshotTest {
                         List.of(new BelotBidView(Seat.NORTH, BidKind.BID, Contract.HEARTS),
                                 new BelotBidView(Seat.WEST, BidKind.CONTRA, null)),
                         List.of(new BelotBidView(Seat.SOUTH, BidKind.PASS, null))),
+                new BelotPlayView(
+                        Contract.HEARTS,
+                        Seat.NORTH,
+                        Seat.EAST,
+                        4,
+                        List.of(new BelotPlayedCard(Seat.NORTH, new Card(Suit.CLUBS, Rank.TEN)),
+                                new BelotPlayedCard(Seat.WEST, new Card(Suit.CLUBS, Rank.KING))),
+                        List.of(new Card(Suit.CLUBS, Rank.SEVEN))),
                 91, 64, 0));
 
         out.put("SearchGameResponse.waiting", SearchGameResponse.waiting());
@@ -222,6 +233,7 @@ class WireFormatSnapshotTest {
         read(out, RegisterRequest.class, "{\"username\":\"petko91\",\"password\":\"secret12\",\"email\":\"petko@example.com\"}");
         read(out, UserDeletionRequest.class, "{\"password\":\"secret12\"}");
         read(out, BelotBidRequest.class, "{\"kind\":\"BID\",\"contract\":\"ALL_TRUMPS\"}");
+        read(out, BelotPlayRequest.class, "{\"card\":{\"suit\":\"SPADES\",\"rank\":\"ACE\"}}");
 
         return out;
     }

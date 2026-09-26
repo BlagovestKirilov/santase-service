@@ -70,6 +70,29 @@
         "contract" : null
       } ]
     },
+    "play" : {
+      "contract" : "HEARTS",
+      "declarer" : "NORTH",
+      "toAct" : "EAST",
+      "trickNo" : 4,
+      "onTable" : [ {
+        "seat" : "NORTH",
+        "card" : {
+          "suit" : "CLUBS",
+          "rank" : "TEN"
+        }
+      }, {
+        "seat" : "WEST",
+        "card" : {
+          "suit" : "CLUBS",
+          "rank" : "KING"
+        }
+      } ],
+      "yours" : [ {
+        "suit" : "CLUBS",
+        "rank" : "SEVEN"
+      } ]
+    },
     "northSouthScore" : 91,
     "eastWestScore" : 64,
     "hangingPoints" : 0
@@ -320,5 +343,15 @@
     },
     "violationsWhenFull" : "[]",
     "violationsWhenEmpty" : "[kind:NotNull]"
+  },
+  "BelotPlayRequest" : {
+    "readsBack" : {
+      "card" : {
+        "suit" : "SPADES",
+        "rank" : "ACE"
+      }
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[card:NotNull]"
   }
 }

@@ -10,6 +10,7 @@ import bg.deck.belot.model.BelotSeat;
 import bg.deck.belot.model.response.BelotStateResponse;
 import bg.deck.belot.repository.BelotDealRepository;
 import bg.deck.belot.service.BelotDealService;
+import bg.deck.belot.service.BelotPlayService;
 import bg.deck.belot.service.BelotPlayerService;
 import bg.deck.belot.service.BelotSeedService;
 import bg.deck.belot.service.BelotService;
@@ -55,6 +56,7 @@ class BelotViewTest {
     private final BelotDealRepository deals = mock(BelotDealRepository.class);
     private final BelotSeedService seeds = new BelotSeedService();
     private final BelotDealService dealService = new BelotDealService(deals, seeds);
+    private final BelotPlayService playService = new BelotPlayService(dealService);
 
     private final BelotTableService tables = mock(BelotTableService.class);
     private final BelotPlayerService players = mock(BelotPlayerService.class);
@@ -62,7 +64,7 @@ class BelotViewTest {
     private final WebSocketService sockets = mock(WebSocketService.class);
 
     private final BelotService belot =
-            new BelotService(tables, dealService, players, availability, sockets);
+            new BelotService(tables, dealService, playService, players, availability, sockets);
 
     private BelotGame table;
     private BelotDeal deal;

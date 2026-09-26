@@ -8,9 +8,15 @@ import bg.deck.belot.model.BelotDeal;
 import bg.deck.belot.model.BelotDealStatus;
 import bg.deck.belot.model.BelotGame;
 import bg.deck.belot.model.BelotSeat;
+import bg.deck.belot.model.BelotGameStatus;
 import bg.deck.belot.model.request.BelotBidRequest;
+import bg.deck.belot.model.request.BelotPlayRequest;
+import bg.deck.belot.engine.Trick;
+import bg.deck.belot.model.BelotDealStatus;
 import bg.deck.belot.model.response.BelotBidView;
 import bg.deck.belot.model.response.BelotBiddingView;
+import bg.deck.belot.model.response.BelotPlayView;
+import bg.deck.belot.model.response.BelotPlayedCard;
 import bg.deck.belot.model.response.BelotSeatView;
 import bg.deck.belot.model.response.BelotStateResponse;
 import bg.deck.enums.GameType;
@@ -42,6 +48,7 @@ public class BelotService {
 
     private final BelotTableService belotTableService;
     private final BelotDealService belotDealService;
+    private final BelotPlayService belotPlayService;
     private final BelotPlayerService belotPlayerService;
     private final AvailabilityService availabilityService;
     private final WebSocketService webSocketService;
@@ -80,10 +87,8 @@ public class BelotService {
      */
     @Transactional
     public void bid(String username, BelotBidRequest request) {
-        BelotGame table = belotTableService.tableOf(username).orElseThrow(
-                () -> new IllegalStateException(username + " is not at a belot table"));
-        BelotSeat seat = table.seatOf(username).orElseThrow(
-                () -> new IllegalStateException(username + " has no seat at table " + table.getId()));
+        BelotGame table = tableFor(username);
+        BelotSeat seat = seatFor(table, username);
         BelotDeal deal = belotDealService.current(table).orElseThrow(
                 () -> new IllegalStateException("No deal in progress at table " + table.getId()));
 
@@ -95,6 +100,42 @@ public class BelotService {
         }
 
         tellEveryone(table);
+    }
+
+    /**
+     * One card, from whoever is calling.
+     *
+     * <p>As with a bid, the seat comes from the table rather than the
+     * request. When the card was the last of the deal the score sheet is
+     * written and, unless that finished the game, the next hand is dealt —
+     * so the four of them are told once, about a table that has already
+     * moved on.
+     */
+    @Transactional
+    public void play(String username, BelotPlayRequest request) {
+        BelotGame table = tableFor(username);
+        BelotSeat seat = seatFor(table, username);
+        BelotDeal deal = belotDealService.current(table).orElseThrow(
+                () -> new IllegalStateException("No deal in progress at table " + table.getId()));
+
+        belotPlayService.play(table, deal, seat.getSeat(), request.card());
+
+        if (deal.getStatus() == BelotDealStatus.FINISHED
+                && table.getStatus() != BelotGameStatus.FINISHED) {
+            belotDealService.dealNext(table);
+        }
+
+        tellEveryone(table);
+    }
+
+    private BelotGame tableFor(String username) {
+        return belotTableService.tableOf(username).orElseThrow(
+                () -> new IllegalStateException(username + " is not at a belot table"));
+    }
+
+    private BelotSeat seatFor(BelotGame table, String username) {
+        return table.seatOf(username).orElseThrow(
+                () -> new IllegalStateException(username + " has no seat at table " + table.getId()));
     }
 
     private void tellEveryone(BelotGame table) {
@@ -110,9 +151,13 @@ public class BelotService {
         Seat seat = table.seatOf(username).map(BelotSeat::getSeat).orElse(null);
         Optional<BelotDeal> deal = belotDealService.current(table);
 
-        List<Card> hand = deal.isPresent() && seat != null
-                ? belotDealService.visibleHand(table, deal.get(), seat)
-                : List.of();
+        List<Card> hand = List.of();
+        if (deal.isPresent() && seat != null) {
+            // Five while the bidding is on, then what is left of the eight.
+            hand = deal.get().getStatus() == BelotDealStatus.PLAYING
+                    ? belotPlayService.handOf(table, deal.get(), seat)
+                    : belotDealService.visibleHand(table, deal.get(), seat);
+        }
 
         return new BelotStateResponse(
                 table.getId(),
@@ -127,6 +172,7 @@ public class BelotService {
                 deal.map(BelotDeal::getStatus).orElse(null),
                 hand,
                 deal.map(current -> biddingFor(current, seat)).orElse(null),
+                deal.map(current -> playFor(table, current, seat)).orElse(null),
                 table.getNorthSouthScore(),
                 table.getEastWestScore(),
                 table.getHangingPoints());
@@ -156,5 +202,26 @@ public class BelotService {
                 bidding.doubling(),
                 deal.getBids().stream().map(bid -> BelotBidView.of(bid.action())).toList(),
                 yours);
+    }
+
+    /**
+     * The trick on the table, and what this seat may add to it.
+     *
+     * <p>{@code yours} is empty unless it is their turn, so the client has
+     * no rule to apply and no card to offer that would be refused.
+     */
+    private BelotPlayView playFor(BelotGame table, BelotDeal deal, Seat seat) {
+        if (deal.getStatus() != BelotDealStatus.PLAYING) {
+            return null;
+        }
+        Trick trick = deal.currentTrick();
+
+        return new BelotPlayView(
+                deal.getContract(),
+                deal.getDeclarerSeat(),
+                belotPlayService.toAct(deal),
+                deal.currentTrickNumber(),
+                trick.plays().stream().map(play -> new BelotPlayedCard(play.seat(), play.card())).toList(),
+                seat == null ? List.of() : belotPlayService.legalFor(table, deal, seat));
     }
 }

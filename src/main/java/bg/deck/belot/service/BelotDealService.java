@@ -92,6 +92,12 @@ public class BelotDealService {
         return belotDealRepository.save(deal);
     }
 
+    /** Writes a deal and the bids and cards hanging off it. */
+    @Transactional
+    public BelotDeal save(BelotDeal deal) {
+        return belotDealRepository.save(deal);
+    }
+
     /**
      * The eight cards a seat holds in this deal, dealt again from the seed.
      *
