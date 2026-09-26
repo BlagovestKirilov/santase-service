@@ -1,19 +1,54 @@
 package bg.deck.belot.controller;
 
+import bg.deck.belot.model.request.BelotBidRequest;
 import bg.deck.belot.service.BelotPlayerService;
+import bg.deck.belot.service.BelotService;
 import bg.deck.util.AuthenticatedUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Belot, over HTTP for the asking and STOMP for the answering.
+ *
+ * <p>Every endpoint answers 202 with an empty body, exactly as сантасе and
+ * табла do: what the player is waiting for is their own view of the table, and
+ * that arrives on {@code /topic/belot/{gameId}/{username}} — where the other
+ * three players' views cannot follow it.
+ */
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/belot")
 public class BelotController {
 
+    private final BelotService belotService;
     private final BelotPlayerService belotPlayerService;
+
+    /** Sit down: at the table this player already has, or at one short of four. */
+    @PostMapping("/search")
+    public ResponseEntity<Void> search() {
+        belotService.search(AuthenticatedUser.username());
+        return ResponseEntity.accepted().build();
+    }
+
+    /** Send me my view again — a reload, or a socket that dropped. */
+    @GetMapping("/state")
+    public ResponseEntity<Void> state() {
+        belotService.sendState(AuthenticatedUser.username());
+        return ResponseEntity.accepted().build();
+    }
+
+    /** Pass, bid, contra or recontra, when the bidding reaches this player. */
+    @PostMapping("/bid")
+    public ResponseEntity<Void> bid(@Valid @RequestBody BelotBidRequest request) {
+        belotService.bid(AuthenticatedUser.username(), request);
+        return ResponseEntity.accepted().build();
+    }
 
     /**
      * Proves the seam end to end: a real session reaches belot, and belot

@@ -18,6 +18,62 @@
   "AvailableServicesResponse" : {
     "services" : [ "SANTASE", "TABLA" ]
   },
+  "BelotStateResponse" : {
+    "gameId" : "11111111-2222-3333-4444-555555555555",
+    "status" : "PLAYING",
+    "serverSeedHash" : "0f5c1b6c9b4b4d2f8a1e6d3c2b7a9e8f0a1b2c3d4e5f60718293a4b5c6d7e8f9",
+    "seats" : [ {
+      "seat" : "NORTH",
+      "team" : "NORTH_SOUTH",
+      "username" : "petko91"
+    }, {
+      "seat" : "WEST",
+      "team" : "EAST_WEST",
+      "username" : "ninja2011"
+    }, {
+      "seat" : "SOUTH",
+      "team" : "NORTH_SOUTH",
+      "username" : "gosho"
+    }, {
+      "seat" : "EAST",
+      "team" : "EAST_WEST",
+      "username" : "ivan"
+    } ],
+    "yourSeat" : "NORTH",
+    "dealNumber" : 3,
+    "dealerSeat" : "WEST",
+    "dealStatus" : "BIDDING",
+    "yourHand" : [ {
+      "suit" : "SPADES",
+      "rank" : "ACE"
+    }, {
+      "suit" : "HEARTS",
+      "rank" : "JACK"
+    } ],
+    "bidding" : {
+      "toAct" : "SOUTH",
+      "highestBid" : "HEARTS",
+      "bidder" : "NORTH",
+      "doubling" : "CONTRA",
+      "said" : [ {
+        "seat" : "NORTH",
+        "kind" : "BID",
+        "contract" : "HEARTS"
+      }, {
+        "seat" : "WEST",
+        "kind" : "CONTRA",
+        "contract" : null
+      } ],
+      "yours" : [ {
+        "seat" : "SOUTH",
+        "kind" : "PASS",
+        "contract" : null
+      } ]
+    },
+    "northSouthScore" : 91,
+    "eastWestScore" : 64,
+    "hangingPoints" : 0
+  },
   "SearchGameResponse.waiting" : {
     "status" : "WAITING"
   },
@@ -256,5 +312,13 @@
     },
     "violationsWhenFull" : "[]",
     "violationsWhenEmpty" : "[password:NotBlank]"
+  },
+  "BelotBidRequest" : {
+    "readsBack" : {
+      "kind" : "BID",
+      "contract" : "ALL_TRUMPS"
+    },
+    "violationsWhenFull" : "[]",
+    "violationsWhenEmpty" : "[kind:NotNull]"
   }
 }

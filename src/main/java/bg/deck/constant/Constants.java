@@ -17,6 +17,13 @@ public class Constants {
      */
     public static final String NOTIFY_SEARCH_BY_GAME_DESTINATION = "/topic/search/%s/%s";
 
+    /**
+     * Belot pushes a different state to every seat — each player’s own hand is
+     * in it — so the destination ends in the username, as the others do, and
+     * the subscribe check refuses anyone listening to somebody else’s.
+     */
+    public static final String NOTIFY_BELOT_DESTINATION = "/topic/belot/%s/%s";
+
     /** The one cache: the games on offer. @see bg.deck.config.CacheConfig */
     public static final String SERVICES_CACHE = "services";
     public static final String ROLE = "role";

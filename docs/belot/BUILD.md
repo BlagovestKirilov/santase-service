@@ -119,15 +119,16 @@ forgive.
 
 # M2 — a table over STOMP (1 week)
 
-- [ ] Tables: `belot.game`, `belot.seat`, `belot.deal`, `belot.trick`, `belot.play`, `belot.declaration`. All `@Table(schema = "belot")`.
-- [ ] Matchmaking for four: queue, form the table when four are waiting, seat them so partners sit opposite.
-- [ ] Turn order counter-clockwise; dealer rotates each deal.
-- [ ] Per-player views — a player sees only their own hand. One `BelotStateResponse` per seat, pushed to `/topic/belot/{gameId}/{username}`.
-- [ ] Provably fair dealing: commit `sha256(serverSeed)` at the start, reveal at the end.
+- [x] Tables: `belot.game`, `belot.seat` (022), `belot.deal`, `belot.bid` (023). All `@Table(schema = "belot")`. `belot.trick`, `belot.play` and `belot.declaration` come with the play phase.
+- [x] Matchmaking for four: `POST /belot/search` — the oldest table short of players, or a new one; seats handed out in playing order so partners sit opposite.
+- [x] Turn order counter-clockwise; the deal moves one seat along each hand, thrown-in hands included.
+- [x] Per-player views — one `BelotStateResponse` per seat on `/topic/belot/{gameId}/{username}`, carrying that seat’s hand and the calls it may make. `BelotViewTest` checks no other seat’s cards appear in it.
+- [x] Provably fair dealing: the hash is committed when the table opens and travels in every view; hands are derived from seed + deal number and stored nowhere. The reveal at the end comes with the game’s finish.
 - [ ] Inactivity: own scheduler, own timeout, and a decision —
       **❓ does a dropped player forfeit for their team, or does the table pause?**
-- [ ] Reconnect: rejoining mid-deal restores the full view.
-- [ ] Add the new request/response records to `WireFormatSnapshotTest`.
+- [ ] Reconnect: rejoining mid-deal restores the full view. `GET /belot/state` already re-sends one seat’s view; what is missing is the play in progress, which does not exist yet.
+- [ ] The play itself: tricks, following suit, declarations, scoring a deal into the sheet. The engine has all of it (`LegalMoves`, `TrickResolver`, `DealScorer`); what is missing is the tables and the turn loop.
+- [x] `BelotStateResponse` and `BelotBidRequest` pinned in `WireFormatSnapshotTest`. The rest join them as they are written.
 
 **Checkpoint.** Two browsers × two tabs play a full deal end to end; killing one
 tab and reopening it restores that seat's hand exactly.

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static bg.deck.constant.Constants.NOTIFY_BELOT_DESTINATION;
 import static bg.deck.constant.Constants.NOTIFY_GAME_DESTINATION;
 import static bg.deck.constant.Constants.NOTIFY_GAME_SEARCH_DESTINATION;
 import static bg.deck.constant.Constants.NOTIFY_SEARCH_BY_GAME_DESTINATION;
@@ -33,6 +34,13 @@ public class WebSocketService {
     public void notifyGameUpdate(String gameId, String username, Object gameState) {
         String destination = String.format(NOTIFY_GAME_DESTINATION, gameId, username);
         enqueueMessage(username, () -> messagingTemplate.convertAndSend(destination, gameState));
+    }
+
+    /** One seat’s view of a belot table. Never the table’s view: it holds a hand. */
+    @Async
+    public void notifyBelotUpdate(String gameId, String username, Object state) {
+        String destination = String.format(NOTIFY_BELOT_DESTINATION, gameId, username);
+        enqueueMessage(username, () -> messagingTemplate.convertAndSend(destination, state));
     }
 
     @Async

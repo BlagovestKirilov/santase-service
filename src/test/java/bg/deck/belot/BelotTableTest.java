@@ -208,7 +208,7 @@ class BelotTableTest {
                         """)
                 .getResultList();
 
-        assertEquals(List.of("game", "player", "seat"), tablesInBelot);
+        assertEquals(List.of("bid", "deal", "game", "player", "seat"), tablesInBelot);
     }
 
     @Test

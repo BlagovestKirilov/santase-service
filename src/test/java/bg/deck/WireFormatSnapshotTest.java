@@ -1,5 +1,20 @@
 package bg.deck;
 
+import bg.deck.belot.engine.BidKind;
+import bg.deck.belot.engine.Card;
+import bg.deck.belot.engine.Contract;
+import bg.deck.belot.engine.Doubling;
+import bg.deck.belot.engine.Rank;
+import bg.deck.belot.engine.Seat;
+import bg.deck.belot.engine.Suit;
+import bg.deck.belot.engine.Team;
+import bg.deck.belot.model.BelotDealStatus;
+import bg.deck.belot.model.BelotGameStatus;
+import bg.deck.belot.model.request.BelotBidRequest;
+import bg.deck.belot.model.response.BelotBidView;
+import bg.deck.belot.model.response.BelotBiddingView;
+import bg.deck.belot.model.response.BelotSeatView;
+import bg.deck.belot.model.response.BelotStateResponse;
 import bg.deck.model.dto.CardDTO;
 import bg.deck.model.request.CardRequest;
 import bg.deck.model.request.ChangeForgottenPasswordRequest;
@@ -108,6 +123,30 @@ class WireFormatSnapshotTest {
         out.put("AvailableServicesResponse",
                 new AvailableServicesResponse(List.of("SANTASE", "TABLA")));
 
+        // Belot sends one of these per seat, each with that seat’s own hand.
+        out.put("BelotStateResponse", new BelotStateResponse(
+                ID,
+                BelotGameStatus.PLAYING,
+                "0f5c1b6c9b4b4d2f8a1e6d3c2b7a9e8f0a1b2c3d4e5f60718293a4b5c6d7e8f9",
+                List.of(new BelotSeatView(Seat.NORTH, Team.NORTH_SOUTH, "petko91"),
+                        new BelotSeatView(Seat.WEST, Team.EAST_WEST, "ninja2011"),
+                        new BelotSeatView(Seat.SOUTH, Team.NORTH_SOUTH, "gosho"),
+                        new BelotSeatView(Seat.EAST, Team.EAST_WEST, "ivan")),
+                Seat.NORTH,
+                3,
+                Seat.WEST,
+                BelotDealStatus.BIDDING,
+                List.of(new Card(Suit.SPADES, Rank.ACE), new Card(Suit.HEARTS, Rank.JACK)),
+                new BelotBiddingView(
+                        Seat.SOUTH,
+                        Contract.HEARTS,
+                        Seat.NORTH,
+                        Doubling.CONTRA,
+                        List.of(new BelotBidView(Seat.NORTH, BidKind.BID, Contract.HEARTS),
+                                new BelotBidView(Seat.WEST, BidKind.CONTRA, null)),
+                        List.of(new BelotBidView(Seat.SOUTH, BidKind.PASS, null))),
+                91, 64, 0));
+
         out.put("SearchGameResponse.waiting", SearchGameResponse.waiting());
         out.put("SearchGameResponse.started", SearchGameResponse.started(ID));
 
@@ -182,6 +221,8 @@ class WireFormatSnapshotTest {
         read(out, RefreshRequest.class, "{\"refreshToken\":\"refresh\"}");
         read(out, RegisterRequest.class, "{\"username\":\"petko91\",\"password\":\"secret12\",\"email\":\"petko@example.com\"}");
         read(out, UserDeletionRequest.class, "{\"password\":\"secret12\"}");
+        read(out, BelotBidRequest.class, "{\"kind\":\"BID\",\"contract\":\"ALL_TRUMPS\"}");
+
         return out;
     }
 
