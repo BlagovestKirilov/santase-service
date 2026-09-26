@@ -1,6 +1,7 @@
 package bg.deck.service;
 
 import bg.deck.constant.LogConstants;
+import bg.deck.enums.GameType;
 import bg.deck.enums.card.Rank;
 import bg.deck.exception.CardNotFoundException;
 import bg.deck.exception.NoCardForReplacingException;
@@ -27,11 +28,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Log4j2
 @RequiredArgsConstructor
 @Service
-public class GameService {
+public class SantaseService {
     private final WebSocketService webSocketService;
     private final WebSocketUtilService webSocketUtilService;
     private final GameUtilService gameUtilService;
     private final GameInactivityService gameInactivityService;
+    private final AvailabilityService availabilityService;
 
     private final Queue<String> matchQueue = new ConcurrentLinkedQueue<>();
 
@@ -54,6 +56,9 @@ public class GameService {
     public void searchGame() {
         String username = gameUtilService.getUsername();
         log.info(LogConstants.GAME_SEARCH_START, username);
+
+        // Nobody joins the queue for a game they are not being offered.
+        availabilityService.requireAvailable(GameType.SANTASE.name(), username);
 
         if (!gameUtilService.checkIfUserExistsAndIsAvailable(username)) {
             log.warn(LogConstants.GAME_SEARCH_USER_UNAVAILABLE, username);

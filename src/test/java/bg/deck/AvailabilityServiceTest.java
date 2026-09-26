@@ -2,12 +2,14 @@ package bg.deck;
 
 import bg.deck.enums.Scope;
 import bg.deck.enums.ServiceState;
+import bg.deck.exception.ServiceNotAvailableException;
 import bg.deck.model.AvailableService;
 import bg.deck.model.User;
-import bg.deck.repository.AvailableServiceRepository;
+import bg.deck.model.dto.ServiceAvailability;
+import bg.deck.model.dto.CachedServices;
 import bg.deck.service.AvailabilityService;
+import bg.deck.service.CacheService;
 import bg.deck.service.UserAccountService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,10 +23,15 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -42,18 +49,19 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AvailabilityServiceTest {
 
-    @Mock private AvailableServiceRepository availableServiceRepository;
+    // The catalogue and how long it is held for belong to
+    // CacheService and the cache around it; what is under test here
+    // is only who gets offered what.
+    @Mock private CacheService cacheService;
     @Mock private UserAccountService userAccountService;
     @InjectMocks private AvailabilityService availabilityService;
 
-    @BeforeEach
-    void forgetBetweenTests() {
-        availabilityService.forget();
-    }
-
     private void offering(AvailableService... services) {
-        when(availableServiceRepository.findAll()).thenReturn(List.of(services));
-        availabilityService.forget();
+        Map<String, ServiceAvailability> byCode = Stream.of(services)
+                .map(service -> new ServiceAvailability(
+                        service.getCode(), service.getState(), service.getRequiredScope()))
+                .collect(Collectors.toMap(ServiceAvailability::code, Function.identity()));
+        when(cacheService.availableServices()).thenReturn(new CachedServices(byCode));
     }
 
     private static AvailableService service(String code, ServiceState state, Scope scope) {
@@ -87,6 +95,29 @@ class AvailabilityServiceTest {
             accountWith("petko91", held);
 
             assertEquals(offered, availabilityService.isAvailable("TABLA", "petko91"));
+        }
+    }
+
+    @Nested
+    @DisplayName("asked where a game begins")
+    class Requiring {
+
+        @Test
+        @DisplayName("a game on offer lets the search carry on")
+        void onOfferPassesThrough() {
+            offering(service("TABLA", ServiceState.ON, Scope.PUBLIC));
+
+            availabilityService.requireAvailable("TABLA", "petko91");
+        }
+
+        @Test
+        @DisplayName("one that is not stops it")
+        void notOnOfferThrows() {
+            offering(service("TABLA", ServiceState.ON, Scope.BETA));
+            accountWith("petko91", Scope.PUBLIC);
+
+            assertThrows(ServiceNotAvailableException.class,
+                    () -> availabilityService.requireAvailable("TABLA", "petko91"));
         }
     }
 
@@ -176,39 +207,4 @@ class AvailabilityServiceTest {
         }
     }
 
-    @Nested
-    @DisplayName("the cache")
-    class Cache {
-
-        @Test
-        @DisplayName("spares the table on every request")
-        void readOnceWhileFresh() {
-            offering(service("TABLA", ServiceState.ON, Scope.PUBLIC));
-
-            availabilityService.isAvailable("TABLA", "petko91");
-            availabilityService.isAvailable("TABLA", "petko91");
-            availabilityService.availableTo("petko91");
-
-            verify(availableServiceRepository).findAll();
-        }
-
-        @Test
-        @DisplayName("and lets go when told to")
-        void forgetting() {
-            offering(service("TABLA", ServiceState.ON, Scope.PUBLIC));
-            availabilityService.isAvailable("TABLA", "petko91");
-
-            availabilityService.forget();
-            availabilityService.isAvailable("TABLA", "petko91");
-
-            verify(availableServiceRepository, org.mockito.Mockito.times(2)).findAll();
-        }
-
-        @Test
-        @DisplayName("is short enough that an UPDATE bites within the minute")
-        void staysFreshForHalfAMinute() {
-            assertTrue(AvailabilityService.FRESH_FOR.toSeconds() <= 60,
-                    "the promise made to whoever switches a game off during an incident");
-        }
-    }
 }

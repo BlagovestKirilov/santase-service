@@ -16,6 +16,9 @@ public class Constants {
      * one release, so a client mid-deploy does not miss its match.
      */
     public static final String NOTIFY_SEARCH_BY_GAME_DESTINATION = "/topic/search/%s/%s";
+
+    /** The one cache: the games on offer. @see bg.deck.config.CacheConfig */
+    public static final String SERVICES_CACHE = "services";
     public static final String ROLE = "role";
     public static final String USERNAME = "username";
     public static final String BEARER = "Bearer ";

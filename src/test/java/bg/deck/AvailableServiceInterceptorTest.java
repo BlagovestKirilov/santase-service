@@ -2,7 +2,7 @@ package bg.deck;
 
 import bg.deck.config.AvailableServiceInterceptor;
 import bg.deck.config.RequiresService;
-import bg.deck.controller.GameController;
+import bg.deck.controller.SantaseController;
 import bg.deck.controller.TablaController;
 import bg.deck.service.AvailabilityService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -89,7 +89,7 @@ class AvailableServiceInterceptorTest {
 
         boolean carryOn = interceptor.preHandle(
                 new MockHttpServletRequest("POST", "/game/search"), response,
-                endpoint(GameController.class, "searchGame"));
+                endpoint(SantaseController.class, "searchGame"));
 
         assertFalse(carryOn);
         assertEquals(HttpServletResponse.SC_NOT_FOUND, response.getStatus());
@@ -102,7 +102,7 @@ class AvailableServiceInterceptorTest {
 
         boolean carryOn = interceptor.preHandle(
                 new MockHttpServletRequest("POST", "/game/play-card"), response,
-                endpoint(GameController.class, "playCard", bg.deck.model.request.CardRequest.class));
+                endpoint(SantaseController.class, "playCard", bg.deck.model.request.CardRequest.class));
 
         assertTrue(carryOn, "playing a card is not gated: a table already in play finishes");
         verifyNoInteractions(availabilityService);
@@ -121,7 +121,7 @@ class AvailableServiceInterceptorTest {
     @DisplayName("the two search endpoints carry the annotation")
     void theSearchEndpointsAreAnnotated() throws Exception {
         assertEquals("SANTASE",
-                GameController.class.getMethod("searchGame").getAnnotation(RequiresService.class).value());
+                SantaseController.class.getMethod("searchGame").getAnnotation(RequiresService.class).value());
         assertEquals("TABLA",
                 TablaController.class.getMethod("search").getAnnotation(RequiresService.class).value());
     }
@@ -129,7 +129,7 @@ class AvailableServiceInterceptorTest {
     @Test
     @DisplayName("and the endpoints that keep a game going do not")
     void movesAreNotAnnotated() throws Exception {
-        for (Method method : GameController.class.getMethods()) {
+        for (Method method : SantaseController.class.getMethods()) {
             if (method.getName().equals("searchGame")) {
                 continue;
             }

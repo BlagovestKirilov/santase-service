@@ -1,7 +1,7 @@
 package bg.deck.config;
 
 import bg.deck.constant.LogConstants;
-import bg.deck.service.GameService;
+import bg.deck.service.SantaseService;
 import bg.deck.service.TablaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -16,7 +16,7 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 @Component
 public class WebSocketEventListener {
 
-    private final GameService gameService;
+    private final SantaseService santaseService;
     private final TablaService tablaService;
 
     @EventListener
@@ -42,7 +42,7 @@ public class WebSocketEventListener {
 
         try {
             // A disconnecting user must leave every queue, not just the Santase one.
-            gameService.cancelSearchGame(username);
+            santaseService.cancelSearchGame(username);
             tablaService.cancelSearch(username);
         } catch (Exception ex) {
             log.error(LogConstants.GAME_SEARCH_CANCEL_ERROR, username, ex);

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Обикновена табла.
  *
- * <p>Mirrors {@link GameController}: every endpoint returns 202 with an empty
+ * <p>Mirrors {@link SantaseController}: every endpoint returns 202 with an empty
  * body and all real output is pushed over STOMP, so both games behave the same
  * way from the client's point of view.
  */

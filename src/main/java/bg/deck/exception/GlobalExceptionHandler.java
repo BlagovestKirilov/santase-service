@@ -71,6 +71,20 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, INCORRECT_CREDENTIALS_MESSAGE, request.getRequestURI());
     }
 
+    /**
+     * A game that is not on offer to whoever asked for it.
+     *
+     * <p>404, and the body says no more than that. 403 would tell a stranger
+     * the game exists and is being kept from them.
+     */
+    @ExceptionHandler(ServiceNotAvailableException.class)
+    public ResponseEntity<ErrorResponse> handleServiceNotAvailable(ServiceNotAvailableException ex,
+                                                                   HttpServletRequest request) {
+        log.info(ex.getMessage());
+
+        return buildResponse(HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.getReasonPhrase(), request.getRequestURI());
+    }
+
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
         log.error(ExceptionConstants.LOG_FORMAT_SECURITY, ex.getMessage(), request.getHeader(CF_CONNECTING_IP), request.getRequestURI());
