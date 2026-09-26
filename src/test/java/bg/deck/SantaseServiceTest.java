@@ -11,7 +11,8 @@ import bg.deck.model.User;
 import bg.deck.model.request.CardRequest;
 import bg.deck.model.response.SearchGameResponse;
 import bg.deck.service.GameInactivityService;
-import bg.deck.service.GameService;
+import bg.deck.service.AvailabilityService;
+import bg.deck.service.SantaseService;
 import bg.deck.service.GameUtilService;
 import bg.deck.service.WebSocketService;
 import bg.deck.service.WebSocketUtilService;
@@ -38,7 +39,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class GameServiceTest {
+class SantaseServiceTest {
 
     private final String p1Name = "Alice";
     private final String p2Name = "Bob";
@@ -50,8 +51,10 @@ class GameServiceTest {
     private GameUtilService gameUtilService;
     @Mock
     private GameInactivityService gameInactivityService;
+    @Mock
+    private AvailabilityService availabilityService;
     @InjectMocks
-    private GameService gameService;
+    private SantaseService santaseService;
     private Player p1;
     private Player p2;
     private Game game;
@@ -89,7 +92,7 @@ class GameServiceTest {
             when(gameUtilService.getUsername()).thenReturn(p1Name);
             when(gameUtilService.checkIfUserExistsAndIsAvailable(p1Name)).thenReturn(true);
 
-            gameService.searchGame();
+            santaseService.searchGame();
 
             verify(webSocketService).notifyGameSearch(eq(p1Name), any(SearchGameResponse.class));
             verify(gameUtilService, never()).startGame(any(), any());
@@ -100,7 +103,7 @@ class GameServiceTest {
             // First player enters queue
             when(gameUtilService.getUsername()).thenReturn(p1Name);
             when(gameUtilService.checkIfUserExistsAndIsAvailable(p1Name)).thenReturn(true);
-            gameService.searchGame();
+            santaseService.searchGame();
 
             // Second player enters queue
             reset(webSocketUtilService);
@@ -111,7 +114,7 @@ class GameServiceTest {
             when(gameUtilService.newPlayerFor(p1Name)).thenReturn(p1);
             when(gameUtilService.startGame(p2, p1)).thenReturn(game);
 
-            gameService.searchGame();
+            santaseService.searchGame();
 
             verify(gameUtilService).startGame(any(), any());
             verify(webSocketService).notifyGameSearch(anyList(), any(SearchGameResponse.class));
@@ -132,7 +135,7 @@ class GameServiceTest {
             when(gameUtilService.getUsername()).thenReturn(p1Name);
             when(gameUtilService.findGameByUsername(p1Name)).thenReturn(game);
 
-            gameService.playCard(request);
+            santaseService.playCard(request);
 
             assertThat(p1.getPlayedCard()).isEqualTo(card);
             assertThat(state.getInTurnPlayer()).isEqualTo(p2);
@@ -151,7 +154,7 @@ class GameServiceTest {
             when(gameUtilService.getUsername()).thenReturn(p1Name);
             when(gameUtilService.findGameByUsername(p1Name)).thenReturn(game);
 
-            gameService.playCard(new CardRequest(p1Card.getId()));
+            santaseService.playCard(new CardRequest(p1Card.getId()));
 
             verify(gameUtilService).evaluateTrick(game);
         }
@@ -167,7 +170,7 @@ class GameServiceTest {
             CardRequest request = new CardRequest(randomId);
 
             // 2. Act & Assert: Only the specific service call is inside the lambda
-            assertThatThrownBy(() -> gameService.playCard(request))
+            assertThatThrownBy(() -> santaseService.playCard(request))
                     .isInstanceOf(NotInTurnException.class);
         }
     }
@@ -185,7 +188,7 @@ class GameServiceTest {
             when(gameUtilService.findGameByUsername(p1Name)).thenReturn(game);
             when(gameUtilService.checkTwentyForty(game, p1, king)).thenReturn(true);
 
-            gameService.announceCombination(new CardRequest(king.getId()));
+            santaseService.announceCombination(new CardRequest(king.getId()));
 
             verify(webSocketUtilService).updateGameState(game);
             assertThat(p1.getBonus()).isNull(); // Reset after successful logic
@@ -209,9 +212,9 @@ class GameServiceTest {
             when(gameUtilService.findGame(p1Name)).thenReturn(game);
 
             // 3. Execute
-            gameService.replaceCard();
+            santaseService.replaceCard();
 
-            // 4. Assertions based on the logic in your GameService.replaceCard()
+            // 4. Assertions based on the logic in your SantaseService.replaceCard()
             // The trump card in state should now be the Nine
             assertThat(state.getTrumpCard().getRank()).isEqualTo(Rank.NINE);
 
@@ -237,7 +240,7 @@ class GameServiceTest {
             when(gameUtilService.getUsername()).thenReturn(p1Name);
             when(gameUtilService.findGameByUsername(p1Name)).thenReturn(game);
 
-            gameService.finishDeal();
+            santaseService.finishDeal();
 
             // P1 wins with 2 Result points because P2 is under 33 but not blanked
             assertThat(p1.getResult()).isEqualTo(2);
@@ -254,7 +257,7 @@ class GameServiceTest {
             // because it's a real method on a real object.
 
             // 2. Execute
-            gameService.surrender();
+            santaseService.surrender();
 
             // 3. Assertions: Check if the real logic worked
             // The winner should be P2 because P1 surrendered (setting it is delegated to GameUtilService)
