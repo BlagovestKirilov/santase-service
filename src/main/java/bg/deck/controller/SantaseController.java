@@ -4,7 +4,6 @@ import bg.deck.model.request.CardRequest;
 import bg.deck.service.SantaseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import bg.deck.config.RequiresService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,15 +12,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
-@RequestMapping("/game")
+@RequestMapping("/santase")
 @RestController
 public class SantaseController {
 
     private final SantaseService santaseService;
 
-    // Only the start of a game is gated: switching сантасе off stops new
-    // games and lets the ones being played finish.
-    @RequiresService("SANTASE")
     @PostMapping("/search")
     public ResponseEntity<Void> searchGame() {
         santaseService.searchGame();

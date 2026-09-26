@@ -79,7 +79,7 @@ class JwtAuthenticationFilterTest {
         when(jwtService.extractRole("good.jwt")).thenReturn("ROLE_USER");
         when(jwtService.isTokenValid("good.jwt")).thenReturn(true);
 
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/game/state");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/santase/state");
         request.addHeader("Authorization", "Bearer good.jwt");
         MockHttpServletResponse response = new MockHttpServletResponse();
 

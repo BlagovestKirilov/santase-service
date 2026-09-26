@@ -55,6 +55,8 @@ public class TablaService {
         String username = gameUtilService.getUsername();
 
         // Nobody joins the queue for a game they are not being offered.
+        // Only the start is gated: switching табла off stops new games and
+        // lets the tables already being played finish.
         availabilityService.requireAvailable(GameType.TABLA.name(), username);
 
         // Typed, so an in-progress Santase game does not block a табла search.

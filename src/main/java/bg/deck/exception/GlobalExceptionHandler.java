@@ -1,7 +1,9 @@
 package bg.deck.exception;
 
 import bg.deck.constant.ExceptionConstants;
+import bg.deck.constant.LogConstants;
 import bg.deck.model.response.ErrorResponse;
+import bg.deck.util.AuthenticatedUser;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -80,7 +82,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ServiceNotAvailableException.class)
     public ResponseEntity<ErrorResponse> handleServiceNotAvailable(ServiceNotAvailableException ex,
                                                                    HttpServletRequest request) {
-        log.info(ex.getMessage());
+        log.info(LogConstants.SERVICE_NOT_AVAILABLE, ex.getCode(),
+                AuthenticatedUser.username(), request.getRequestURI());
 
         return buildResponse(HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.getReasonPhrase(), request.getRequestURI());
     }
