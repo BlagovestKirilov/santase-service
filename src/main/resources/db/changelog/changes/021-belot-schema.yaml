@@ -10,7 +10,7 @@ databaseChangeLog:
   # Additive: a new schema and a new table. Nothing existing is read or
   # written.
   - changeSet:
-      id: 019-belot-schema
+      id: 021-belot-schema
       author: Blagovest Kirilov
       comment: The belot schema and the player it knows about
       changes:

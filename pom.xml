@@ -118,6 +118,21 @@
             <artifactId>spring-boot-starter-liquibase</artifactId>
         </dependency>
 
+        <!-- The catalogue of games on offer is read on nearly every request and
+             changed by hand a few times a year, so it is cached. Caffeine rather
+             than the simple cache manager, because what matters here is that a row
+             changed during an incident takes effect on its own: that needs an
+             expiry, and the simple manager has none. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- The scheduled jobs hold a lock in the database, so a second
              instance of the service skips a run rather than repeating it. -->
         <dependency>

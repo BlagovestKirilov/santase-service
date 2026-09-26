@@ -43,6 +43,7 @@ public class TablaService {
     private final GameUtilService gameUtilService;
     private final GameInactivityService gameInactivityService;
     private final WebSocketService webSocketService;
+    private final AvailabilityService availabilityService;
 
     private final Queue<String> matchQueue = new ConcurrentLinkedQueue<>();
 
@@ -52,6 +53,9 @@ public class TablaService {
 
     public void searchGame() {
         String username = gameUtilService.getUsername();
+
+        // Nobody joins the queue for a game they are not being offered.
+        availabilityService.requireAvailable(GameType.TABLA.name(), username);
 
         // Typed, so an in-progress Santase game does not block a табла search.
         if (!gameUtilService.checkIfUserExistsAndIsAvailable(username, GameType.TABLA)) {

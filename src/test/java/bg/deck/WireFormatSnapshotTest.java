@@ -12,6 +12,7 @@ import bg.deck.model.request.RefreshRequest;
 import bg.deck.model.request.RegisterRequest;
 import bg.deck.model.request.UserDeletionRequest;
 import bg.deck.model.response.AuthResponse;
+import bg.deck.model.response.AvailableServicesResponse;
 import bg.deck.model.dto.ComboHopDTO;
 import bg.deck.model.response.ErrorResponse;
 import bg.deck.model.response.GameStateResponse;
@@ -103,6 +104,9 @@ class WireFormatSnapshotTest {
         out.put("ErrorResponse", ErrorResponse.builder()
                 .timestamp(Instant.parse("2026-09-22T10:15:30Z")).status(400).error("Bad Request")
                 .message("Невалиден ход.").details(Map.of("field", "reason")).path("/tabla/move").build());
+
+        out.put("AvailableServicesResponse",
+                new AvailableServicesResponse(List.of("SANTASE", "TABLA")));
 
         out.put("SearchGameResponse.waiting", SearchGameResponse.waiting());
         out.put("SearchGameResponse.started", SearchGameResponse.started(ID));

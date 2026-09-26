@@ -48,7 +48,14 @@ databaseChangeLog:
       file: db/changelog/changes/018-status-check-constraints.yaml
 
   - include:
-      file: db/changelog/changes/019-belot-schema.yaml
+      file: db/changelog/changes/019-available-services.yaml
+
+  # Written on the belot branch as 019 and 020, renumbered on the way in:
+  # 019-available-services has already run against production, and two
+  # changesets sharing a number is a merge waiting to pick the wrong one.
+  # Safe to renumber because neither of these has ever run anywhere.
+  - include:
+      file: db/changelog/changes/021-belot-schema.yaml
 
   - include:
-      file: db/changelog/changes/020-belot-game.yaml
+      file: db/changelog/changes/022-belot-game.yaml

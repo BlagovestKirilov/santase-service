@@ -14,7 +14,7 @@ databaseChangeLog:
   #
   # Additive: two new tables in belot's own schema.
   - changeSet:
-      id: 020-belot-game
+      id: 022-belot-game
       author: Blagovest Kirilov
       comment: A belot table, its seats and its score sheet
       changes:

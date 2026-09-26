@@ -18,6 +18,7 @@ that service.**
 | `UserDeletionRepository` | `UserDeletionService` |
 | `GameRepository`, `GameStateRepository` | `GameUtilService` |
 | `DeletedUserRepository` | `UserUtilService` |
+| `AvailableServiceRepository` | `CacheService` |
 
 Check it in one line — every repository must print `1`:
 
@@ -47,6 +48,23 @@ so a caller cannot get it half right:
 
 If a method on the owner reads like the repository method it wraps, ask whether
 the caller's surrounding lines belong in the owner instead.
+
+### When the owner is not the obvious service
+
+`AvailabilityService` answers who may play what, so it looks like the owner
+of `available_service`. The owner is `CacheService`, and the reason is
+`@Cacheable`: Spring applies it with a proxy, and a bean calling its own
+cached method never goes through that proxy. A cached read has to be called
+from another bean, so it cannot sit beside the code that uses it.
+
+```
+AvailabilityService  → who may play what
+CacheService         → owns AvailableServiceRepository, @Cacheable read
+```
+
+So `CacheService` is where a cached read lives, and the next one belongs
+there too. Nothing evicts by hand: the entry expires, which is what lets an
+`UPDATE` against the table take effect without a deploy.
 
 ### Adding a repository
 

@@ -68,7 +68,7 @@ ShedLock, see `ExpiredLinkScheduler`).
 
 # M0 — the seam (½–1 day)
 
-- [x] `db/changelog/changes/019-belot-schema.yaml` — `CREATE SCHEMA IF NOT EXISTS belot;`, included from the master changelog.
+- [x] `db/changelog/changes/021-belot-schema.yaml` — `CREATE SCHEMA IF NOT EXISTS belot;`, included from the master changelog.
 - [x] Package `bg.deck.belot` with `model`, `engine`, `service`, `controller`, `repository`.
 - [x] One entity, `belot.player(id, username UNIQUE, created_at, updated_at)`, `@Table(schema = "belot")`. Keyed by **username**: it is the token's subject, fixed at registration, with no rename path — so belot never needs the user id and never reads `public.users`.
 - [x] Provisioning: on first authenticated belot request, insert the row from the SecurityContext. Model it on `UserProvisioningFilter` in the Keycloak stash.

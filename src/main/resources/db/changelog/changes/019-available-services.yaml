@@ -1,0 +1,82 @@
+databaseChangeLog:
+  # Which games the site is offering, and to whom.
+  #
+  # A row per game with a state, and a scope saying who may see it. Kept in the
+  # database rather than in application.yml on purpose: turning табла off during
+  # an incident is then one UPDATE that takes effect within the cache's half
+  # minute, instead of a build, a push and an ssh.
+  #
+  # The scope is a ladder — PUBLIC below BETA — and a player sees everything at
+  # or below their own level, so a beta tester keeps the ordinary games as well
+  # as whatever they are testing. Both columns list every level they accept:
+  # 018 exists because a status column whose enum had grown went on refusing the
+  # new value, and this is the same trap.
+  #
+  # Additive. One new table, one new column on users, and a row for each game
+  # that already exists.
+  - changeSet:
+      id: 019-available-services
+      author: Blagovest Kirilov
+      comment: The catalogue of games on offer, and who may see each one
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE TABLE IF NOT EXISTS available_service (
+                  id             UUID         PRIMARY KEY,
+                  created_at     TIMESTAMPTZ  NOT NULL,
+                  updated_at     TIMESTAMPTZ  NOT NULL,
+                  code           VARCHAR(40)  NOT NULL UNIQUE,
+                  state          VARCHAR(10)  NOT NULL,
+                  required_scope VARCHAR(20)  NOT NULL DEFAULT 'PUBLIC',
+                  CONSTRAINT available_service_state_check
+                      CHECK (state IN ('ON', 'OFF')),
+                  CONSTRAINT available_service_scope_check
+                      CHECK (required_scope IN ('PUBLIC', 'BETA'))
+              );
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              INSERT INTO available_service (id, created_at, updated_at, code, state, required_scope)
+              VALUES (gen_random_uuid(), now(), now(), 'SANTASE', 'ON', 'PUBLIC'),
+                     (gen_random_uuid(), now(), now(), 'TABLA',   'ON', 'PUBLIC')
+              ON CONFLICT (code) DO NOTHING;
+        # Added, filled, and only then made NOT NULL: a bare NOT NULL on a table
+        # that already has rows fails.
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE users ADD COLUMN IF NOT EXISTS scope VARCHAR(20);
+        - sql:
+            dbms: postgresql
+            sql: UPDATE users SET scope = 'PUBLIC' WHERE scope IS NULL;
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE users ALTER COLUMN scope SET DEFAULT 'PUBLIC';
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE users ALTER COLUMN scope SET NOT NULL;
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              DO $$
+              BEGIN
+                  IF NOT EXISTS (
+                      SELECT 1 FROM pg_constraint WHERE conname = 'users_scope_check'
+                  ) THEN
+                      ALTER TABLE users ADD CONSTRAINT users_scope_check
+                          CHECK (scope IN ('PUBLIC', 'BETA'));
+                  END IF;
+              END $$;
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE users DROP CONSTRAINT IF EXISTS users_scope_check;
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE users DROP COLUMN IF EXISTS scope;
+        - sql:
+            dbms: postgresql
+            sql: DROP TABLE IF EXISTS available_service;

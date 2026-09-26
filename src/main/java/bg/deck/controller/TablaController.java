@@ -4,6 +4,7 @@ import bg.deck.model.request.MoveRequest;
 import bg.deck.service.TablaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import bg.deck.config.RequiresService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Обикновена табла.
  *
- * <p>Mirrors {@link GameController}: every endpoint returns 202 with an empty
+ * <p>Mirrors {@link SantaseController}: every endpoint returns 202 with an empty
  * body and all real output is pushed over STOMP, so both games behave the same
  * way from the client's point of view.
  */
@@ -25,6 +26,8 @@ public class TablaController {
 
     private final TablaService tablaService;
 
+    // As with сантасе: the table already being played is not interrupted.
+    @RequiresService("TABLA")
     @PostMapping("/search")
     public ResponseEntity<Void> search() {
         tablaService.searchGame();
