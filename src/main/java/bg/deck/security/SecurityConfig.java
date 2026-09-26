@@ -96,7 +96,7 @@ public class SecurityConfig {
                         // health is exposed, and it answers UP or DOWN without
                         // saying anything about why.
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/game/**").hasRole(USER)
+                        .requestMatchers("/santase/**").hasRole(USER)
                         .requestMatchers("/tabla/**").hasRole(USER)
                         .requestMatchers("/user/confirm-deletion").permitAll()
                         .requestMatchers("/user/**").hasRole(USER)

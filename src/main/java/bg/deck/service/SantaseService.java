@@ -58,6 +58,8 @@ public class SantaseService {
         log.info(LogConstants.GAME_SEARCH_START, username);
 
         // Nobody joins the queue for a game they are not being offered.
+        // Only the start is gated: switching сантасе off stops new games and
+        // lets the tables already being played finish.
         availabilityService.requireAvailable(GameType.SANTASE.name(), username);
 
         if (!gameUtilService.checkIfUserExistsAndIsAvailable(username)) {
