@@ -4,6 +4,7 @@ import bg.deck.model.request.CardRequest;
 import bg.deck.service.GameService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import bg.deck.config.RequiresService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,9 @@ public class GameController {
 
     private final GameService gameService;
 
+    // Only the start of a game is gated: switching сантасе off stops new
+    // games and lets the ones being played finish.
+    @RequiresService("SANTASE")
     @PostMapping("/search")
     public ResponseEntity<Void> searchGame() {
         gameService.searchGame();
