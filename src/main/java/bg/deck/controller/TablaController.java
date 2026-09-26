@@ -4,7 +4,6 @@ import bg.deck.model.request.MoveRequest;
 import bg.deck.service.TablaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import bg.deck.config.RequiresService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,8 +25,6 @@ public class TablaController {
 
     private final TablaService tablaService;
 
-    // As with сантасе: the table already being played is not interrupted.
-    @RequiresService("TABLA")
     @PostMapping("/search")
     public ResponseEntity<Void> search() {
         tablaService.searchGame();
