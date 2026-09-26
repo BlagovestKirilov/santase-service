@@ -19,10 +19,14 @@ public class Constants {
 
     /**
      * Belot pushes a different state to every seat — each player’s own hand is
-     * in it — so the destination ends in the username, as the others do, and
-     * the subscribe check refuses anyone listening to somebody else’s.
+     * in it — so the destination ends in the username, and the subscribe check
+     * refuses anyone listening to somebody else’s.
+     *
+     * <p>Keyed by player rather than by table, unlike сантасе’s: a client has to
+     * subscribe before it knows which table it will be given, and belot has no
+     * separate search topic to tell it. The table id is in the state anyway.
      */
-    public static final String NOTIFY_BELOT_DESTINATION = "/topic/belot/%s/%s";
+    public static final String NOTIFY_BELOT_DESTINATION = "/topic/belot/%s";
 
     /** The one cache: the games on offer. @see bg.deck.config.CacheConfig */
     public static final String SERVICES_CACHE = "services";

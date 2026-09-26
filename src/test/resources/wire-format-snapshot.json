@@ -25,19 +25,23 @@
     "seats" : [ {
       "seat" : "NORTH",
       "team" : "NORTH_SOUTH",
-      "username" : "petko91"
+      "username" : "petko91",
+      "cardsLeft" : 5
     }, {
       "seat" : "WEST",
       "team" : "EAST_WEST",
-      "username" : "ninja2011"
+      "username" : "ninja2011",
+      "cardsLeft" : 5
     }, {
       "seat" : "SOUTH",
       "team" : "NORTH_SOUTH",
-      "username" : "gosho"
+      "username" : "gosho",
+      "cardsLeft" : 5
     }, {
       "seat" : "EAST",
       "team" : "EAST_WEST",
-      "username" : "ivan"
+      "username" : "ivan",
+      "cardsLeft" : 5
     } ],
     "yourSeat" : "NORTH",
     "dealNumber" : 3,

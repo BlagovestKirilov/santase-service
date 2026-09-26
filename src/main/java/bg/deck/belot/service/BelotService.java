@@ -3,6 +3,7 @@ package bg.deck.belot.service;
 import bg.deck.belot.engine.BidAction;
 import bg.deck.belot.engine.Bidding;
 import bg.deck.belot.engine.Card;
+import bg.deck.belot.engine.Dealing;
 import bg.deck.belot.engine.Seat;
 import bg.deck.belot.model.BelotDeal;
 import bg.deck.belot.model.BelotDealStatus;
@@ -143,7 +144,7 @@ public class BelotService {
     }
 
     private void tell(BelotGame table, String username) {
-        webSocketService.notifyBelotUpdate(table.getId().toString(), username, viewFor(table, username));
+        webSocketService.notifyBelotUpdate(username, viewFor(table, username));
     }
 
     /** The table as one seat sees it, with that seat's hand and nobody else's. */
@@ -164,7 +165,8 @@ public class BelotService {
                 table.getStatus(),
                 table.getServerSeedHash(),
                 table.getSeats().stream()
-                        .map(taken -> new BelotSeatView(taken.getSeat(), taken.team(), taken.getUsername()))
+                        .map(taken -> new BelotSeatView(taken.getSeat(), taken.team(),
+                                taken.getUsername(), cardsLeft(deal, taken.getSeat())))
                         .toList(),
                 seat,
                 deal.map(BelotDeal::getDealNumber).orElse(null),
@@ -176,6 +178,19 @@ public class BelotService {
                 table.getNorthSouthScore(),
                 table.getEastWestScore(),
                 table.getHangingPoints());
+    }
+
+    /**
+     * How many cards a seat is still holding — public, as it is at a table.
+     *
+     * <p>Five during the bidding, because that is all that has been dealt.
+     */
+    private int cardsLeft(java.util.Optional<BelotDeal> deal, Seat seat) {
+        return deal.map(current -> switch (current.getStatus()) {
+            case BIDDING -> Dealing.BEFORE_BIDDING;
+            case PLAYING -> Dealing.HAND_SIZE - current.playedBy(seat).size();
+            case THROWN_IN, FINISHED -> 0;
+        }).orElse(0);
     }
 
     /**

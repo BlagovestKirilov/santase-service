@@ -38,8 +38,8 @@ public class WebSocketService {
 
     /** One seat’s view of a belot table. Never the table’s view: it holds a hand. */
     @Async
-    public void notifyBelotUpdate(String gameId, String username, Object state) {
-        String destination = String.format(NOTIFY_BELOT_DESTINATION, gameId, username);
+    public void notifyBelotUpdate(String username, Object state) {
+        String destination = String.format(NOTIFY_BELOT_DESTINATION, username);
         enqueueMessage(username, () -> messagingTemplate.convertAndSend(destination, state));
     }
 

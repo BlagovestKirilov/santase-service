@@ -97,7 +97,6 @@ class BelotViewTest {
         ArgumentCaptor<Object> state = ArgumentCaptor.forClass(Object.class);
         belot.sendState(username);
         verify(sockets).notifyBelotUpdate(
-                org.mockito.ArgumentMatchers.eq(table.getId().toString()),
                 org.mockito.ArgumentMatchers.eq(username),
                 state.capture());
         return (BelotStateResponse) state.getValue();

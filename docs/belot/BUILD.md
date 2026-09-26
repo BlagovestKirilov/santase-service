@@ -50,7 +50,7 @@ ShedLock, see `ExpiredLinkScheduler`).
 | Reused | Note |
 |---|---|
 | `JwtAuthenticationFilter`, `SecurityConfig` | add `.requestMatchers("/belot/**").hasRole(USER)` |
-| STOMP transport | topic `/topic/belot/{gameId}/{username}` — already passes `StompAuthChannelInterceptor.authorise`, which requires the destination to end in the caller's name |
+| STOMP transport | topic `/topic/belot/{username}` — already passes `StompAuthChannelInterceptor.authorise`, which requires the destination to end in the caller's name |
 | `WebSocketService` | per-player push |
 | Scheduler + ShedLock | proven in production as of `fb39c4b` |
 | `GlobalExceptionHandler`, `ErrorResponse`, `Constants` | error shape stays identical for the client |
